@@ -440,6 +440,24 @@ def plane_points(axis, pos, ext, res):
 
 _LIGHT = {}
 
+POST = {
+    "x_slices": [-0.95, 2.951], "x_ext": [0.0, 0.95, 0.0, 1.30],
+    "y_slices": [0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.585, 0.70], "y_ext": [-1.2, 3.2, 0.0, 1.40],
+    "z_slices": [0.004, 0.015, 0.03, 0.06, 0.10, 0.20, 0.35, 0.60, 0.90, 1.10], "z_ext": [-1.2, 3.2, 0.0, 0.95],
+    "clip": [-1.4, 4.6, -0.01, 1.2, -0.01, 1.6],
+    "seed_rakes": [  # x, y0, y1, ny, z0, z1, nz
+        [-1.05, 0.05, 0.78, 16, 0.02, 0.36, 7], [0.24, 0.12, 0.50, 9, 0.012, 0.045, 3],
+        [1.05, 0.02, 0.56, 10, 0.70, 1.22, 7], [-0.30, 0.30, 0.80, 7, 0.05, 0.50, 5]],
+    "stream_length": 6.0,
+    "wing_sections": {"FW": [["fw_main", "fw_flaps", "fw_cascade"], [0.10, 0.25, 0.45, 0.62]],
+                      "RW": [["rw_main", "rw_flaps"], [0.05, 0.25, 0.45]]},
+    "underfloor": [[0.0, 0.012], [0.20, 0.012], [0.33, 0.012], [0.46, 0.012]], "underfloor_x": [-1.2, 3.2],
+}
+
+
+def set_post(car):
+    POST.update(car.get("post", {}))
+
 
 def light_volume(vol):
     """Geometry-only copy of the volume carrying just the arrays the web needs (built once)."""
@@ -463,9 +481,9 @@ def slices_export(vol, cfg, webdir):
     res = cfg.get("slice_res", 0.005)
     cat = {"x": [], "y": [], "z": []}
     plan = {
-        "x": (np.round(np.arange(-0.95, 2.951, cfg.get("dx_slices", 0.05)), 3), (0.0, 0.95, 0.0, 1.30)),
-        "y": (np.array([0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.585, 0.70]), (-1.2, 3.2, 0.0, 1.40)),
-        "z": (np.array([0.004, 0.015, 0.03, 0.06, 0.10, 0.20, 0.35, 0.60, 0.90, 1.10]), (-1.2, 3.2, 0.0, 0.95)),
+        "x": (np.round(np.arange(POST["x_slices"][0], POST["x_slices"][1], cfg.get("dx_slices", 0.05)), 3), tuple(POST["x_ext"])),
+        "y": (np.array(POST["y_slices"]), tuple(POST["y_ext"])),
+        "z": (np.array(POST["z_slices"]), tuple(POST["z_ext"])),
     }
     jobs, chunks, off = [], [], 0
     for axis, (positions, ext) in plan.items():
@@ -538,22 +556,10 @@ def iso_export(vol, cfg, webdir, name, scalar, value, color_fields, target=18000
 
 def seeds():
     pts = []
-    # front wing: tip / flap vortices, in front of the wing
-    for y in np.linspace(0.05, 0.78, 16):
-        for z in np.linspace(0.02, 0.36, 7):
-            pts.append((-1.05, y, z))
-    # under-floor inlet
-    for y in np.linspace(0.12, 0.50, 9):
-        for z in (0.012, 0.025, 0.045):
-            pts.append((0.24, y, z))
-    # rear wing
-    for y in np.linspace(0.02, 0.56, 10):
-        for z in np.linspace(0.70, 1.22, 7):
-            pts.append((1.05, y, z))
-    # front-wheel / sidepod region
-    for y in np.linspace(0.30, 0.80, 7):
-        for z in np.linspace(0.05, 0.50, 5):
-            pts.append((-0.30, y, z))
+    for x, y0, y1, ny, z0, z1, nz in POST["seed_rakes"]:
+        for y in np.linspace(y0, y1, int(ny)):
+            for z in np.linspace(z0, z1, int(nz)):
+                pts.append((x, y, z))
     return np.array(pts)
 
 
@@ -563,9 +569,9 @@ def streams_export(vol, cfg, webdir):
     kw = dict(vectors="U", integration_direction="forward", initial_step_length=0.5, max_steps=4000,
               terminal_speed=1e-3)
     try:
-        sl = vol.streamlines_from_source(src, max_length=6.0, **kw)
+        sl = vol.streamlines_from_source(src, max_length=POST["stream_length"], **kw)
     except TypeError:
-        sl = vol.streamlines_from_source(src, max_time=6.0, **kw)
+        sl = vol.streamlines_from_source(src, max_time=POST["stream_length"], **kw)
     U = cfg["U"]
     lines = []
     L = sl.lines
@@ -603,8 +609,7 @@ def lines_export(vol, patches, cfg):
     q = 0.5 * U * U
     out = {"wing_sections": [], "underfloor": []}
     import pyvista as pv
-    for wing, names, ys in (("FW", ["fw_main", "fw_flaps", "fw_cascade"], [0.10, 0.25, 0.45, 0.62]),
-                            ("RW", ["rw_main", "rw_flaps"], [0.05, 0.25, 0.45])):
+    for wing, (names, ys) in POST["wing_sections"].items():
         for y in ys:
             pts = []
             for n in names:
@@ -620,8 +625,9 @@ def lines_export(vol, patches, cfg):
                 a = np.vstack(pts)
                 out["wing_sections"].append({"wing": wing, "y": y, "x": np.round(a[:, 0], 4).tolist(),
                                              "z": np.round(a[:, 1], 4).tolist(), "Cp": np.round(a[:, 2], 3).tolist()})
-    for y, z in ((0.0, 0.012), (0.20, 0.012), (0.33, 0.012), (0.46, 0.012)):
-        s = light_volume(vol).sample_over_line((-1.2, y, z), (3.2, y, z), resolution=880)
+    xa, xb = POST["underfloor_x"]
+    for y, z in POST["underfloor"]:
+        s = light_volume(vol).sample_over_line((xa, y, z), (xb, y, z), resolution=int((xb - xa) / 0.005))
         m = np.asarray(s.point_data["vtkValidPointMask"]).astype(bool)
         x = s.points[:, 0]
         cp = np.where(m, np.asarray(s.point_data["Cp"]), np.nan)
@@ -635,6 +641,7 @@ def main(case, out, cfg):
     webdir = os.path.join(out, "web")
     os.makedirs(webdir, exist_ok=True)
     car = json.load(open(os.path.join(case, "constant", "triSurface", "car.json")))
+    set_post(car)
     rc = json.load(open(os.path.join(case, "run_config.json")))
     cfg = {**rc, **cfg}
     meta = {"case": cfg.get("name"), "config": {k: v for k, v in cfg.items() if k not in ("groups",)}, "car": car,
@@ -668,7 +675,7 @@ def main(case, out, cfg):
     try:
         vol = read_internal(r)
         log("internal mesh", vol.n_cells, vol.array_names)
-        vol = clip_region(vol, (-1.4, 4.6, -0.01, 1.2, -0.01, 1.6))
+        vol = clip_region(vol, tuple(POST["clip"]))
         vol = vol.cell_data_to_point_data() if "U" not in vol.point_data else vol
         vol = add_derived(vol, cfg["U"])
         log("clipped", vol.n_cells)

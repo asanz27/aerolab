@@ -13,7 +13,7 @@ from matplotlib.collections import PolyCollection
 
 COL = {"fw": (0.85, 0.25, 0.25), "rw": (0.25, 0.45, 0.9), "wheels": (0.15, 0.15, 0.15), "susp": (0.6, 0.6, 0.6),
        "body": (0.55, 0.55, 0.6), "sidepods": (0.5, 0.6, 0.55), "floor": (0.95, 0.7, 0.2), "driver": (0.9, 0.8, 0.3),
-       "rollhoop": (0.7, 0.7, 0.7), "sidewing": (0.8, 0.4, 0.8), "enginecover": (0.2, 0.4, 0.95), "radiator": (0.3, 0.3, 0.3), "diffuser": (0.95, 0.5, 0.1)}
+       "rollhoop": (0.7, 0.7, 0.7), "sidewing": (0.8, 0.4, 0.8), "enginecover": (0.2, 0.4, 0.95), "radiator": (0.3, 0.3, 0.3), "diffuser": (0.95, 0.5, 0.1), "frontwing": (0.85, 0.25, 0.25), "rearwing": (0.25, 0.45, 0.9)}
 
 
 def read_stl(p):

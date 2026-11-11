@@ -42,11 +42,21 @@ GROUPS = {
 ALL_PARTS = list(SURF_LEVELS)
 WHEELS = [{"part": "wheels_front", "origin": [0.0, 0.62, 0.2225]}, {"part": "wheels_rear", "origin": [1.535, 0.62, 0.2225]}]
 TYRE_R = 0.2285
+BOXES = {
+    "box_far": ((-2.0, 0, 0), (7.0, 1.6, 2.0), 2),
+    "box_wake": ((-1.3, 0, 0), (4.0, 1.05, 1.5), 3),
+    "box_near": ((-1.05, 0, 0), (2.4, 0.85, 0.45), 4),
+    "box_rw": ((1.0, 0, 0.55), (2.7, 0.66, 1.35), 4),
+    "box_floor": ((0.25, 0.05, 0), (1.42, 0.56, 0.06), 5),
+    "box_fwgnd": ((-0.95, 0, 0), (-0.50, 0.73, 0.065), 5),
+}
+LOCATION = (5.1234, 1.8765, 2.3456)
 
 
 def load_car(case):
-    """Take parts, refinement levels, force groups and wheel axes from the geometry's car.json."""
-    global SURF_LEVELS, LAYER_PARTS, GROUPS, ALL_PARTS, WHEELS, TYRE_R
+    """Take parts, refinement levels, force groups, wheel axes and (optionally) the domain and
+    refinement boxes from the geometry's car.json, so any car size can be meshed."""
+    global SURF_LEVELS, LAYER_PARTS, GROUPS, ALL_PARTS, WHEELS, TYRE_R, X0, X1, Y1, Z1, BOXES, LOCATION
     p = os.path.join(case, "constant", "triSurface", "car.json")
     if not os.path.exists(p):
         return
@@ -59,6 +69,12 @@ def load_car(case):
         GROUPS = car["force_groups"]
         WHEELS = car["wheels"]
         TYRE_R = car["tyre_radius"]
+    if "domain" in car:
+        X0, X1, Y1, Z1 = car["domain"]
+    if "boxes" in car:
+        BOXES = {k: (tuple(v[0]), tuple(v[1]), int(v[2])) for k, v in car["boxes"].items()}
+    if "location_in_mesh" in car:
+        LOCATION = tuple(car["location_in_mesh"])
 
 # domain (half car, symmetry plane at y=0)
 X0, X1, Y1, Z1 = -5.6, 12.0, 4.0, 4.0
@@ -98,14 +114,7 @@ mergePatchPairs ();
 
 def snappy(c):
     geo = "\n".join(f"    {p}.stl {{ type triSurfaceMesh; name {p}; }}" for p in ALL_PARTS)
-    boxes = {
-        "box_far": ((-2.0, 0, 0), (7.0, 1.6, 2.0), 2),
-        "box_wake": ((-1.3, 0, 0), (4.0, 1.05, 1.5), 3),
-        "box_near": ((-1.05, 0, 0), (2.4, 0.85, 0.45), 4),
-        "box_rw": ((1.0, 0, 0.55), (2.7, 0.66, 1.35), 4),
-        "box_floor": ((0.25, 0.05, 0), (1.42, 0.56, 0.06), 5),
-        "box_fwgnd": ((-0.95, 0, 0), (-0.50, 0.73, 0.065), 5),
-    }
+    boxes = BOXES
     geo += "\n" + "\n".join(f"    {n} {{ type searchableBox; min ({a[0]} {a[1]} {a[2]}); max ({b[0]} {b[1]} {b[2]}); }}"
                             for n, (a, b, _) in boxes.items())
     feats = "\n".join(f'        {{ file "{p}.eMesh"; level {SURF_LEVELS[p][1]}; }}' for p in ALL_PARTS)
@@ -143,7 +152,7 @@ castellatedMeshControls
     {{
 {regs}
     }}
-    locationInMesh (5.1234 1.8765 2.3456);
+    locationInMesh ({LOCATION[0]} {LOCATION[1]} {LOCATION[2]});
     allowFreeStandingZoneFaces true;
 }}
 
@@ -385,10 +394,10 @@ def fields(c):
     U = c["U"]
     k = 1.5 * (0.005 * U) ** 2
     om = k / (10 * 1.5e-5)
-    omega_w = U / TYRE_R
     wheels = ""
     for wdef in WHEELS:
         o = wdef["origin"]
+        omega_w = U / wdef.get("radius", TYRE_R)
         wheels += f"""    {wdef['part']}
     {{
         type            rotatingWallVelocity;

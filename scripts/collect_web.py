@@ -36,6 +36,13 @@ def fetch_case(case, dest):
                 shutil.copy(os.path.join(tmp, extra), dest)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
+    try:  # drop boundary-layer sheets from the iso-surfaces (light NumPy pass)
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import isofilter
+        if os.path.exists(os.path.join(dest, "surface.fsb.gz")):
+            isofilter.run(dest, 0.008)
+    except Exception as e:  # noqa: BLE001
+        print("isofilter skipped:", e)
     return json.load(open(os.path.join(dest, "meta.json")))
 
 
