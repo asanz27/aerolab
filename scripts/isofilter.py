@@ -104,24 +104,27 @@ def filter_iso(iso_path, surf_V, surf_F, dist=0.008, h=0.004):
     return len(F), len(keepF)
 
 
-def run(web_dir, dist=0.008):
+def run(web_dir, dist=0.008, q_dist=None):
+    """dist: wall clearance for all iso-surfaces; q_dist (optional, larger): for the Q-criterion ones, whose
+    boundary-layer sheets reach further from the wall on thick (fine-mesh) boundary layers."""
     sb, _ = read_fsb(os.path.join(web_dir, "surface.fsb.gz"))
     V = dequant_pos(sb["pos"][0], sb["pos"][1])
     F = sb["index"][0].reshape(-1, 3).astype(np.int64)
     res = {}
     for fn in sorted(os.listdir(web_dir)):
         if fn.startswith("iso_") and fn.endswith(".fsb.gz"):
-            res[fn] = filter_iso(os.path.join(web_dir, fn), V, F, dist)
+            d = q_dist if (q_dist and fn.startswith("iso_q")) else dist
+            res[fn] = filter_iso(os.path.join(web_dir, fn), V, F, d) + (d,)
             print(fn, "triangles", res[fn])
     meta_p = os.path.join(web_dir, "meta.json")
     meta = json.load(open(meta_p))
     for it in meta.get("iso", []):
         if it.get("file") in res:
             it["tris"] = int(res[it["file"]][1])
-            it["wall_filter_m"] = dist
+            it["wall_filter_m"] = res[it["file"]][2]
     json.dump(meta, open(meta_p, "w"), separators=(",", ":"))
     return res
 
 
 if __name__ == "__main__":
-    run(sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 0.008)
+    run(sys.argv[1], float(sys.argv[2]) if len(sys.argv) > 2 else 0.008, float(sys.argv[3]) if len(sys.argv) > 3 else None)

@@ -13,6 +13,7 @@ import sys
 import tempfile
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+Q_WALL = float(os.environ.get("Q_WALL", "0.025"))  # wall clearance of the Q iso-surfaces [m]
 
 
 def git(*a, cwd=REPO):
@@ -48,7 +49,7 @@ def fetch_case(case, dest):
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         import isofilter
         if os.path.exists(os.path.join(dest, "surface.fsb.gz")):
-            isofilter.run(dest, 0.008)
+            isofilter.run(dest, 0.008, Q_WALL)
     except Exception as e:  # noqa: BLE001
         print("isofilter skipped:", e)
     return json.load(open(os.path.join(dest, "meta.json")))
@@ -85,7 +86,7 @@ def main():
         else:
             git("fetch", "-q", "origin", f"res-{case}")
             m = json.loads(git("show", "FETCH_HEAD:web/meta.json"))
-        v = m.get("config", {}).get("variant", {}) or {}
+        v = m.get("config", {}).get("variant") or m.get("car", {}).get("variant") or {}
         index["aeromap"].append({"case": case, "label": label, "front_rh_mm": v.get("front_rh_mm", 0),
                                  "rear_rh_mm": v.get("rear_rh_mm", 0), **summary(m)})
     json.dump(index, open(os.path.join(out, "index.json"), "w"), indent=1)
