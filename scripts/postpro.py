@@ -416,37 +416,70 @@ def sample_plane(vol, axis, pos, ext, res):
     return s, mask, na, nb
 
 
+def plane_points(axis, pos, ext, res):
+    a0, a1, b0, b1 = ext
+    na = int(round((a1 - a0) / res)) + 1
+    nb = int(round((b1 - b0) / res)) + 1
+    A, B = np.meshgrid(np.linspace(a0, a1, na), np.linspace(b0, b1, nb))  # rows = b
+    if axis == "x":
+        P = np.c_[np.full(A.size, pos), A.ravel(), B.ravel()]
+    elif axis == "y":
+        P = np.c_[A.ravel(), np.full(A.size, pos), B.ravel()]
+    else:
+        P = np.c_[A.ravel(), B.ravel(), np.full(A.size, pos)]
+    return P, na, nb
+
+
 def slices_export(vol, cfg, webdir):
+    """All planes are probed in ONE pass (the cell locator is built once)."""
+    import pyvista as pv
     sdir = os.path.join(webdir, "slices")
     os.makedirs(sdir, exist_ok=True)
     res = cfg.get("slice_res", 0.005)
     cat = {"x": [], "y": [], "z": []}
     plan = {
         "x": (np.round(np.arange(-0.95, 2.951, cfg.get("dx_slices", 0.05)), 3), (0.0, 0.95, 0.0, 1.30)),
-        "y": (np.array([0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.62, 0.70]), (-1.2, 3.2, 0.0, 1.40)),
+        "y": (np.array([0.0, 0.10, 0.20, 0.30, 0.40, 0.50, 0.585, 0.70]), (-1.2, 3.2, 0.0, 1.40)),
         "z": (np.array([0.004, 0.015, 0.03, 0.06, 0.10, 0.20, 0.35, 0.60, 0.90, 1.10]), (-1.2, 3.2, 0.0, 0.95)),
     }
+    jobs, chunks, off = [], [], 0
     for axis, (positions, ext) in plan.items():
         for k, pos in enumerate(positions):
-            s, mask, na, nb = sample_plane(vol, axis, float(pos), ext, res)
-            for f, src in SRC.items():
-                lo, hi = FIELD_DEF[f]["range"]
-                v = np.asarray(s.point_data[src]).reshape(nb, na)
-                img = (1 + np.round(np.clip((v - lo) / (hi - lo), 0, 1) * 254)).astype(np.uint8)
-                img[~mask] = 0
-                png8(os.path.join(sdir, f"{axis}_{k:03d}_{f}.png"), img[::-1])  # row 0 = top (max b)
-            if axis == "x":
-                # cross-flow vectors at half resolution
-                u = np.asarray(s.point_data["U"]).reshape(nb, na, 3) / cfg["U"]
-                rgb = np.zeros((nb, na, 3), np.uint8)
-                rgb[..., 0] = np.round(np.clip((u[..., 1] + 0.5), 0, 1) * 255)
-                rgb[..., 1] = np.round(np.clip((u[..., 2] + 0.5), 0, 1) * 255)
-                rgb[..., 2] = mask * 255
-                png8(os.path.join(sdir, f"{axis}_{k:03d}_vec.png"), rgb[::-2, ::2])
-            cat[axis].append({"i": k, "pos": float(pos)})
-        log("slices", axis, len(positions))
-    plan_out = {a: {"ext": list(plan[a][1]), "res": res, "items": cat[a]} for a in cat}
-    return plan_out
+            P, na, nb = plane_points(axis, float(pos), ext, res)
+            jobs.append((axis, k, float(pos), na, nb, off))
+            chunks.append(P)
+            off += len(P)
+    allP = np.vstack(chunks)
+    log("probing", len(allP), "points on", len(jobs), "planes")
+    keep = set(SRC.values()) | {"U"}
+    light = pv.UnstructuredGrid()
+    light.copy_structure(vol)  # geometry only; the original keeps all its arrays
+    for n in keep:
+        light.point_data[n] = vol.point_data[n]
+    smp = pv.PolyData(allP).sample(light, pass_cell_data=False, pass_point_data=False)
+    mask_all = np.asarray(smp.point_data["vtkValidPointMask"]).astype(bool)
+    arrays = {n: np.asarray(smp.point_data[n]) for n in keep}
+    log("probe done")
+    for axis, k, pos, na, nb, o in jobs:
+        sl = slice(o, o + na * nb)
+        mask = mask_all[sl].reshape(nb, na)
+        for f, src in SRC.items():
+            lo, hi = FIELD_DEF[f]["range"]
+            v = arrays[src][sl].reshape(nb, na)
+            img = (1 + np.round(np.clip((v - lo) / (hi - lo), 0, 1) * 254)).astype(np.uint8)
+            img[~mask] = 0
+            png8(os.path.join(sdir, f"{axis}_{k:03d}_{f}.png"), img[::-1])  # row 0 = top (max b)
+        if axis == "x":
+            u = arrays["U"][sl].reshape(nb, na, 3) / cfg["U"]
+            rgb = np.zeros((nb, na, 3), np.uint8)
+            rgb[..., 0] = np.round(np.clip((u[..., 1] + 0.5), 0, 1) * 255)
+            rgb[..., 1] = np.round(np.clip((u[..., 2] + 0.5), 0, 1) * 255)
+            rgb[..., 2] = mask * 255
+            png8(os.path.join(sdir, f"{axis}_{k:03d}_vec.png"), rgb[::-2, ::2])
+        cat[axis].append({"i": k, "pos": pos})
+    for a in cat:
+        log("slices", a, len(cat[a]))
+    return {a: {"ext": list(plan[a][1]), "res": res, "items": cat[a]} for a in cat}
 
 
 def clip_region(vol, bounds):

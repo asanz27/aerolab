@@ -9,7 +9,7 @@ CASE="${RUNNER_TEMP:-/tmp}/case_${NAME}"
 RES="$ROOT/results/${NAME}"
 JOB_START="${JOB_START:-$(date +%s)}"
 BUDGET_MIN="${BUDGET_MIN:-350}"          # job timeout (minutes) as configured in the workflow
-POST_RESERVE_MIN="${POST_RESERVE_MIN:-38}" # time kept for reconstruction + post-processing
+POST_RESERVE_MIN="${POST_RESERVE_MIN:-45}" # time kept for reconstruction + post-processing
 mkdir -p "$CASE" "$RES"
 NP=$(nproc)
 
@@ -118,6 +118,7 @@ stamp solve1
 
 # stage 2: second order, guarded by a wall-clock deadline
 cp system/fvSchemes.second system/fvSchemes
+cp system/fvSolution.second system/fvSolution
 foamDictionary system/controlDict -entry endTime -set "$ITERS" > /dev/null
 foamDictionary system/controlDict -entry writeInterval -set 100 > /dev/null
 NOW=$(date +%s)
@@ -126,7 +127,17 @@ SLEEP=$(( STOP_AT - NOW ))
 echo "solver wall-clock budget: $(( SLEEP / 60 )) min"
 ( sleep "$SLEEP"; echo "deadline reached -> writeNow" > deadline.txt; foamDictionary system/controlDict -entry stopAt -set writeNow > /dev/null ) > /dev/null 2>&1 &
 GUARD=$!
-par log.simpleFoam.2 simpleFoam || fail simpleFoam2
+if ! par log.simpleFoam.2 simpleFoam; then
+  echo "stage 2 (SIMPLEC) failed -> resuming with SIMPLE from the last written time"
+  cp system/fvSolution.first system/fvSolution
+  for d in processor*; do
+    last=$(ls -1 "$d" | grep -E '^[0-9.e+-]+$' | sort -g | tail -1)
+    for t in $(ls -1 "$d" | grep -E '^[0-9.e+-]+$'); do
+      [ "$t" != "$last" ] && [ "$t" != "0" ] && rm -rf "$d/$t"
+    done
+  done
+  par log.simpleFoam.3 simpleFoam || fail simpleFoam3
+fi
 kill $GUARD 2>/dev/null
 stamp solve2
 status "reconstructing"

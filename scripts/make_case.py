@@ -326,42 +326,51 @@ wallDist {{ method meshWave; }}
 """
 
 
-def solution():
-    return HDR.format(cls="dictionary", obj="fvSolution") + """
+def solution(simplec=False):
+    """Stage 1 (and default): SIMPLE with strong under-relaxation. Stage 2 optionally SIMPLEC
+    (consistent), which tolerates much larger relaxation and converges in far fewer iterations."""
+    nl = chr(10)
+    if simplec:
+        algo = "    nNonOrthogonalCorrectors 0;" + nl + "    consistent      yes;"
+        relax = "    equations   { U 0.85; k 0.7; omega 0.7; }"
+    else:
+        algo = "    nNonOrthogonalCorrectors 0;" + nl + "    consistent      no;"
+        relax = "    fields      { p 0.3; }" + nl + "    equations   { U 0.7; k 0.6; omega 0.6; }"
+    return HDR.format(cls="dictionary", obj="fvSolution") + f"""
 solvers
-{
+{{
     p
-    {
+    {{
         solver          GAMG;
         smoother        GaussSeidel;
         tolerance       1e-7;
         relTol          0.05;
-        nCellsInCoarsestLevel 50;
-    }
-    Phi { $p; relTol 0.01; }
+        nCellsInCoarsestLevel 100;
+        cacheAgglomeration on;
+        mergeLevels     1;
+    }}
+    Phi {{ $p; relTol 0.01; }}
     "(U|k|omega)"
-    {
+    {{
         solver          smoothSolver;
         smoother        GaussSeidel;
         nSweeps         2;
         tolerance       1e-8;
         relTol          0.1;
-    }
-}
+    }}
+}}
 SIMPLE
-{
-    nNonOrthogonalCorrectors 0;
-    consistent      no;
-}
+{{
+{algo}
+}}
 potentialFlow
-{
+{{
     nNonOrthogonalCorrectors 6;
-}
+}}
 relaxationFactors
-{
-    fields      { p 0.3; }
-    equations   { U 0.7; k 0.6; omega 0.6; }
-}
+{{
+{relax}
+}}
 """
 
 
@@ -474,6 +483,8 @@ def main(case, cfg):
     w(f"{case}/system/fvSchemes.first", schemes(first_order=True))
     w(f"{case}/system/fvSchemes.second", schemes(first_order=False))
     w(f"{case}/system/fvSolution", solution())
+    w(f"{case}/system/fvSolution.first", solution())
+    w(f"{case}/system/fvSolution.second", solution(simplec=bool(c.get("simplec", True))))
     w(f"{case}/system/decomposeParDict", decompose(c["nprocs"]))
     w(f"{case}/constant/transportProperties", HDR.format(cls="dictionary", obj="transportProperties") +
       "\ntransportModel Newtonian;\nnu 1.5e-05;\n")
