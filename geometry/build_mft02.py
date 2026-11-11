@@ -29,7 +29,7 @@ from meshkit import (Surf, check_closed, ellipsoid, loft, merge, naca4, place_in
                      stack_elements, tube, write_stl)
 from build_car import body_loft, envelope_polygon, frontal_area, loft_element
 
-CAR_NAME = "MAD Formula Team MFT02 (reproducción)"
+CAR_NAME = "MAD Formula Team MFT02 (reproducción v2)"
 WB = 1.545
 TRACK = 1.170
 R_TYRE = 0.2286
@@ -55,15 +55,15 @@ FW_FLAP_Y0 = 0.205
 def fw_stack(y):
     ay = abs(y)
     centre = np.clip((FW_FLAP_Y0 - ay) / 0.07, 0, 1)
-    main = dict(m=0.07 - 0.04 * centre, p=0.40, t=0.10 - 0.015 * centre, chord=0.37,
+    main = dict(m=0.07 - 0.04 * centre, p=0.40, t=0.10 - 0.015 * centre, chord=0.34,
                 angle=4.0 - 3.0 * centre, x_le=FW_X_LE, min_z=0.030 + 0.035 * centre)
     if ay < FW_FLAP_Y0 - 1e-9:
         return stack_elements(main, [])
     ys = [0.205, 0.30, 0.40, 0.50, 0.60, 0.70]
-    a1 = interp(ay, ys, [18, 20, 22, 25, 27, 27])
-    a2 = interp(ay, ys, [34, 37, 40, 45, 48, 48])
-    f1 = dict(m=0.07, p=0.40, t=0.10, chord=0.20, angle=a1, gap=0.010, overlap=0.016)
-    f2 = dict(m=0.06, p=0.40, t=0.10, chord=0.16, angle=a2, gap=0.009, overlap=0.013)
+    a1 = interp(ay, ys, [15, 16, 17, 19, 20, 20])
+    a2 = interp(ay, ys, [27, 29, 31, 34, 36, 36])
+    f1 = dict(m=0.07, p=0.40, t=0.10, chord=0.16, angle=a1, gap=0.009, overlap=0.015)
+    f2 = dict(m=0.06, p=0.40, t=0.10, chord=0.125, angle=a2, gap=0.008, overlap=0.012)
     return stack_elements(main, [f1, f2])
 
 
@@ -88,18 +88,19 @@ def build_front_wing():
     ys_f = np.linspace(FW_FLAP_Y0, FW_SPAN, 14)
     flaps = merge([loft_element(ys_f, lambda y, k=k: fw_stack(y)[k]).with_mirror() for k in (1, 2)])
     plates = []
-    # outer endplate: envelope + margin, two louvres from the trailing edge
+    # outer endplate: plain rectangular plate with a chamfered leading corner (as photographed)
     st = fw_stack(FW_SPAN)
-    ep = envelope_polygon(st, hi_margin=0.045, x_pad=(0.010, 0.025), z_floor=0.012)
-    ztop_rear = ep[len(ep) // 2, 1]  # first point of the top edge sits at the trailing edge
-    plates.append(notch_plate(ep, [(ztop_rear - 0.07, -0.13, -0.03, 0.010), (ztop_rear - 0.14, -0.12, -0.03, 0.010)],
-                              FW_SPAN + 0.003, 0.006))
+    pts = np.vstack([np.vstack([u, l]) for u, l in st])
+    x1 = pts[:, 0].max() + 0.02
+    ztop = max(0.235, pts[:, 1].max() + 0.012)
+    ep = np.array([[FW_X_LE - 0.012, 0.012], [x1, 0.012], [x1, ztop], [FW_X_LE + 0.05, ztop], [FW_X_LE - 0.012, ztop - 0.07]])
+    plates.append(plate_xz(ep, FW_SPAN + 0.003, 0.006))
     # tall inner fence (inner endplate of the flap stack) and a short mid fence
-    for yf, hm, xp in ((FW_FLAP_Y0, 0.050, (-0.03, 0.006)), (0.45, 0.012, (-0.08, 0.004))):
+    for yf, hm, xp in ((FW_FLAP_Y0, 0.040, (-0.03, 0.006)), (0.45, 0.012, (-0.08, 0.004))):
         stf = fw_stack(yf + 1e-4)
         fp = envelope_polygon(stf, hi_margin=hm, x_pad=xp)
         plates.append(plate_xz(fp, yf, 0.005))
-    pyl = np.array([[-0.76, 0.075], [-0.54, 0.080], [-0.55, 0.215], [-0.66, 0.215], [-0.72, 0.17]])
+    pyl = np.array([[-0.86, 0.075], [-0.64, 0.080], [-0.66, 0.300], [-0.78, 0.300], [-0.83, 0.20]])
     plates.append(plate_xz(pyl, 0.09, 0.008))
     plates = merge([p.with_mirror() for p in plates])
     return {"fw_main": main, "fw_flaps": flaps, "fw_plates": plates}
@@ -109,29 +110,31 @@ def build_front_wing():
 # Bodywork
 # ---------------------------------------------------------------------------------------------
 def build_body():
-    st = [(-0.640, 0.045, 0.200, 0.265), (-0.628, 0.100, 0.178, 0.305), (-0.585, 0.135, 0.163, 0.340),
-          (-0.45, 0.165, 0.150, 0.380), (-0.25, 0.185, 0.130, 0.425), (-0.05, 0.205, 0.100, 0.475),
-          (0.15, 0.225, 0.070, 0.525), (0.35, 0.250, 0.045, 0.575), (0.55, 0.280, 0.040, 0.610),
-          (0.80, 0.290, 0.040, 0.620), (1.02, 0.290, 0.045, 0.615), (1.20, 0.265, 0.060, 0.580),
-          (1.40, 0.225, 0.080, 0.520), (1.58, 0.175, 0.100, 0.450), (1.68, 0.125, 0.120, 0.390),
-          (1.71, 0.070, 0.150, 0.340)]
+    st = [(-0.778, 0.060, 0.330, 0.470), (-0.768, 0.120, 0.290, 0.512), (-0.735, 0.150, 0.272, 0.530),
+          (-0.60, 0.165, 0.255, 0.540), (-0.40, 0.180, 0.220, 0.545), (-0.20, 0.195, 0.170, 0.550),
+          (0.00, 0.210, 0.120, 0.552), (0.18, 0.232, 0.075, 0.548), (0.30, 0.255, 0.050, 0.490),
+          (0.40, 0.272, 0.042, 0.458), (0.60, 0.285, 0.040, 0.450), (0.80, 0.288, 0.040, 0.450),
+          (0.95, 0.283, 0.045, 0.462), (1.10, 0.262, 0.055, 0.490), (1.30, 0.228, 0.070, 0.470),
+          (1.50, 0.180, 0.090, 0.420), (1.64, 0.130, 0.110, 0.360), (1.69, 0.080, 0.140, 0.320),
+          (1.705, 0.040, 0.170, 0.290)]
     chassis = body_loft(st, n_exp=2.9)
-    hr = [(1.010, 0.075, 0.68, 0.94), (1.030, 0.095, 0.64, 0.97), (1.060, 0.095, 0.60, 0.97), (1.075, 0.07, 0.60, 0.93)]
+    hr = [(0.895, 0.070, 0.50, 0.72), (0.910, 0.095, 0.47, 0.76), (0.935, 0.095, 0.45, 0.76), (0.950, 0.07, 0.45, 0.72)]
     headrest = body_loft(hr, n_exp=3.0, M=48)
     return chassis + headrest
 
 
 def build_engine_cover():
-    st = [(1.04, 0.070, 0.52, 0.62), (1.09, 0.160, 0.50, 0.725), (1.20, 0.185, 0.48, 0.745),
-          (1.38, 0.170, 0.46, 0.700), (1.55, 0.130, 0.43, 0.590), (1.64, 0.080, 0.42, 0.500), (1.665, 0.035, 0.44, 0.47)]
+    st = [(0.945, 0.070, 0.44, 0.54), (0.99, 0.160, 0.42, 0.660), (1.10, 0.190, 0.40, 0.740),
+          (1.30, 0.180, 0.39, 0.745), (1.45, 0.150, 0.37, 0.700), (1.60, 0.110, 0.35, 0.600),
+          (1.67, 0.060, 0.37, 0.520), (1.69, 0.030, 0.40, 0.48)]
     return body_loft(st, n_exp=2.6, M=56)
 
 
 def build_sidepods():
     yc = 0.330
-    st = [(0.295, 0.030, 0.13, 0.20), (0.31, 0.100, 0.07, 0.31), (0.36, 0.135, 0.045, 0.350), (0.48, 0.145, 0.040, 0.365),
-          (0.80, 0.147, 0.040, 0.385), (1.05, 0.140, 0.045, 0.370), (1.18, 0.120, 0.060, 0.330),
-          (1.255, 0.080, 0.090, 0.270), (1.285, 0.030, 0.130, 0.200)]
+    st = [(0.265, 0.030, 0.12, 0.18), (0.28, 0.100, 0.07, 0.29), (0.33, 0.135, 0.045, 0.325), (0.45, 0.145, 0.040, 0.338),
+          (0.80, 0.147, 0.040, 0.350), (1.00, 0.140, 0.045, 0.340), (1.10, 0.120, 0.060, 0.310),
+          (1.17, 0.080, 0.090, 0.250), (1.20, 0.030, 0.130, 0.190)]
     return body_loft(st, yc_fn=lambda x: yc, M=56, n_exp=3.2).with_mirror()
 
 
@@ -172,24 +175,24 @@ def build_floor():
 def build_rear_diffuser_radiator():
     """Short central diffuser behind the rear axle with the radiator + fan shroud on top of it."""
     # diffuser roof: plate in x-z (extruded across y via loft of y-z sections)
-    xs = np.linspace(1.38, 1.86, 9)
+    xs = np.linspace(1.38, 1.95, 9)
     rings = []
     for x in xs:
-        t = (x - 1.38) / 0.48
-        zb = 0.065 + 0.11 * t**1.4
+        t = (x - 1.38) / 0.57
+        zb = 0.065 + 0.10 * t**1.4
         sec = np.array([[-0.20, zb], [0.20, zb], [0.20, zb + 0.006], [-0.20, zb + 0.006]])
         rings.append(np.c_[np.full(4, x), sec[:, 0], sec[:, 1]])
     roof = loft(rings)
     sides = []
     for s in (1, -1):
-        xk = np.linspace(1.38, 1.86, 9)
-        zt = [0.065 + 0.11 * ((x - 1.38) / 0.48) ** 1.4 + 0.004 for x in xk]
+        xk = np.linspace(1.38, 1.95, 9)
+        zt = [0.065 + 0.10 * ((x - 1.38) / 0.57) ** 1.4 + 0.004 for x in xk]
         poly = np.vstack([np.c_[xk, np.full(len(xk), 0.02)], np.c_[xk[::-1], zt[::-1]]])
         sides.append(plate_xz(poly, s * 0.203, 0.006))
     diff = roof + merge(sides)
     # radiator + fan shroud: inclined block above the diffuser exit
     rings = []
-    for x, zb, zt, a in ((1.66, 0.20, 0.30, 0.10), (1.70, 0.17, 0.36, 0.16), (1.80, 0.17, 0.38, 0.16), (1.86, 0.19, 0.36, 0.14), (1.88, 0.22, 0.32, 0.09)):
+    for x, zb, zt, a in ((1.715, 0.16, 0.42, 0.10), (1.74, 0.11, 0.47, 0.16), (1.86, 0.10, 0.48, 0.165), (1.97, 0.12, 0.46, 0.15), (1.995, 0.16, 0.42, 0.10)):
         from meshkit import superellipse_ring
         se = superellipse_ring(0.0, 0.5 * (zb + zt), a, 0.5 * (zt - zb), n_exp=4.0, M=48)
         rings.append(np.c_[np.full(48, x), se[:, 0], se[:, 1]])
@@ -201,14 +204,14 @@ def build_rear_diffuser_radiator():
 # Rear wing
 # ---------------------------------------------------------------------------------------------
 RW_SPAN = 0.486
-RW_X_LE = 1.195
-RW_TOP = 1.160
+RW_X_LE = 1.375
+RW_TOP = 1.150
 
 
 def rw_stack():
-    main = dict(m=0.075, p=0.40, t=0.11, chord=0.42, angle=5.0, x_le=RW_X_LE, min_z=0.845)
-    f1 = dict(m=0.07, p=0.40, t=0.10, chord=0.26, angle=24.0, gap=0.012, overlap=0.016)
-    f2 = dict(m=0.07, p=0.40, t=0.10, chord=0.21, angle=44.0, gap=0.011, overlap=0.014)
+    main = dict(m=0.075, p=0.40, t=0.11, chord=0.34, angle=8.0, x_le=RW_X_LE, min_z=0.825)
+    f1 = dict(m=0.07, p=0.40, t=0.10, chord=0.23, angle=27.0, gap=0.011, overlap=0.016)
+    f2 = dict(m=0.07, p=0.40, t=0.10, chord=0.18, angle=46.0, gap=0.010, overlap=0.014)
     st = stack_elements(main, [f1, f2])
     top = max(max(u[:, 1].max(), l[:, 1].max()) for u, l in st)
     if top > RW_TOP:
@@ -225,11 +228,11 @@ def build_rear_wing():
     pts = np.vstack([np.vstack([u, l]) for u, l in st])
     xmax = pts[:, 0].max() + 0.015
     ztop = pts[:, 1].max() + 0.004
-    outline = [(1.10, 0.93), (1.085, 1.08), (1.12, ztop), (xmax, ztop), (xmax, 0.60), (1.80, 0.56), (1.52, 0.57),
-               (1.30, 0.64), (1.16, 0.79)]
-    ep = notch_plate(outline, [(1.07, -0.24, -0.09, 0.012), (0.97, -0.24, -0.09, 0.012), (0.87, -0.22, -0.08, 0.012)],
-                     RW_SPAN + 0.005, 0.008)
-    strut = np.array([[1.36, 0.45], [1.46, 0.45], [1.50, 0.885], [1.40, 0.885]])
+    xmax = max(xmax, 2.012)
+    outline = [(1.355, 0.53), (1.60, 0.545), (1.78, 0.575), (1.88, 0.62), (1.96, 0.70), (xmax, 0.82), (xmax, ztop),
+               (1.355, ztop)]
+    ep = plate_xz(np.array(outline), RW_SPAN + 0.005, 0.008)
+    strut = np.array([[1.46, 0.60], [1.56, 0.58], [1.58, 0.84], [1.48, 0.84]])
     out["rw_plates"] = (ep + plate_xz(strut, 0.15, 0.012)).with_mirror()
     return out
 
@@ -279,19 +282,19 @@ def build_suspension():
 
 
 def build_driver():
-    helmet = ellipsoid((0.915, 0.0, 0.870), (0.150, 0.130, 0.140), n=48)
-    torso = ellipsoid((0.960, 0.0, 0.590), (0.150, 0.215, 0.165), n=48)
-    neck = rod(np.array([0.945, 0, 0.69]), np.array([0.925, 0, 0.80]), 0.06, n=20)
+    helmet = ellipsoid((0.760, 0.0, 0.665), (0.150, 0.130, 0.140), n=48)
+    torso = ellipsoid((0.860, 0.0, 0.420), (0.170, 0.215, 0.150), n=48)
+    neck = rod(np.array([0.830, 0, 0.50]), np.array([0.790, 0, 0.60]), 0.06, n=20)
     return helmet + torso + neck
 
 
 def build_rollhoop():
     t = np.linspace(0, np.pi, 25)
-    top = np.c_[np.full(25, 1.068), 0.135 * np.cos(t), 0.915 + 0.135 * np.sin(t)]
-    legL = np.c_[np.full(6, 1.068), np.linspace(0.255, 0.140, 6), np.linspace(0.58, 0.900, 6)]
+    top = np.c_[np.full(25, 0.935), 0.135 * np.cos(t), 0.750 + 0.135 * np.sin(t)]
+    legL = np.c_[np.full(6, 0.935), np.linspace(0.250, 0.140, 6), np.linspace(0.42, 0.735, 6)]
     path = np.vstack([legL, top[1:-1], legL[::-1] * [1, -1, 1]])
     hoop = tube(path, 0.013, n=14)
-    braces = merge([rod(np.array([1.068, s * 0.12, 0.995]), np.array([1.26, s * 0.17, 0.53]), 0.011) for s in (1, -1)])
+    braces = merge([rod(np.array([0.935, s * 0.12, 0.855]), np.array([1.15, s * 0.17, 0.45]), 0.011) for s in (1, -1)])
     return hoop + braces
 
 
