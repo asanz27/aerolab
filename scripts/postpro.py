@@ -297,6 +297,14 @@ def surface_export(case, r, cfg, webdir, parts):
             s = s.subdivide_adaptive(max_edge_len=me, max_n_passes=8)
         except Exception as e:
             log("subdivide failed", name, e)
+        # keep the web surface light: ~1 triangle per (6 mm)^2 on wings, coarser elsewhere
+        dens = 1.0 / (0.006 ** 2) if name.startswith(("fw_", "rw_", "floor")) else 1.0 / (0.010 ** 2)
+        target = int(max(3000, s.area * dens))
+        if s.n_cells > 1.15 * target:
+            try:
+                s = s.decimate(1.0 - target / s.n_cells).triangulate().clean()
+            except Exception as e:
+                log("decimate failed", name, e)
         s = s.compute_normals(point_normals=True, cell_normals=False, auto_orient_normals=False, split_vertices=False,
                               consistent_normals=False)
         pn = s.point_data["Normals"]
@@ -430,6 +438,23 @@ def plane_points(axis, pos, ext, res):
     return P, na, nb
 
 
+_LIGHT = {}
+
+
+def light_volume(vol):
+    """Geometry-only copy of the volume carrying just the arrays the web needs (built once)."""
+    import pyvista as pv
+    key = id(vol)
+    if key not in _LIGHT:
+        light = pv.UnstructuredGrid()
+        light.copy_structure(vol)
+        for n in set(SRC.values()) | {"U", "Cp"}:
+            light.point_data[n] = vol.point_data[n]
+        _LIGHT.clear()
+        _LIGHT[key] = light
+    return _LIGHT[key]
+
+
 def slices_export(vol, cfg, webdir):
     """All planes are probed in ONE pass (the cell locator is built once)."""
     import pyvista as pv
@@ -452,11 +477,7 @@ def slices_export(vol, cfg, webdir):
     allP = np.vstack(chunks)
     log("probing", len(allP), "points on", len(jobs), "planes")
     keep = set(SRC.values()) | {"U"}
-    light = pv.UnstructuredGrid()
-    light.copy_structure(vol)  # geometry only; the original keeps all its arrays
-    for n in keep:
-        light.point_data[n] = vol.point_data[n]
-    smp = pv.PolyData(allP).sample(light, pass_cell_data=False, pass_point_data=False)
+    smp = pv.PolyData(allP).sample(light_volume(vol), pass_cell_data=False, pass_point_data=False)
     mask_all = np.asarray(smp.point_data["vtkValidPointMask"]).astype(bool)
     arrays = {n: np.asarray(smp.point_data[n]) for n in keep}
     log("probe done")
@@ -504,9 +525,12 @@ def iso_export(vol, cfg, webdir, name, scalar, value, color_fields, target=18000
     F = iso.faces.reshape(-1, 4)[:, 1:].astype(np.uint32)
     pos, pm = qpos(iso.points)
     bufs = {"pos": (pos, pm), "index": (F.reshape(-1), {})}
+    # the linear-grid contour filter does not interpolate other arrays: probe them on the iso points
+    import pyvista as pv
+    probe = pv.PolyData(np.asarray(iso.points)).sample(light_volume(vol), pass_cell_data=False, pass_point_data=False)
     for f in color_fields:
         lo, hi = FIELD_DEF[f]["range"]
-        bufs[f] = (quant(iso.point_data[SRC[f]], lo, hi, np.uint8), {"min": lo, "max": hi})
+        bufs[f] = (quant(np.asarray(probe.point_data[SRC[f]]), lo, hi, np.uint8), {"min": lo, "max": hi})
     size = write_fsb(os.path.join(webdir, f"iso_{name}.fsb.gz"), bufs)
     log("iso", name, iso.n_cells, f"{size/1e6:.2f} MB")
     return {"file": f"iso_{name}.fsb.gz", "scalar": scalar, "value": value, "fields": color_fields, "tris": int(iso.n_cells)}
@@ -597,7 +621,7 @@ def lines_export(vol, patches, cfg):
                 out["wing_sections"].append({"wing": wing, "y": y, "x": np.round(a[:, 0], 4).tolist(),
                                              "z": np.round(a[:, 1], 4).tolist(), "Cp": np.round(a[:, 2], 3).tolist()})
     for y, z in ((0.0, 0.012), (0.20, 0.012), (0.33, 0.012), (0.46, 0.012)):
-        s = vol.sample_over_line((-1.2, y, z), (3.2, y, z), resolution=880)
+        s = light_volume(vol).sample_over_line((-1.2, y, z), (3.2, y, z), resolution=880)
         m = np.asarray(s.point_data["vtkValidPointMask"]).astype(bool)
         x = s.points[:, 0]
         cp = np.where(m, np.asarray(s.point_data["Cp"]), np.nan)

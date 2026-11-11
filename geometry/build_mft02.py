@@ -56,7 +56,7 @@ def fw_stack(y):
     ay = abs(y)
     centre = np.clip((FW_FLAP_Y0 - ay) / 0.07, 0, 1)
     main = dict(m=0.07 - 0.04 * centre, p=0.40, t=0.10 - 0.015 * centre, chord=0.34,
-                angle=4.0 - 3.0 * centre, x_le=FW_X_LE, min_z=0.030 + 0.035 * centre)
+                angle=4.0 - 3.0 * centre, x_le=FW_X_LE, min_z=0.042 + 0.033 * centre)
     if ay < FW_FLAP_Y0 - 1e-9:
         return stack_elements(main, [])
     ys = [0.205, 0.30, 0.40, 0.50, 0.60, 0.70]
@@ -204,14 +204,14 @@ def build_rear_diffuser_radiator():
 # Rear wing
 # ---------------------------------------------------------------------------------------------
 RW_SPAN = 0.486
-RW_X_LE = 1.375
+RW_X_LE = 1.355
 RW_TOP = 1.150
 
 
 def rw_stack():
-    main = dict(m=0.075, p=0.40, t=0.11, chord=0.34, angle=8.0, x_le=RW_X_LE, min_z=0.825)
-    f1 = dict(m=0.07, p=0.40, t=0.10, chord=0.23, angle=27.0, gap=0.011, overlap=0.016)
-    f2 = dict(m=0.07, p=0.40, t=0.10, chord=0.18, angle=46.0, gap=0.010, overlap=0.014)
+    main = dict(m=0.08, p=0.40, t=0.11, chord=0.36, angle=10.0, x_le=RW_X_LE, min_z=0.76)
+    f1 = dict(m=0.08, p=0.40, t=0.10, chord=0.25, angle=31.0, gap=0.011, overlap=0.018)
+    f2 = dict(m=0.07, p=0.40, t=0.10, chord=0.20, angle=50.0, gap=0.010, overlap=0.016)
     st = stack_elements(main, [f1, f2])
     top = max(max(u[:, 1].max(), l[:, 1].max()) for u, l in st)
     if top > RW_TOP:
@@ -229,8 +229,8 @@ def build_rear_wing():
     xmax = pts[:, 0].max() + 0.015
     ztop = pts[:, 1].max() + 0.004
     xmax = max(xmax, 2.012)
-    outline = [(1.355, 0.53), (1.60, 0.545), (1.78, 0.575), (1.88, 0.62), (1.96, 0.70), (xmax, 0.82), (xmax, ztop),
-               (1.355, ztop)]
+    outline = [(1.335, 0.53), (1.60, 0.545), (1.78, 0.575), (1.88, 0.62), (1.96, 0.70), (xmax, 0.82), (xmax, ztop),
+               (1.335, ztop)]
     ep = plate_xz(np.array(outline), RW_SPAN + 0.005, 0.008)
     strut = np.array([[1.46, 0.60], [1.56, 0.58], [1.58, 0.84], [1.48, 0.84]])
     out["rw_plates"] = (ep + plate_xz(strut, 0.15, 0.012)).with_mirror()
