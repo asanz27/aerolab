@@ -226,9 +226,20 @@ def open_case(case):
     return r
 
 
+def _disable_all(r):
+    try:
+        r.disable_all_patch_arrays()
+    except Exception:
+        for n in r.patch_array_names:
+            try:
+                r.disable_patch_array(n)
+            except Exception:
+                pass
+
+
 def read_boundary(r, names):
     import pyvista as pv
-    r.disable_all_patch_arrays()
+    _disable_all(r)
     for n in names:
         for cand in (f"patch/{n}", n):
             if cand in r.patch_array_names:
@@ -248,7 +259,7 @@ def read_boundary(r, names):
 
 
 def read_internal(r):
-    r.disable_all_patch_arrays()
+    _disable_all(r)
     r.enable_patch_array("internalMesh")
     mb = r.read()
     return mb["internalMesh"]
