@@ -34,6 +34,14 @@ def fetch_case(case, dest):
         for extra in ("case.json", "run.txt"):
             if os.path.exists(os.path.join(tmp, extra)):
                 shutil.copy(os.path.join(tmp, extra), dest)
+        snappy = os.path.join(tmp, "logs", "log.snappyHexMesh")
+        if os.path.exists(snappy):  # re-parse the layer table (older postpro read the wrong columns)
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from postpro import layer_table
+            mp = os.path.join(dest, "meta.json")
+            mm = json.load(open(mp))
+            mm.setdefault("mesh", {}).update(layer_table(open(snappy, errors="ignore").read()))
+            json.dump(mm, open(mp, "w"))
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
     try:  # drop boundary-layer sheets from the iso-surfaces (light NumPy pass)
@@ -59,7 +67,8 @@ def main():
     base = args["baseline"]
     mesh = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("mesh=")]
     amap = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("map=")]
-    index = {"car": "mft02", "baseline": base, "cases": [], "mesh_study": [], "aeromap": []}
+    car = dict(a.split("=", 1) for a in sys.argv[2:] if a.startswith("car=")).get("car", "mft02")
+    index = {"car": car, "baseline": base, "cases": [], "mesh_study": [], "aeromap": []}
     meta = fetch_case(base, os.path.join(out, base))
     index["cases"].append({"name": base, "dir": base, "label": "baseline"})
     for spec in mesh:

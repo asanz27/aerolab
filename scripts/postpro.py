@@ -168,6 +168,34 @@ def residuals(case):
     return out
 
 
+def layer_table(txt):
+    """Final snappyHexMesh layer summary.
+
+    Recent versions print 'patch faces target mesh thickness[m] thickness[%]'; older ones omit 'target'.
+    Only the table after the last 'overall thickness' header is used."""
+    i = txt.rfind("overall thickness")
+    if i < 0:
+        return {}
+    out = {}
+    for line in txt[i:].splitlines()[3:]:
+        tok = line.split()
+        if len(tok) < 5 or not tok[1].isdigit():
+            if out:
+                break
+            continue
+        try:
+            nums = [float(t) for t in tok[1:]]
+        except ValueError:
+            break
+        if len(nums) == 5:
+            faces, target, mean, thick, pct = nums
+        else:
+            faces, mean, thick, pct = nums[:4]
+            target = None
+        out[tok[0]] = {"faces": int(faces), "target": target, "layers": mean, "thickness": thick, "pct": pct}
+    return {"layers": out} if out else {}
+
+
 def mesh_stats(case):
     st = {}
     p = os.path.join(case, "log.checkMesh")
@@ -187,10 +215,7 @@ def mesh_stats(case):
     p = os.path.join(case, "log.snappyHexMesh")
     if os.path.exists(p):
         txt = open(p, errors="ignore").read()
-        # final layer summary table: patch faces layers overall thickness [m] [%]
-        tab = re.findall(r"^(\w+)\s+(\d+)\s+([\d.]+)\s+([\d.e+-]+)\s+([\d.]+)\s*$", txt, re.M)
-        if tab:
-            st["layers"] = {r[0]: {"faces": int(r[1]), "layers": float(r[2]), "thickness": float(r[3]), "pct": float(r[4])} for r in tab}
+        st.update(layer_table(txt))
         m = re.findall(r"Finished meshing in = ([\d.]+) s", txt)
         if m:
             st["snappy_s"] = float(m[-1])
