@@ -1,0 +1,63 @@
+name: fs-cfd
+
+# Runs the Formula Student CFD on GitHub-hosted runners (free for public repositories).
+# Triggered by editing run.json on the `cfd` branch. Results are force-pushed as small orphan
+# commits to branches res-<case>; live progress to st-<case>. No Actions artifacts are used.
+on:
+  push:
+    branches: [cfd]
+    paths: ["run.json"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      cases: ${{ steps.p.outputs.cases }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: p
+        run: echo "cases=$(python3 -c 'import json;print(json.dumps(json.load(open("run.json"))["cases"]))')" >> "$GITHUB_OUTPUT"
+
+  solve:
+    needs: plan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        case: ${{ fromJson(needs.plan.outputs.cases) }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CASE_JSON: ${{ toJson(matrix.case) }}
+      BUDGET_MIN: "350"
+    steps:
+      - name: Start clock
+        run: echo "JOB_START=$(date +%s)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python packages
+        run: pip install -q numpy scipy pillow pyvista
+      - name: Install OpenFOAM
+        if: ${{ !matrix.case.post_only_from }}
+        run: bash scripts/install_openfoam.sh
+      - name: Run case
+        run: |
+          if [ -n "${{ matrix.case.post_only_from }}" ]; then
+            bash scripts/post_only.sh "$CASE_JSON"
+          else
+            bash scripts/run_case.sh "${{ matrix.case.name }}" "$CASE_JSON"
+          fi
+      - name: Publish results
+        if: always()
+        run: |
+          mkdir -p "results/${{ matrix.case.name }}"
+          echo "$CASE_JSON" > "results/${{ matrix.case.name }}/case.json"
+          echo "run ${{ github.run_id }} attempt ${{ github.run_attempt }} job status ${{ job.status }}" > "results/${{ matrix.case.name }}/run.txt"
+          du -sh "results/${{ matrix.case.name }}"
+          bash scripts/publish.sh "results/${{ matrix.case.name }}" "res-${{ matrix.case.name }}" "results ${{ matrix.case.name }} (run ${{ github.run_id }})"
