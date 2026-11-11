@@ -40,6 +40,25 @@ GROUPS = {
     "suspension": ["susp_front", "susp_rear"],
 }
 ALL_PARTS = list(SURF_LEVELS)
+WHEELS = [{"part": "wheels_front", "origin": [0.0, 0.62, 0.2225]}, {"part": "wheels_rear", "origin": [1.535, 0.62, 0.2225]}]
+TYRE_R = 0.2285
+
+
+def load_car(case):
+    """Take parts, refinement levels, force groups and wheel axes from the geometry's car.json."""
+    global SURF_LEVELS, LAYER_PARTS, GROUPS, ALL_PARTS, WHEELS, TYRE_R
+    p = os.path.join(case, "constant", "triSurface", "car.json")
+    if not os.path.exists(p):
+        return
+    car = json.load(open(p))
+    if "levels" in car:
+        SURF_LEVELS = {k: tuple(v) for k, v in car["levels"].items() if k in car["parts"]}
+        ALL_PARTS = list(SURF_LEVELS)
+        nol = set(car.get("no_layers", []))
+        LAYER_PARTS = [k for k in ALL_PARTS if k not in nol]
+        GROUPS = car["force_groups"]
+        WHEELS = car["wheels"]
+        TYRE_R = car["tyre_radius"]
 
 # domain (half car, symmetry plane at y=0)
 X0, X1, Y1, Z1 = -5.6, 12.0, 4.0, 4.0
@@ -344,20 +363,20 @@ def fields(c):
     U = c["U"]
     k = 1.5 * (0.005 * U) ** 2
     om = k / (10 * 1.5e-5)
-    R = 0.2285
-    zc = R - 0.006
-    omega_w = U / R
+    omega_w = U / TYRE_R
     wheels = ""
-    for name, x in (("wheels_front", 0.0), ("wheels_rear", 1.535)):
-        wheels += f"""    {name}
+    for wdef in WHEELS:
+        o = wdef["origin"]
+        wheels += f"""    {wdef['part']}
     {{
         type            rotatingWallVelocity;
-        origin          ({x} 0.62 {zc});
+        origin          ({o[0]} {o[1]} {o[2]});
         axis            (0 -1 0);
         omega           {omega_w:.4f};
     }}
 """
     car = "(" + "|".join(p for p in ALL_PARTS if not p.startswith("wheels")) + ")"
+    allp = "(" + "|".join(ALL_PARTS) + ")"
     out = {}
     out["U"] = HDR.format(cls="volVectorField", obj="U") + f"""
 dimensions      [0 1 -1 0 0 0 0];
@@ -384,10 +403,10 @@ boundaryField
     ground  {{ type zeroGradient; }}
     top     {{ type slip; }}
     side    {{ type slip; }}
-    "(fw_.*|rw_.*|body|sidepods|sidewing|floor|driver|rollhoop|wheels_.*|susp_.*)" {{ type zeroGradient; }}
+    "{allp}" {{ type zeroGradient; }}
 }}
 """
-    walls = "(ground|fw_.*|rw_.*|body|sidepods|sidewing|floor|driver|rollhoop|wheels_.*|susp_.*)"
+    walls = "(ground|" + "|".join(ALL_PARTS) + ")"
     out["k"] = HDR.format(cls="volScalarField", obj="k") + f"""
 dimensions      [0 2 -2 0 0 0 0];
 internalField   uniform {k:.6g};
@@ -433,6 +452,7 @@ boundaryField
 def main(case, cfg):
     c = {"U": 20.0, "iters": 1500, "iters1": 150, "layers": 3, "nprocs": 4, "h0": 0.16}
     c.update(cfg)
+    load_car(case)
     w(f"{case}/system/blockMeshDict", block_mesh(c))
     w(f"{case}/system/snappyHexMeshDict", snappy(c))
     w(f"{case}/system/surfaceFeatureExtractDict", feature_extract())

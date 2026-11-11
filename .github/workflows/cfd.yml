@@ -1,12 +1,12 @@
 name: fs-cfd
 
 # Runs the Formula Student CFD on GitHub-hosted runners (free for public repositories).
-# Triggered by editing run.json on the `cfd` branch. Results are force-pushed as small orphan
-# commits to branches res-<case>; live progress to st-<case>. No Actions artifacts are used.
+# Triggered by a push to the `cfd` branch whose commit message contains "[run]"; the cases come
+# from run.json. Results are force-pushed as small orphan commits to branches res-<case>; live
+# progress to st-<case>. No Actions artifacts are used.
 on:
   push:
     branches: [cfd]
-    paths: ["run.json"]
   workflow_dispatch: {}
 
 permissions:
@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   plan:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run]') }}
     runs-on: ubuntu-24.04
     outputs:
       cases: ${{ steps.p.outputs.cases }}

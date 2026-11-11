@@ -1,4 +1,4 @@
-# AeroLab · CFD del Rennstall Esslingen Stallardo '25 (Formula Student)
+# AeroLab · CFD del MAD Formula Team MFT02 (Formula Student)
 
 Esta rama (`cfd`) contiene **solo** el caso de CFD que alimenta la sección «Caso de estudio FS» de AeroLab.
 No se ejecuta nada pesado en local: todo el cálculo corre en **GitHub Actions** (runners gratuitos

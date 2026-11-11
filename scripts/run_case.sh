@@ -59,8 +59,11 @@ source "$OF_BASHRC"
 set -u
 echo "OpenFOAM: $WM_PROJECT_VERSION  procs: $NP"
 
-python3 "$ROOT/scripts/make_case.py" "$CASE" "$CFG"
-python3 "$ROOT/geometry/build_car.py" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" > "$CASE/log.geometry"
+CAR=$(jget car mft02)
+GEOM="$ROOT/geometry/build_${CAR}.py"
+[ "$CAR" = "esslingen" ] && GEOM="$ROOT/geometry/build_car.py"
+python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" > "$CASE/log.geometry" 2>&1 || { cat "$CASE/log.geometry"; echo "geometry failed"; exit 1; }
+python3 "$ROOT/scripts/make_case.py" "$CASE" "$CFG" || { echo "make_case failed"; exit 1; }
 cd "$CASE"
 sed -i "s/numberOfSubdomains .*/numberOfSubdomains $NP;/" system/decomposeParDict
 cp system/fvSchemes.first system/fvSchemes
