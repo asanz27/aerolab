@@ -90,7 +90,7 @@ boundary
     ground   {{ type wall;  faces ((0 3 2 1)); }}
     top      {{ type patch; faces ((4 5 6 7)); }}
     side     {{ type patch; faces ((3 7 6 2)); }}
-    symmetry {{ type symmetryPlane; faces ((0 1 5 4)); }}
+    ysym     {{ type symmetryPlane; faces ((0 1 5 4)); }}
 );
 mergePatchPairs ();
 """
