@@ -268,7 +268,7 @@ def read_internal(r):
 # ---------------------------------------------------------------------------------------------
 # Surface (display mesh from the STL, data mapped from CFD patches)
 # ---------------------------------------------------------------------------------------------
-PART_MAXEDGE = {"fw_": 0.007, "rw_": 0.008, "floor": 0.010, "sidewing": 0.008, "body": 0.014, "sidepods": 0.012,
+PART_MAXEDGE = {"fw_": 0.012, "rw_": 0.014, "floor": 0.016, "sidewing": 0.012, "body": 0.022, "sidepods": 0.02,
                 "wheels": 0.012, "susp": 0.020, "driver": 0.018, "rollhoop": 0.015}
 
 
