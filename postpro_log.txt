@@ -1,0 +1,60 @@
+[    0.0s] forces total {'ClA': 2.3621855200553252, 'CdA': 1.1682785189488243, 'ClA_std': 0.051672859020204714, 'CdA_std': 0.0034361342303937965, 'downforce_N': 569.2867103333334, 'drag_N': 281.5551230666667, 'ClA_front': 1.5995292226250741, 'ClA_rear': 0.7626562974302509, 'CdA_pressure': 1.1223662070539422, 'CdA_viscous': 0.045912312621023514, 'ClA_pressure': 2.3690093669432923, 'ClA_viscous': -0.0068238473207468875, 'avg_window': [241.0, 300.0], 'balance_front': 0.6770548099920877}
+[    2.1s] time values [300.0] patches 27
+[    3.1s] patches read ['fw_main', 'fw_flaps', 'fw_plates', 'rw_main', 'rw_flaps', 'rw_plates', 'floor', 'diffuser', 'body', 'enginecover', 'sidepods', 'radiator', 'driver', 'rollhoop', 'wheels_front', 'wheels_rear', 'susp_front', 'susp_rear']
+[   17.5s] surface (1093066, 3) (2183137, 3) 17.96 MB
+[   19.8s] internal mesh 1561685 ['p', 'Q', 'U', 'k', 'nut', 'omega', 'vorticity', 'wallShearStress', 'yPlus', 'Q', 'U', 'k', 'nut', 'omega', 'p', 'vorticity', 'wallShearStress', 'yPlus']
+[   21.9s] clipped 1514097
+[   26.1s] slices x 40
+[   30.3s] slices y 8
+[   34.2s] slices z 10
+[   39.0s] streams 235 0.18 MB
+[   42.3s] iso_q_low: Traceback (most recent call last):
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 635, in main
+    res = fn()
+          ^^^^
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 632, in <lambda>
+    steps.append((f"iso_{nm}", lambda nm=nm, sc=sc, val=val, cf=cf: iso_export(vol, cfg, webdir, nm, sc, val, cf)))
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 476, in iso_export
+    bufs[f] = (quant(iso.point_data[SRC[f]], lo, hi, np.uint8), {"min": lo, "max": hi})
+                     ~~~~~~~~~~~~~~^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/datasetattributes.py", line 285, in __getitem__
+    return self.get_array(key)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/datasetattributes.py", line 515, in get_array
+    raise KeyError(msg)
+KeyError: 'Cpt'
+
+[   44.1s] iso_q_high: Traceback (most recent call last):
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 635, in main
+    res = fn()
+          ^^^^
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 632, in <lambda>
+    steps.append((f"iso_{nm}", lambda nm=nm, sc=sc, val=val, cf=cf: iso_export(vol, cfg, webdir, nm, sc, val, cf)))
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 476, in iso_export
+    bufs[f] = (quant(iso.point_data[SRC[f]], lo, hi, np.uint8), {"min": lo, "max": hi})
+                     ~~~~~~~~~~~~~~^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/datasetattributes.py", line 285, in __getitem__
+    return self.get_array(key)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/datasetattributes.py", line 515, in get_array
+    raise KeyError(msg)
+KeyError: 'Cpt'
+
+[   46.3s] iso_cpt0: Traceback (most recent call last):
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 635, in main
+    res = fn()
+          ^^^^
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 632, in <lambda>
+    steps.append((f"iso_{nm}", lambda nm=nm, sc=sc, val=val, cf=cf: iso_export(vol, cfg, webdir, nm, sc, val, cf)))
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/aerolab/aerolab/scripts/postpro.py", line 476, in iso_export
+    bufs[f] = (quant(iso.point_data[SRC[f]], lo, hi, np.uint8), {"min": lo, "max": hi})
+                     ~~~~~~~~~~~~~~^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/datasetattributes.py", line 285, in __getitem__
+    return self.get_array(key)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/datasetattributes.py", line 515, in get_array
+    raise KeyError(msg)
+KeyError: 'wx'
