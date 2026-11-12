@@ -1,0 +1,47 @@
+[23:52:03] rb12: scale 1:0.992 (tyre 0.658 m, width 1.805 m), length axis z, front +
+[23:52:03] wheelbase 3.473 m, R front 0.327 rear 0.329, track/2 0.729/0.706, tyre inner face y 0.513
+[23:52:03] wheels_front: 56 parts, 34434 triangles
+[23:52:04]   grid [177, 235, 177] = 7 M voxels, h=4.0 mm, r=3
+[23:52:04]   3 M surface samples, 0.17 M surface voxels
+[23:52:05]   solid 1.53 M voxels
+[23:52:06] wheels_rear: 42 parts, 23682 triangles
+[23:52:06]   grid [178, 234, 178] = 7 M voxels, h=4.0 mm, r=3
+[23:52:06]   3 M surface samples, 0.14 M surface voxels
+[23:52:07]   solid 1.60 M voxels
+[23:52:08] body: 823 parts, 98252 triangles
+[23:52:08]   grid [1445, 242, 322] = 113 M voxels, h=3.5 mm, r=2
+[23:52:13]   70 M surface samples, 1.92 M surface voxels
+[23:52:36]   solid 3.66 M voxels
+[23:53:24] wheels_front  tris= 120000
+[23:53:24] wheels_rear   tris= 120000
+[23:53:24] bargeboards   tris=    329
+[23:53:24] beamwing      tris=  10901
+[23:53:24] body          tris= 199564
+[23:53:24] diffuser      tris=  21625
+[23:53:24] floor         tris=  18047
+[23:53:24] frontwing     tris=  25478
+[23:53:24] rearwing      tris=   3431
+[23:53:24] sidepods      tris= 156184
+[23:53:24] suspension    tris=  14440
+Traceback (most recent call last):
+  File "/home/runner/work/aerolab/aerolab/geometry/build_rb12.py", line 9, in <module>
+    cli("rb12")
+  File "/home/runner/work/aerolab/aerolab/geometry/build_glb.py", line 350, in cli
+    main(car, a.outdir, a.front_rh_mm, a.rear_rh_mm)
+  File "/home/runner/work/aerolab/aerolab/geometry/build_glb.py", line 339, in main
+    json.dump(meta, fh, indent=1)
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/__init__.py", line 179, in dump
+    for chunk in iterable:
+                 ^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type float32 is not JSON serializable
