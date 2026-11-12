@@ -65,7 +65,7 @@ jobs:
       - name: Python packages
         run: pip install -q numpy scipy pillow pyvista matplotlib
       - name: Install OpenFOAM
-        if: ${{ !matrix.case.post_only_from }}
+        if: ${{ !matrix.case.post_only_from && !matrix.case.geometry_only }}
         run: bash scripts/install_openfoam.sh
       - name: Run case (stage 1)
         run: |

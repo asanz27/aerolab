@@ -141,9 +141,9 @@ MEMPID=$!
 # OpenFOAM environment
 set +eu
 # shellcheck disable=SC1090
-source "$OF_BASHRC"
+[ -n "${OF_BASHRC:-}" ] && source "$OF_BASHRC"
 set -u
-echo "OpenFOAM: $WM_PROJECT_VERSION  procs: $NP  stage: $STAGE/$NSTAGES  private: $PRIVATE"
+echo "OpenFOAM: ${WM_PROJECT_VERSION:-not installed}  procs: $NP  stage: $STAGE/$NSTAGES  private: $PRIVATE"
 
 if [ "$STAGE" = "1" ]; then
   CAR=$(jget car mft02)
@@ -157,7 +157,10 @@ if [ "$STAGE" = "1" ]; then
       | openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:CAD_KEY > "$CADDIR/${CAR}.npz" || { echo "CAD decryption failed"; exit 1; }
     export CAD_NPZ="$CADDIR/${CAR}.npz"
   fi
-  python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" > "$CASE/log.geometry" 2>&1 || { tail -30 "$CASE/log.geometry"; echo "geometry failed"; exit 1; }
+  if ! python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" > "$CASE/log.geometry" 2>&1; then
+    tail -30 "$CASE/log.geometry"; mkdir -p "$RES/logs"; cp "$CASE/log.geometry" "$CASE/mem.log" "$RES/logs/" 2>/dev/null
+    echo "geometry failed"; exit 1
+  fi
   [ -n "${CAD_NPZ:-}" ] && rm -f "$CAD_NPZ"
   if [ "$(jget geometry_only false)" = "true" ]; then
     # check run: geometry + preview images only
