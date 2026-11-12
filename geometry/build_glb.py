@@ -199,7 +199,9 @@ def classify(tri, W, year):
     rw = (x > xr + 0.05) & (z > 0.58)
     bw = (x > xr - 0.05) & (z > 0.28) & (z <= 0.58) & (y < 0.55) & ~rw
     diff = (x > xr - 0.55) & (z < 0.30) & (n[:, 2] < 0.5) & ~bw
-    floor = (x > xf + 0.25) & (x <= xr - 0.55) & (z < 0.11) & ((n[:, 2] < -0.3) | (y > ytyre_in - 0.12))
+    # floor: underside (tunnel roofs up to ~0.3 m in the ground-effect era) and the low floor edges
+    zroof = 0.32 if year >= 2022 else 0.14
+    floor = (x > xf + 0.25) & (x <= xr - 0.55) & (((z < zroof) & (n[:, 2] < -0.3)) | ((z < 0.09) & (y > 0.30)))
     susp = (y > 0.22) & (y < ytyre_in + 0.02) & (z > 0.08) & (z < 0.62) & ((np.abs(x - xf) < 0.45) | (np.abs(x - xr) < 0.45)) & ~fw & ~floor & ~diff
     side = (y > 0.27) & (z < 0.68) & (x > xf + 0.75) & (x < xr - 0.30) & ~floor & ~susp & ~diff
     barge = (y > 0.22) & (z < 0.50) & (x > xf + 0.30) & (x <= xf + 0.75) & ~floor & ~susp if year < 2022 else np.zeros(len(tri), bool)
@@ -336,7 +338,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2):
         },
     }
     with open(os.path.join(outdir, "car.json"), "w") as fh:
-        json.dump(meta, fh, indent=1)
+        json.dump(meta, fh, indent=1, default=lambda o: o.tolist() if hasattr(o, "tolist") else float(o))
     log(json.dumps({k: meta[k] for k in ("length", "width", "height", "frontal_area", "wheelbase")}))
 
 
