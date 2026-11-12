@@ -62,14 +62,14 @@ def write_stl_bin(path, tri, name):
         fh.write(rec.tobytes())
 
 
-def frontal_area(tris, px=0.002):
+def frontal_area(tris, px=0.002, half_width=0.8, height=1.3):
     """Projected (y, z) area by rasterising the triangles with a vectorised edge-function test."""
-    W, H = int(1.6 / px), int(1.3 / px)
+    W, H = int(2 * half_width / px), int(height / px)
     mask = np.zeros((H, W), bool)
     for T in tris:
         P = T[:, :, 1:3].astype(np.float64)
         P[..., 1] = np.maximum(P[..., 1], 0.0)
-        J = (P[..., 0] + 0.8) / px
+        J = (P[..., 0] + half_width) / px
         I = P[..., 1] / px
         j0 = np.clip(np.floor(J.min(1)).astype(int), 0, W - 1); j1 = np.clip(np.ceil(J.max(1)).astype(int), 0, W - 1)
         i0 = np.clip(np.floor(I.min(1)).astype(int), 0, H - 1); i1 = np.clip(np.ceil(I.max(1)).astype(int), 0, H - 1)

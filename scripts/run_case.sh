@@ -159,6 +159,13 @@ if [ "$STAGE" = "1" ]; then
   fi
   python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" > "$CASE/log.geometry" 2>&1 || { tail -30 "$CASE/log.geometry"; echo "geometry failed"; exit 1; }
   [ -n "${CAD_NPZ:-}" ] && rm -f "$CAD_NPZ"
+  if [ "$(jget geometry_only false)" = "true" ]; then
+    # check run: geometry + preview images only
+    mkdir -p "$RES/logs"
+    cp "$CASE/log.geometry" "$RES/logs/"; cp "$CASE/constant/triSurface/car.json" "$RES/"
+    python3 "$ROOT/scripts/preview_geom.py" "$CASE/constant/triSurface" "$RES/preview.png" || true
+    touch "$RES/.final"; kill $MEMPID 2>/dev/null; exit 0
+  fi
   python3 "$ROOT/scripts/make_case.py" "$CASE" "$CFG" || { echo "make_case failed"; exit 1; }
   cd "$CASE"
   sed -i "s/numberOfSubdomains .*/numberOfSubdomains $NP;/" system/decomposeParDict

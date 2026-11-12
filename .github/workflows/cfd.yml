@@ -63,7 +63,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Python packages
-        run: pip install -q numpy scipy pillow pyvista
+        run: pip install -q numpy scipy pillow pyvista matplotlib
       - name: Install OpenFOAM
         if: ${{ !matrix.case.post_only_from }}
         run: bash scripts/install_openfoam.sh
@@ -120,7 +120,7 @@ jobs:
           python-version: "3.12"
       - name: Python packages
         if: ${{ steps.dl.outcome == 'success' }}
-        run: pip install -q numpy scipy pillow pyvista
+        run: pip install -q numpy scipy pillow pyvista matplotlib
       - name: Install OpenFOAM
         if: ${{ steps.dl.outcome == 'success' }}
         run: bash scripts/install_openfoam.sh
@@ -173,7 +173,7 @@ jobs:
           python-version: "3.12"
       - name: Python packages
         if: ${{ steps.dl.outcome == 'success' }}
-        run: pip install -q numpy scipy pillow pyvista
+        run: pip install -q numpy scipy pillow pyvista matplotlib
       - name: Install OpenFOAM
         if: ${{ steps.dl.outcome == 'success' }}
         run: bash scripts/install_openfoam.sh
