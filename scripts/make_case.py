@@ -263,24 +263,28 @@ def control(c):
     {
         type            yPlus;
         libs            (fieldFunctionObjects);
+        executeControl  writeTime;
         writeControl    writeTime;
     }
     wallShearStress
     {
         type            wallShearStress;
         libs            (fieldFunctionObjects);
+        executeControl  writeTime;
         writeControl    writeTime;
     }
     vorticity
     {
         type            vorticity;
         libs            (fieldFunctionObjects);
+        executeControl  writeTime;
         writeControl    writeTime;
     }
     Q
     {
         type            Q;
         libs            (fieldFunctionObjects);
+        executeControl  writeTime;
         writeControl    writeTime;
     }""")
     return HDR.format(cls="dictionary", obj="controlDict") + f"""
