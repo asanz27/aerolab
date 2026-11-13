@@ -59,7 +59,9 @@ def summary(meta):
     t = meta.get("forces", {}).get("total", {})
     return {"ClA": t.get("ClA"), "CdA": t.get("CdA"), "balance_front": t.get("balance_front"),
             "cells": meta.get("mesh", {}).get("cells"), "h0": meta.get("config", {}).get("h0"),
-            "iters": (meta.get("history", {}).get("iter") or [None])[-1]}
+            "iters": (meta.get("history", {}).get("iter") or [None])[-1],
+            "parts": {k: v.get("ClA") for k, v in meta.get("forces", {}).items()
+                      if k in ("frontwing", "nosewing", "rearwing", "floor", "diffuser", "body")}}
 
 
 def main():
@@ -88,10 +90,8 @@ def main():
             git("fetch", "-q", "origin", f"res-{case}")
             m = json.loads(git("show", "FETCH_HEAD:web/meta.json"))
         v = m.get("config", {}).get("variant") or m.get("car", {}).get("variant") or {}
-        F = m.get("forces", {})
-        parts = {k: F[k].get("ClA") for k in ("frontwing", "nosewing", "rearwing", "floor", "diffuser", "body") if k in F}
         index["aeromap"].append({"case": case, "label": label, "front_rh_mm": v.get("front_rh_mm", 0),
-                                 "rear_rh_mm": v.get("rear_rh_mm", 0), **summary(m), "parts": parts})
+                                 "rear_rh_mm": v.get("rear_rh_mm", 0), **summary(m)})
     json.dump(index, open(os.path.join(out, "index.json"), "w"), indent=1)
     total = sum(os.path.getsize(os.path.join(d, f)) for d, _, fs in os.walk(out) for f in fs)
     print(json.dumps(index, indent=1))
