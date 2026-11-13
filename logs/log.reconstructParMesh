@@ -1,0 +1,98 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : reconstructParMesh -constant
+Date   : Nov 13 2026
+Time   : 15:33:47
+Host   : runnervm7aw5e
+PID    : 12006
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_f03_m3
+nProcs : 1
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Merge individual processor meshes back into one master mesh.
+Use if the original master mesh has been deleted or the processor meshes
+have been modified (topology change).
+This tool will write the resulting mesh to a new time step and construct
+{cell,face,point}ProcAddressing files in the processor directories so that
+reconstructPar can be used to reconstruct fields onto the master mesh.
+
+Reasonably tested, but use at your own risk!
+
+Merge assuming correct, fully matched procBoundaries.
+
+Found 4 processor directories
+    Reading database "case_f03_m3/processor0"
+    Reading database "case_f03_m3/processor1"
+    Reading database "case_f03_m3/processor2"
+    Reading database "case_f03_m3/processor3"
+
+Time = constant
+
+
+Writing merged mesh to "constant/polyMesh"
+
+Reconstructing addressing from processor meshes to the newly reconstructed mesh
+
+Processor 0
+Read processor mesh: "case_f03_m3/processor0"
+Writing addressing : "case_f03_m3/processor0/constant/polyMesh"
+    pointProcAddressing
+    faceProcAddressing
+    cellProcAddressing
+    boundaryProcAddressing
+
+Processor 1
+Read processor mesh: "case_f03_m3/processor1"
+Writing addressing : "case_f03_m3/processor1/constant/polyMesh"
+    pointProcAddressing
+    faceProcAddressing
+    cellProcAddressing
+    boundaryProcAddressing
+
+Processor 2
+Read processor mesh: "case_f03_m3/processor2"
+Writing addressing : "case_f03_m3/processor2/constant/polyMesh"
+    pointProcAddressing
+    faceProcAddressing
+    cellProcAddressing
+    boundaryProcAddressing
+
+Processor 3
+Read processor mesh: "case_f03_m3/processor3"
+Writing addressing : "case_f03_m3/processor3/constant/polyMesh"
+    pointProcAddressing
+    faceProcAddressing
+    cellProcAddressing
+    boundaryProcAddressing
+
+Time = 100
+No meshes
+
+Time = 689
+No meshes
+
+Time = 1486
+No meshes
+
+Time = 2245
+No meshes
+
+End
+

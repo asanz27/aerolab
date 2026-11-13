@@ -1,0 +1,151 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : checkMesh -constant -parallel
+Date   : Nov 13 2026
+Time   : 00:25:42
+Host   : runnervm8axu0
+PID    : 6180
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_f03_m3
+nProcs : 4
+Hosts  :
+(
+    (runnervm8axu0 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = constant
+
+Check mesh...
+
+Time = constant
+
+Mesh stats 
+    points:           6702419
+    faces:            18427420
+    internal faces:   17610049
+    cells:            5871991
+    faces per cell:   6.1371806
+    boundary patches: 20 (22 23)
+    point zones:      1
+    face zones:       0
+    cell zones:       0
+
+Overall number of cells of each type:
+    hexahedra:     5360886
+    prisms:        100970
+    wedges:        7
+    pyramids:      0
+    tet wedges:    1011
+    tetrahedra:    11
+    polyhedra:     409106
+    Breakdown of polyhedra by number of faces:
+        faces   number of cells
+            4   20709
+            5   14052
+            6   61101
+            7   72834
+            8   21483
+            9   167623
+           10   644
+           11   109
+           12   38529
+           13   5
+           14   5
+           15   11063
+           16   2
+           17   4
+           18   936
+           21   7
+
+Checking topology...
+    Boundary definition OK.
+    Cell to face addressing OK.
+    Point usage OK.
+    Upper triangular ordering OK.
+    Face vertices OK.
+    Number of regions: 1 (OK).
+
+Checking patch topology for multiply connected surfaces...
+                   Patch    Faces   Points  Surface topology
+                   inlet      361      400  ok (non-closed singly connected)
+                  outlet      361      400  ok (non-closed singly connected)
+                  ground    43556    44897  ok (non-closed singly connected)
+                     top     1596     1720  ok (non-closed singly connected)
+                    side     1596     1720  ok (non-closed singly connected)
+                    ysym    43314    46542  ok (non-closed singly connected)
+               frontwing   127096   130301  ok (non-closed singly connected)
+                nosewing     5803     6300  ok (non-closed singly connected)
+                rw_wings   112619   116381  ok (non-closed singly connected)
+               rw_plates   113073   115435  ok (non-closed singly connected)
+                   floor   105253   105984  ok (non-closed singly connected)
+                diffuser    59626    60392  ok (non-closed singly connected)
+                    body    68318    72856  ok (non-closed singly connected)
+             enginecover     9450    11585  ok (non-closed singly connected)
+                  intake     4708     5649  ok (non-closed singly connected)
+                  engine     8776     9332  ok (non-closed singly connected)
+                  driver     2107     2512  ok (non-closed singly connected)
+              suspension     5490     6755  multiply connected (shared edge)
+            wheels_front    17228    19433  ok (non-closed singly connected)
+             wheels_rear    17042    19199  ok (non-closed singly connected)
+                    ".*"   747373   770329  multiply connected (shared edge)
+
+Detected 1 bad edges (possibly relevant for finite-area)
+
+Checking faceZone topology for multiply connected surfaces...
+    No faceZones found.
+  <<Writing 2 conflicting points to set nonManifoldPoints
+
+Checking basic cellZone addressing...
+    No cellZones found.
+
+Checking basic pointZone addressing...
+               PointZone  PointsBoundingBox
+            frozenPoints       0(1e+150 1e+150 1e+150) (-1e+150 -1e+150 -1e+150)
+
+Checking geometry...
+    Overall domain bounding box (-5.6 0 -2.7711708e-42) (12.04 3.99 3.99)
+    Mesh has 3 geometric (non-empty/wedge) directions (1 1 1)
+    Mesh has 3 solution (non-empty) directions (1 1 1)
+    Boundary openness (-9.5329467e-16 2.1080795e-15 5.7631848e-15) OK.
+    Max cell openness = 8.1846436e-16 OK.
+    Max aspect ratio = 24.386391 OK.
+    Minimum face area = 9.3053758e-08. Maximum face area = 0.044550003.  Face area magnitudes OK.
+    Min volume = 3.0649609e-10. Max volume = 0.0093175757.  Total volume = 280.51033.  Cell volumes OK.
+    Mesh non-orthogonality Max: 74.381402 average: 8.2578236
+   *Number of severely non-orthogonal (> 70 degrees) faces: 25.
+    Non-orthogonality check OK.
+  <<Writing 25 non-orthogonal faces to set nonOrthoFaces
+    Face pyramids OK.
+ ***Max skewness = 8.2600797, 84 highly skew faces detected which may impair the quality of the results
+  <<Writing 84 skew faces to set skewFaces
+    Coupled point location match (average 0) OK.
+
+Failed 1 mesh checks.
+
+End
+
+Finalising parallel run
