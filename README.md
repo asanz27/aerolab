@@ -40,11 +40,15 @@ de los resultados (la que muestra la web).
 ## Recoger resultados en la web
 
 ```bash
-python scripts/collect_web.py ../web/data/fs_mft03 baseline=f03_m4 car=mft03 "mesh=f03_m1:h0 = 0.30 m" "mesh=f03_m2:h0 = 0.25 m" "mesh=f03_m3:h0 = 0.21 m" "mesh=f03_m4:h0 = 0.18 m" map=f03_m2:ref map=f03_rhl:heave_low map=f03_rhh:heave_high map=f03_dive:dive map=f03_rake:rake
+python scripts/collect_web.py ../web/data/fs_mft03 baseline=f03_m4 car=mft03 "mesh=f03_m1:h0 = 0.30 m" "mesh=f03_m2:h0 = 0.25 m" "mesh=f03_m3:h0 = 0.21 m" "mesh=f03_m4:h0 = 0.18 m" map=f03_m3:ref map=f03_rhl21:heave_low map=f03_rhh21:heave_high map=f03_dive21:dive map=f03_rake21:rake
 Q_WALL=0.012 python scripts/collect_web.py ../web/data/f1_mp44 baseline=p44_m4 car=mp44 "mesh=mp44_c:h0 = 0.40 m" "mesh=mp44:h0 = 0.30 m" "mesh=p44_m3:h0 = 0.25 m" "mesh=p44_m4:h0 = 0.22 m"
 python scripts/collect_web.py ../web/data/f1_mp423 baseline=mp423_f car=mp423 "mesh=mp423_c:h0 = 0.34 m" "mesh=mp423_m:h0 = 0.29 m" "mesh=mp423_f:h0 = 0.25 m"
 python scripts/make_figs.py ../web/data/f1_mp423/mp423_f ../web/data/f1_mp423/figs
 ```
+
+El mapa aerodinámico del MFT03 se calcula con la malla h0 = 0,21 m: en las mallas más gruesas (0,30 y 0,25 m) el flujo
+del alerón delantero se despega a la altura nominal y en las finas (0,21 y 0,18 m) no, así que el mapa en la malla de 0,25 m
+confundía el efecto de la altura con el de la resolución.
 
 `Q_WALL` es la distancia a la pared por debajo de la cual se quitan las isosuperficies Q (capas límite); 25 mm por
 defecto, 12 mm para el MP4/4 (coche más grande, vórtices con menos Q).
