@@ -78,19 +78,34 @@ def view_matrix(az, el):
     return np.stack([r, u, d])  # rows: screen x, screen y, depth (towards eye)
 
 
+def orientation(V, F):
+    """+1 if the faces of a (nearly) closed surface point outwards, -1 if inwards (sign of the enclosed volume)."""
+    T = V[F]
+    vol = np.einsum("ij,ij->i", T[:, 0], np.cross(T[:, 1], T[:, 2])).sum()
+    return 1.0 if vol >= 0 else -1.0
+
+
 def paint(ax, meshes, R, light=(0.35, 0.45, 0.82)):
-    """meshes: list of (V, F, rgba per face). Painter's algorithm with Lambert shading."""
+    """meshes: list of (V, F, rgba per face[, cull]). Painter's algorithm with Lambert shading; cull=True paints the
+    faces of a closed surface that look away from the camera first and darkened, so they only show through openings
+    (with plain depth sorting, thin multi-element wings show their hidden side)."""
     polys, cols, depth = [], [], []
     L = np.array(light) / np.linalg.norm(light)
-    for V, F, C in meshes:
+    for item in meshes:
+        V, F, C = item[:3]
+        cull = len(item) > 3 and item[3]
         P = V @ R.T
         T = P[F]
         n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
         n /= np.linalg.norm(n, axis=1)[:, None] + 1e-30
+        dz = T[:, :, 2].mean(1)
+        back = (orientation(V, F) * n[:, 2] < 0) if cull else np.zeros(len(F), bool)
+        dz = dz - 1e3 * back  # back faces are painted first, so they only show through real openings
         sh = 0.45 + 0.55 * np.abs(n @ L)
+        sh = np.where(back, 0.45 * sh, sh)
         c = C.copy()
         c[:, :3] = np.clip(c[:, :3] * sh[:, None], 0, 1)
-        polys.append(T[:, :, :2]); cols.append(c); depth.append(T[:, :, 2].mean(1))
+        polys.append(T[:, :, :2]); cols.append(c); depth.append(dz)
     P = np.concatenate(polys); C = np.concatenate(cols); D = np.concatenate(depth)
     o = np.argsort(D)
     ax.add_collection(PolyCollection(P[o], facecolors=C[o], edgecolors="none", antialiaseds=False))
@@ -208,7 +223,7 @@ def main():
         iso = mirror(load_mesh(os.path.join(D, isos["q_low"]["file"]), ("Cpt",)), ("Cpt",))
         fig, ax = fig_canvas()
         Rm = view_matrix(az, el)
-        paint(ax, [(full["V"], full["F"], grey(full["F"], 0.55)),
+        paint(ax, [(full["V"], full["F"], grey(full["F"], 0.55), True),
                    (iso["V"], iso["F"], face_colors(iso["Cpt"], iso["F"], "turbo", -0.4, 1.0))], Rm)
         ax.set_title(title, color=FG, fontsize=15)
         colorbar(fig, "turbo", -0.4, 1.0, "Cpt (1 = loss-free air)")
@@ -220,7 +235,7 @@ def main():
             continue
         fig, ax = fig_canvas()
         Rm = view_matrix(az, el)
-        paint(ax, [(full["V"], full["F"], face_colors(full["Cp"], full["F"], "coolwarm", -2.5, 1.0))], Rm)
+        paint(ax, [(full["V"], full["F"], face_colors(full["Cp"], full["F"], "coolwarm", -2.5, 1.0), True)], Rm)
         ax.set_title(title, color=FG, fontsize=15)
         colorbar(fig, "coolwarm", -2.5, 1.0, "Cp")
         save(fig, os.path.join(O, name))
@@ -229,7 +244,7 @@ def main():
         iso = mirror(load_mesh(os.path.join(D, isos["cpt0"]["file"]), ()), ())
         fig, ax = fig_canvas()
         Rm = view_matrix(150, 25)
-        paint(ax, [(full["V"], full["F"], grey(full["F"], 0.6)),
+        paint(ax, [(full["V"], full["F"], grey(full["F"], 0.6), True),
                    (iso["V"], iso["F"], np.tile([0.98, 0.55, 0.22, 0.55], (len(iso["F"]), 1)))], Rm)
         ax.set_title("Cpt = 0 envelope: high-loss wakes (tyres, wings, diffuser)", color=FG, fontsize=15)
         save(fig, os.path.join(O, "cpt0"))
