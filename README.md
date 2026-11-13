@@ -25,6 +25,29 @@ Un trabajo de Actions dura como mucho 6 h. Con `"stages": 2` o `3` en `run.json`
 (`writeNow`) antes del límite, lo comprime (tar + zstd) y lo pasa como *artifact* (2 días de retención) al
 trabajo siguiente, que continúa las iteraciones. Solo el último trabajo reconstruye, postprocesa y publica.
 
+## Interior macizo y radiador de caudal fijo (modelos visuales)
+
+Los modelos visuales son solo una piel: el envolvente cierra los huecos pequeños, pero por las tomas grandes el
+aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige antes de mallar:
+
+1. **Test de rayos** (malla gruesa de ~1 cm, coche completo por simetría): una celda de aire está *dentro* si de
+   sus 26 direcciones como mucho 3 salen sin chocar con la carrocería (chasis, pontones, fondo, tapa motor; sin
+   alerones, suspensión, bargeboards ni difusor, para que las zonas exteriores llenas de piezas sigan siendo aire).
+   Las bolsas finas (sin núcleo de al menos 3 celdas) también siguen siendo aire.
+2. **Aberturas** del interior: la toma del pontón (mira hacia delante, al lado del chasis), el airbox (sobre el
+   piloto) y la salida trasera (mira hacia atrás, junto a la caja de cambios).
+3. La toma del pontón conserva un **conducto** recto (huella frontal de la boca) de hasta 30 cm, que acaba en la
+   **cara del radiador** (`radiator_in`). El airbox es un conducto corto cerrado al fondo. Todo lo demás se rellena.
+4. **Salida** (`radiator_out`): la carrocería trasera que mira hacia atrás, junto a la caja de cambios y por dentro
+   de las ruedas traseras (donde estos coches sacan el aire caliente), con la mitad del área de la cara del radiador.
+   El mismo criterio para todos los coches: las aberturas traseras de los modelos visuales varían demasiado.
+
+En el caso (`make_case.py`), `radiator_in` es una salida con caudal impuesto (`flowRateOutletVelocity`) y
+`radiator_out` una entrada con el mismo caudal (`flowRateInletVelocity`): velocidad media en el radiador =
+`cooling_ratio` · U∞ (0,25 por defecto). `postpro.py` suma a las fuerzas del grupo `cooling` y al total la
+cantidad de movimiento que sale por la toma y vuelve a entrar por detrás (Σ φ·U en ambas caras; la presión sobre
+ellas ya la cuentan los `forces`).
+
 ## Geometría privada (`"private": true`)
 
 El CAD del MFT03 y las mallas originales de los modelos visuales están cifrados con AES-256 en ramas `cad-<coche>`.

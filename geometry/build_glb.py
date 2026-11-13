@@ -117,8 +117,10 @@ def sample_points(T, h):
             yield P.reshape(-1, 3)
 
 
-def wrap(T, h, r, y0=0.0):
-    """Watertight half-model (y >= y0) surface of triangle soup T on an h-voxel grid, closing radius r voxels."""
+def wrap(T, h, r, y0=0.0, W=None):
+    """Watertight half-model (y >= y0) surface of triangle soup T on an h-voxel grid, closing radius r voxels.
+    With W (wheel geometry dict) the hollow interior is filled and the cooling inlets kept as blind ducts
+    (cavity.py). Returns (surface, cavity info or None)."""
     from scipy import ndimage
     import pyvista as pv
     V = T.reshape(-1, 3)
@@ -145,19 +147,31 @@ def wrap(T, h, r, y0=0.0):
     ext0 = np.isin(lab, border[border > 0])
     del lab
     ext = (ndimage.distance_transform_edt(~ext0) <= r) & ~occ
-    del ext0
+    del ext0, occ
+    info, skin = None, None
+    if W is not None:
+        from cavity import fill as fill_cavities
+        skin = ~ext
+        ext, info = fill_cavities(ext, h, lo, W, T=T, k=max(1, int(round(0.0105 / h))), log=log)
     solid = ~ext
     del ext
-    solid[0], solid[-1], solid[:, -1], solid[:, :, 0], solid[:, :, -1] = False, False, False, False, False
-    solid[:, 0] = False
-    f = ndimage.gaussian_filter(solid.astype(np.float32), 0.6)
+    for a in (solid, skin):
+        if a is not None:
+            a[0], a[-1], a[:, -1], a[:, :, 0], a[:, :, -1] = False, False, False, False, False
+            a[:, 0] = False
     log(f"  solid {solid.sum()/1e6:.2f} M voxels")
+    if skin is None:
+        f = ndimage.gaussian_filter(solid.astype(np.float32), 0.6)
+    else:
+        # skin keeps its sharpness; the filled interior (caps, duct ends) is smoothed over ~5 mm
+        f = np.maximum(ndimage.gaussian_filter(skin.astype(np.float32), 0.6), ndimage.gaussian_filter(solid.astype(np.float32), 1.5))
+        del skin
     del solid
     grid = pv.ImageData(dimensions=shape, spacing=(h, h, h), origin=lo)
     grid.point_data["s"] = f.ravel(order="F")
     del f
     surf = grid.contour([0.5], scalars="s").triangulate().clean()
-    return surf
+    return surf, info
 
 
 def finish(surf, target):
@@ -213,7 +227,7 @@ def classify(tri, W, year):
 
 LEVELS = {"frontwing": (6, 6), "rearwing": (5, 6), "beamwing": (5, 6), "bargeboards": (5, 6), "floor": (5, 6),
           "diffuser": (5, 6), "body": (4, 5), "sidepods": (4, 5), "suspension": (5, 5),
-          "wheels_front": (4, 5), "wheels_rear": (4, 5)}
+          "wheels_front": (4, 5), "wheels_rear": (4, 5), "inlets": (5, 5), "radiator_in": (5, 5), "radiator_out": (5, 5)}
 
 
 def components(T):
@@ -236,9 +250,9 @@ def components(T):
     return [T[comp == c] for c in np.unique(comp)]
 
 
-def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2):
+def split_parts(car):
+    """Load the model and split it into wheel parts (per axle) and body parts."""
     cfg = CARS[car]
-    os.makedirs(outdir, exist_ok=True)
     parts, s = load(car)
     tread = np.concatenate([t.reshape(-1, 3) for n, t in parts if re.search(cfg["tread"], n)])
     tl = tread[tread[:, 1] > 0]
@@ -247,7 +261,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2):
     Rf, Rr = (fr[:, 2].max() - fr[:, 2].min()) / 2, (rr[:, 2].max() - rr[:, 2].min()) / 2
     xf, xr = (fr[:, 0].min() + fr[:, 0].max()) / 2, (rr[:, 0].min() + rr[:, 0].max()) / 2
     yf, yr = (fr[:, 1].min() + fr[:, 1].max()) / 2, (rr[:, 1].min() + rr[:, 1].max()) / 2
-    W = {"xf": xf, "xr": xr, "R": 0.5 * (Rf + Rr), "y_in": min(fr[:, 1].min(), rr[:, 1].min())}
+    W = {"xf": xf, "xr": xr, "R": 0.5 * (Rf + Rr), "y_in": min(fr[:, 1].min(), rr[:, 1].min()), "year": cfg["year"]}
     log(f"wheelbase {xr-xf:.3f} m, R front {Rf:.3f} rear {Rr:.3f}, track/2 {yf:.3f}/{yr:.3f}, tyre inner face y {W['y_in']:.3f}")
     # wheel parts = meshes contained in a wheel envelope (tyre, rim, brake, hub)
     # wheel parts = connected pieces lying inside a wheel envelope (tyre, rim, brake disc, hub)
@@ -266,17 +280,82 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2):
                     dest = k
                     break
             (wheels[dest] if dest else body).append(piece)
+    return parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr)
+
+
+def rear_exit(tri, lab, W, target, sym=False):
+    """Fallback radiator exit when the model has no rear opening: the rear-most rear-facing bodywork around
+    the gearbox, inboard of the rear wheels, up to `target` m^2 (half car)."""
+    from cavity import tri_area
+    c = tri.mean(1)
+    n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    n /= np.linalg.norm(n, axis=1)[:, None] + 1e-30
+    cand = ((n[:, 0] > 0.6) & (c[:, 0] > W["xr"] - 0.9) & (c[:, 0] < W["xr"] + 0.25) & (np.abs(c[:, 1]) > 0.08)
+            & (np.abs(c[:, 1]) < 0.40) & (c[:, 2] > 0.15) & (c[:, 2] < 0.70) & np.isin(lab, ["body", "sidepods"]))
+    if sym:                                                # full-car surface: pick on the y > 0 side, mirror by |y|
+        cand &= c[:, 1] > 0
+    if not cand.any():
+        return cand
+    from cavity import pick_area, largest_patch
+    cand = largest_patch(tri, cand)
+    if not cand.any():
+        return cand
+    i0 = np.where(cand)[0][np.argmax(c[cand, 0])]          # grow the patch from the rear-most face
+    sel = pick_area(tri, cand, c[i0], target)
+    if sym:                                                # the mirror-image faces on the y < 0 side
+        from scipy.spatial import cKDTree
+        sc = c[sel].copy()
+        sc[:, 1] *= -1
+        neg = np.where(c[:, 1] < 0)[0]
+        if len(neg):
+            dist, j = cKDTree(c[neg]).query(sc, distance_upper_bound=0.01)
+            sel[neg[j[np.isfinite(dist)]]] = True
+    return sel
+
+
+def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True):
+    cfg = CARS[car]
+    os.makedirs(outdir, exist_ok=True)
+    parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car)
     regions = {}
     for k, lst in wheels.items():
         T = np.concatenate(lst).copy()
         T[..., 2] -= SINK
         log(f"{k}: {len(lst)} parts, {len(T)} triangles")
-        regions[k] = tris_of(finish(wrap(T, 0.004, 3), 120000))
+        regions[k] = tris_of(finish(wrap(T, 0.004, 3)[0], 120000))
     Tb = np.concatenate(body)
     log(f"body: {len(body)} parts, {len(Tb)} triangles")
-    bsurf = finish(wrap(Tb, h_body, r_body), 450000)
+    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None)
+    bsurf = finish(bsurf, 450000)
     btri = tris_of(bsurf)
     lab = classify(btri, W, cfg["year"])
+    cooling = None
+    if cav is not None:
+        from cavity import label_cooling, tri_area
+        vol = np.einsum("ij,ij->i", btri[:, 0], np.cross(btri[:, 1], btri[:, 2])).sum() / 6.0
+        bt = btri if vol > 0 else btri[:, ::-1]          # outward-oriented copy for the normals
+        cl = label_cooling(bt, cav)
+        for name in ("inlets", "radiator_in", "radiator_out"):
+            if name in cl:
+                lab[cl[name]] = name
+        if (lab == "radiator_in").any() and not (lab == "radiator_out").any():
+            lab[rear_exit(bt, lab, W, 0.5 * tri_area(btri[lab == "radiator_in"]).sum())] = "radiator_out"
+        if (lab == "radiator_in").any() and (lab == "radiator_out").any():
+            ai, ao = tri_area(btri[lab == "radiator_in"]), tri_area(btri[lab == "radiator_out"])
+            ci = (btri[lab == "radiator_in"].mean(1) * ai[:, None]).sum(0) / ai.sum()
+            co = (btri[lab == "radiator_out"].mean(1) * ao[:, None]).sum(0) / ao.sum()
+            m = cav["ducts"]["sidepod"]["mouth"]
+            cooling = {"model": "fixed-flow radiator: duct end face = flow-rate outlet, rear exit = flow-rate inlet",
+                       "ratio": 0.25, "face_area": float(ai.sum()), "exit_area": float(ao.sum()),
+                       "inlet_area": m["area"], "duct_depth": cav["duct_depth"],
+                       "face_centroid": ci.round(4).tolist(), "exit_centroid": co.round(4).tolist(),
+                       "exit_from": "rear-facing bodywork"}
+            log(f"cooling: radiator face {ai.sum()*1e4:.0f} cm2 at x {ci[0]:.2f}, exit {ao.sum()*1e4:.0f} cm2 at "
+                f"({co[0]:.2f}, {co[1]:.2f}, {co[2]:.2f}) ({cooling['exit_from']}), inlet opening {m['area']*1e4:.0f} cm2 (half car)")
+        else:
+            for name in ("radiator_in", "radiator_out"):
+                lab[lab == name] = "inlets" if name == "radiator_in" else "body"
+            log("cooling: no sidepod inlet duct found - interior filled, no radiator flow")
     for k in np.unique(lab):
         regions[k] = btri[lab == k]
     if abs(front_mm) > 1e-9 or abs(rear_mm) > 1e-9:
@@ -311,9 +390,15 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2):
         "bbox_min": [float(blo[0]), -float(bhi[1]), float(blo[2])], "bbox_max": bhi.round(4).tolist(),
         "length": L, "width": float(2 * bhi[1]), "height": float(bhi[2]),
         "frontal_area": round(area, 4), "parts": names, "closure": info,
-        "wrap": {"body_voxel_m": h_body, "body_close_voxels": r_body, "wheel_voxel_m": 0.004, "wheel_close_voxels": 3},
+        "wrap": {"body_voxel_m": h_body, "body_close_voxels": r_body, "wheel_voxel_m": 0.004, "wheel_close_voxels": 3,
+                 "interior_filled": cav is not None,
+                 **({"enclosure_max_escapes": cav["K"], "enclosure_cell_m": round(cav["c"], 4), "core_cells": cav["core_cells"],
+                     "openings_used": [{k2: m[k2] for k2 in ("kind", "area", "x", "y", "z", "n")} for m in cav["mouths"] if m.get("kind")]} if cav else {})},
+        **({"cooling": cooling, "patch_types": {"radiator_in": "patch", "radiator_out": "patch"}} if cooling else {}),
         "levels": {k: list(LEVELS.get(k, (4, 5))) for k in names},
-        "force_groups": {k: [k] for k in names}, "no_layers": [k for k in ("suspension",) if k in names],
+        "force_groups": {**{k: [k] for k in names if not k.startswith("radiator_")},
+                         **({"cooling": ["radiator_in", "radiator_out"]} if cooling else {})},
+        "no_layers": [k for k in ("suspension", "radiator_in", "radiator_out") if k in names],
         "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm},
         "domain": [round(blo[0] - 7.5, 1), round(bhi[0] + 13.5, 1), 5.5, 5.5],
         "location_in_mesh": [round(bhi[0] + 3.1234, 4), 2.8765, 3.3456],

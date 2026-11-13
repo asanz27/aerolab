@@ -51,12 +51,14 @@ BOXES = {
     "box_fwgnd": ((-0.95, 0, 0), (-0.50, 0.73, 0.065), 5),
 }
 LOCATION = (5.1234, 1.8765, 2.3456)
+PATCH_TYPES = {}     # part -> OpenFOAM patch type when not a wall (e.g. the radiator face / exit)
+COOLING = None       # fixed-flow radiator: {"face_area", "exit_area", ...} from car.json
 
 
 def load_car(case):
     """Take parts, refinement levels, force groups, wheel axes and (optionally) the domain and
     refinement boxes from the geometry's car.json, so any car size can be meshed."""
-    global SURF_LEVELS, LAYER_PARTS, GROUPS, ALL_PARTS, WHEELS, TYRE_R, X0, X1, Y1, Z1, BOXES, LOCATION
+    global SURF_LEVELS, LAYER_PARTS, GROUPS, ALL_PARTS, WHEELS, TYRE_R, X0, X1, Y1, Z1, BOXES, LOCATION, PATCH_TYPES, COOLING
     p = os.path.join(case, "constant", "triSurface", "car.json")
     if not os.path.exists(p):
         return
@@ -75,6 +77,8 @@ def load_car(case):
         BOXES = {k: (tuple(v[0]), tuple(v[1]), int(v[2])) for k, v in car["boxes"].items()}
     if "location_in_mesh" in car:
         LOCATION = tuple(car["location_in_mesh"])
+    PATCH_TYPES = {k: v for k, v in car.get("patch_types", {}).items() if k in ALL_PARTS}
+    COOLING = car.get("cooling") if all(p in ALL_PARTS for p in ("radiator_in", "radiator_out")) else None
 
 # domain (half car, symmetry plane at y=0)
 X0, X1, Y1, Z1 = -5.6, 12.0, 4.0, 4.0
@@ -118,7 +122,7 @@ def snappy(c):
     geo += "\n" + "\n".join(f"    {n} {{ type searchableBox; min ({a[0]} {a[1]} {a[2]}); max ({b[0]} {b[1]} {b[2]}); }}"
                             for n, (a, b, _) in boxes.items())
     feats = "\n".join(f'        {{ file "{p}.eMesh"; level {SURF_LEVELS[p][1]}; }}' for p in ALL_PARTS)
-    surfs = "\n".join(f"        {p} {{ level ({a} {b}); patchInfo {{ type wall; }} }}" for p, (a, b) in SURF_LEVELS.items())
+    surfs = "\n".join(f"        {p} {{ level ({a} {b}); patchInfo {{ type {PATCH_TYPES.get(p, 'wall')}; }} }}" for p, (a, b) in SURF_LEVELS.items())
     regs = "\n".join(f"        {n} {{ mode inside; levels ((1e15 {lv})); }}" for n, (_, _, lv) in boxes.items())
     nl = c.get("layers", 3)
     layers = "\n".join(f'        "{p}" {{ nSurfaceLayers {nl}; }}' for p in LAYER_PARTS)
@@ -258,6 +262,24 @@ def control(c):
         rho             rhoInf;
         rhoInf          1.205;
         CofR            (0 0 0);
+    }}""")
+    if COOLING:
+        for pt in ("radiator_in", "radiator_out"):
+            for nm, op, fl, extra in (("flux", "weightedSum", "U", "weightField     phi;"), ("Q", "sum", "phi", ""),
+                                      ("p", "areaAverage", "p", "")):
+                fo.append(f"""    cool_{nm}_{pt}
+    {{
+        type            surfaceFieldValue;
+        libs            (fieldFunctionObjects);
+        writeControl    timeStep;
+        writeInterval   1;
+        log             false;
+        writeFields     false;
+        regionType      patch;
+        name            {pt};
+        operation       {op};
+        {extra}
+        fields          ({fl});
     }}""")
     fo.append("""    yPlus
     {
@@ -410,8 +432,32 @@ def fields(c):
         omega           {omega_w:.4f};
     }}
 """
-    car = "(" + "|".join(p for p in ALL_PARTS if not p.startswith("wheels")) + ")"
+    walls_only = [p for p in ALL_PARTS if p not in PATCH_TYPES]
+    car = "(" + "|".join(p for p in walls_only if not p.startswith("wheels")) + ")"
     allp = "(" + "|".join(ALL_PARTS) + ")"
+    cU = ck = co = cn = ""
+    if COOLING:
+        # fixed-flow radiator: the duct end face is an outlet and the rear exit an inlet with the same
+        # volumetric flow (half model), set from the face velocity ratio V_face / U
+        ratio = float(c.get("cooling_ratio", COOLING.get("ratio", 0.25)))
+        Q = ratio * U * COOLING["face_area"]
+        Ve = Q / COOLING["exit_area"]
+        ke = 1.5 * (0.05 * Ve) ** 2
+        oe = ke ** 0.5 / (0.09 ** 0.25 * 0.01)
+        c["cooling_Q_half"] = Q
+        c["cooling_ratio"] = ratio
+        cU = f"""    radiator_in  {{ type flowRateOutletVelocity; volumetricFlowRate {Q:.6g}; value uniform ({ratio * U:.5g} 0 0); }}
+    radiator_out {{ type flowRateInletVelocity; volumetricFlowRate {Q:.6g}; extrapolateProfile false; value uniform ({Ve:.5g} 0 0); }}
+"""
+        ck = f"""    radiator_in  {{ type zeroGradient; }}
+    radiator_out {{ type fixedValue; value uniform {ke:.6g}; }}
+"""
+        co = f"""    radiator_in  {{ type zeroGradient; }}
+    radiator_out {{ type fixedValue; value uniform {oe:.6g}; }}
+"""
+        cn = """    radiator_in  { type calculated; value uniform 0; }
+    radiator_out { type calculated; value uniform 0; }
+"""
     out = {}
     out["U"] = HDR.format(cls="volVectorField", obj="U") + f"""
 dimensions      [0 1 -1 0 0 0 0];
@@ -425,7 +471,7 @@ boundaryField
     top     {{ type slip; }}
     side    {{ type slip; }}
     "{car}" {{ type noSlip; }}
-{wheels}}}
+{wheels}{cU}}}
 """
     out["p"] = HDR.format(cls="volScalarField", obj="p") + f"""
 dimensions      [0 2 -2 0 0 0 0];
@@ -441,7 +487,7 @@ boundaryField
     "{allp}" {{ type zeroGradient; }}
 }}
 """
-    walls = "(ground|" + "|".join(ALL_PARTS) + ")"
+    walls = "(ground|" + "|".join(walls_only) + ")"
     out["k"] = HDR.format(cls="volScalarField", obj="k") + f"""
 dimensions      [0 2 -2 0 0 0 0];
 internalField   uniform {k:.6g};
@@ -453,7 +499,7 @@ boundaryField
     top     {{ type slip; }}
     side    {{ type slip; }}
     "{walls}" {{ type kqRWallFunction; value uniform {k:.6g}; }}
-}}
+{ck}}}
 """
     out["omega"] = HDR.format(cls="volScalarField", obj="omega") + f"""
 dimensions      [0 0 -1 0 0 0 0];
@@ -466,7 +512,7 @@ boundaryField
     top     {{ type slip; }}
     side    {{ type slip; }}
     "{walls}" {{ type omegaWallFunction; value uniform {om:.6g}; }}
-}}
+{co}}}
 """
     out["nut"] = HDR.format(cls="volScalarField", obj="nut") + f"""
 dimensions      [0 2 -1 0 0 0 0];
@@ -479,7 +525,7 @@ boundaryField
     top     {{ type calculated; value uniform 0; }}
     side    {{ type calculated; value uniform 0; }}
     "{walls}" {{ type nutUSpaldingWallFunction; value uniform 0; }}
-}}
+{cn}}}
 """
     return out
 
@@ -491,6 +537,7 @@ def main(case, cfg):
     w(f"{case}/system/blockMeshDict", block_mesh(c))
     w(f"{case}/system/snappyHexMeshDict", snappy(c))
     w(f"{case}/system/surfaceFeatureExtractDict", feature_extract())
+    flds = fields(c)                      # first: sets the cooling flow in c
     w(f"{case}/system/controlDict", control(c))
     w(f"{case}/system/fvSchemes", schemes(first_order=False))
     w(f"{case}/system/fvSchemes.first", schemes(first_order=True))
@@ -503,10 +550,10 @@ def main(case, cfg):
       "\ntransportModel Newtonian;\nnu 1.5e-05;\n")
     w(f"{case}/constant/turbulenceProperties", HDR.format(cls="dictionary", obj="turbulenceProperties") +
       "\nsimulationType RAS;\nRAS\n{\n    RASModel kOmegaSST;\n    turbulence on;\n    printCoeffs on;\n}\n")
-    for name, txt in fields(c).items():
+    for name, txt in flds.items():
         w(f"{case}/0.orig/{name}", txt)
     with open(f"{case}/run_config.json", "w") as fh:
-        json.dump({**c, "groups": GROUPS, "parts": ALL_PARTS, "domain": [X0, X1, Y1, Z1]}, fh, indent=1)
+        json.dump({**c, "groups": GROUPS, "parts": ALL_PARTS, "domain": [X0, X1, Y1, Z1], "cooling": COOLING}, fh, indent=1)
 
 
 if __name__ == "__main__":

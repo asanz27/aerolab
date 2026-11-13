@@ -123,15 +123,108 @@ def build(front_mm=0.0, rear_mm=0.0):
 
 
 LEVELS = {"frontwing": (5, 6), "rearwing": (5, 6), "floor": (5, 6), "diffuser": (5, 6), "body": (4, 5),
-          "sidepods": (4, 5), "wheels_front": (4, 5), "wheels_rear": (4, 5), "suspension": (5, 5)}
+          "sidepods": (4, 5), "wheels_front": (4, 5), "wheels_rear": (4, 5), "suspension": (5, 5),
+          "inlets": (5, 5), "radiator_in": (5, 5), "radiator_out": (5, 5)}
 FORCE_GROUPS = {"frontwing": ["frontwing"], "rearwing": ["rearwing"], "floor": ["floor"], "diffuser": ["diffuser"],
                 "body": ["body"], "sidepods": ["sidepods"], "wheels_front": ["wheels_front"],
-                "wheels_rear": ["wheels_rear"], "suspension": ["suspension"]}
+                "wheels_rear": ["wheels_rear"], "suspension": ["suspension"], "inlets": ["inlets"],
+                "cooling": ["radiator_in", "radiator_out"]}
 
 
-def main(outdir, front_mm=0.0, rear_mm=0.0):
+def add_fill(T, part, h=0.0035, r=2):
+    """The printable model has hollow pockets (nose, engine cover, rear of the sidepods) open to the outside.
+    Fill them like the visual models (cavity.py: ray-enclosure test, sidepod inlet kept as a duct to the
+    radiator face, rear exit): the filled volume becomes an extra closed surface added to the bodywork, and
+    the duct walls / radiator face / exit are relabelled. Returns (T, part, cooling dict, info)."""
+    from scipy import ndimage
+    import pyvista as pv
+    from build_glb import sample_points, rear_exit
+    from cavity import fill as fill_cavities, label_cooling, tri_area
+    wf = T[part == "wheels_front"].reshape(-1, 3)
+    wf = wf[wf[:, 1] > 0]
+    W = {"xf": 0.0, "xr": WB, "R": float((wf[:, 2].max() + SINK) / 2), "y_in": float(wf[:, 1].min()), "year": 1988}
+    body = (part != "wheels_front") & (part != "wheels_rear")
+    Tb = T[body]
+    V = Tb.reshape(-1, 3)
+    pad = (r + 3) * h
+    lo = V.min(0) - pad
+    hi = V.max(0) + pad
+    lo[1] = -2 * h
+    shape = np.ceil((hi - lo) / h).astype(int) + 1
+    occ = np.zeros(shape, bool)
+    for P in sample_points(Tb[Tb[..., 1].max(1) >= lo[1]], h):
+        P = P[P[:, 1] >= lo[1]]
+        idx = np.clip(np.floor((P - lo) / h).astype(np.int64), 0, shape - 1)
+        occ[idx[:, 0], idx[:, 1], idx[:, 2]] = True
+    far = ndimage.distance_transform_edt(~occ) > r
+    lab, _ = ndimage.label(far)
+    del far
+    border = np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))
+    ext0 = np.isin(lab, border[border > 0])
+    del lab
+    ext = (ndimage.distance_transform_edt(~ext0) <= r) & ~occ
+    del ext0, occ
+    new, info = fill_cavities(ext, h, lo, W, T=Tb, k=3, log=print)
+    F = ext & ~new                                   # air that becomes solid
+    F = ndimage.binary_dilation(F, ndimage.generate_binary_structure(3, 1), iterations=2) & ~new   # overlap the shells
+    F[:, 0] = False
+    F[0], F[-1], F[:, -1], F[:, :, 0], F[:, :, -1] = False, False, False, False, False
+    f = ndimage.gaussian_filter(F.astype(np.float32), 1.0)
+    del F, ext, new
+    grid = pv.ImageData(dimensions=shape, spacing=(h, h, h), origin=lo)
+    grid.point_data["s"] = f.ravel(order="F")
+    surf = grid.contour([0.5], scalars="s").triangulate().clean()
+    if surf.n_cells > 200000:
+        surf = surf.decimate(1.0 - 200000 / surf.n_cells)
+    surf = surf.smooth_taubin(n_iter=20, pass_band=0.1).triangulate().clean()
+    Ff = surf.faces.reshape(-1, 4)[:, 1:]
+    Tf = np.asarray(surf.points)[Ff]
+    vol = np.einsum("ij,ij->i", Tf[:, 0], np.cross(Tf[:, 1], Tf[:, 2])).sum() / 6.0
+    if vol < 0:
+        Tf = Tf[:, ::-1]
+    print(f"fill surface: {len(Tf)} triangles, {abs(vol) * 2000:.0f} L (full car)")
+    T2 = np.concatenate([T, Tf])
+    part2 = np.concatenate([part, np.full(len(Tf), "body", dtype=object)])
+    nb = (part2 != "wheels_front") & (part2 != "wheels_rear")
+    idx = np.where(nb)[0]
+    cl = label_cooling(T2[idx], info)
+    for name in ("inlets", "radiator_in", "radiator_out"):
+        if name in cl:
+            part2[idx[cl[name]]] = name
+    cooling = None
+    half = T2.mean(1)[:, 1] > 0
+    ri = (part2 == "radiator_in") & half
+    if ri.any():
+        if not (part2 == "radiator_out").any():       # on the model's own surface, not on the buried fill
+            raw = idx[idx < len(T)]
+            sel = rear_exit(T2[raw], part2[raw], W, 0.5 * tri_area(T2[ri]).sum(), sym=True)
+            part2[raw[sel]] = "radiator_out"
+        ro = (part2 == "radiator_out") & half
+        if ro.any():
+            ai, ao = tri_area(T2[ri]), tri_area(T2[ro])
+            ci = (T2[ri].mean(1) * ai[:, None]).sum(0) / ai.sum()
+            co = (T2[ro].mean(1) * ao[:, None]).sum(0) / ao.sum()
+            m = info["ducts"]["sidepod"]["mouth"]
+            cooling = {"model": "fixed-flow radiator: duct end face = flow-rate outlet, rear exit = flow-rate inlet",
+                       "ratio": 0.25, "face_area": float(ai.sum()), "exit_area": float(ao.sum()), "inlet_area": m["area"],
+                       "duct_depth": info["duct_depth"], "face_centroid": ci.round(4).tolist(), "exit_centroid": co.round(4).tolist(),
+                       "exit_from": "rear-facing bodywork"}
+            print(f"cooling: radiator face {ai.sum()*1e4:.0f} cm2 at x {ci[0]:.2f}, exit {ao.sum()*1e4:.0f} cm2 at {co.round(2)} (half car)")
+    if cooling is None:
+        part2[part2 == "radiator_in"] = "inlets"
+        part2[part2 == "radiator_out"] = "body"
+    wrapinfo = {"interior_filled": True, "fill_voxel_m": h, "enclosure_max_escapes": info["K"], "enclosure_cell_m": round(info["c"], 4),
+                "core_cells": info["core_cells"],
+                "openings_used": [{k2: mm[k2] for k2 in ("kind", "area", "x", "y", "z", "n")} for mm in info["mouths"] if mm.get("kind")]}
+    return T2, part2, cooling, wrapinfo
+
+
+def main(outdir, front_mm=0.0, rear_mm=0.0, fill_interior=True):
     os.makedirs(outdir, exist_ok=True)
     T, part = build(front_mm, rear_mm)
+    cooling, wrapinfo = None, None
+    if fill_interior:
+        T, part, cooling, wrapinfo = add_fill(T, part)
     names = [n for n in LEVELS if (part == n).any()]
     V = T.reshape(-1, 3)
     info = {}
@@ -163,8 +256,11 @@ def main(outdir, front_mm=0.0, rear_mm=0.0):
         "length": float(hi[0] - lo[0]), "width": float(hi[1] - lo[1]), "height": float(hi[2]),
         "frontal_area": round(area, 4), "parts": names, "closure": info,
         "levels": {k: list(LEVELS[k]) for k in names},
-        "force_groups": {k: [p for p in v if p in names] for k, v in FORCE_GROUPS.items() if any(p in names for p in v)},
-        "no_layers": ["suspension"],
+        "force_groups": {k: [p for p in v if p in names] for k, v in FORCE_GROUPS.items()
+                         if any(p in names for p in v) and (k != "cooling" or cooling)},
+        "no_layers": [k for k in ("suspension", "radiator_in", "radiator_out") if k in names],
+        **({"wrap": wrapinfo} if wrapinfo else {}),
+        **({"cooling": cooling, "patch_types": {"radiator_in": "patch", "radiator_out": "patch"}} if cooling else {}),
         "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm},
         "published": {"length": 4.394, "width": 2.134, "height": 0.94, "wheelbase": 2.875, "track_front": 1.824,
                       "track_rear": 1.670, "mass_min": 540.0},

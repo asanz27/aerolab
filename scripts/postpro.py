@@ -100,6 +100,44 @@ def read_dat(pattern):
     return cols, np.array([rows[k] for k in t])
 
 
+def cooling_flux(case, car):
+    """Momentum flux sum(phi U) through the fixed-flow radiator patches (half model, m^4/s^2) with the
+    patch centroids: the air leaving at the radiator face and re-entering at the exit is internal flow of
+    the car, so its momentum change is a force on the car (cooling drag) that the wall forces miss."""
+    cool = car.get("cooling")
+    if not cool:
+        return []
+    out = []
+    for pt, key in (("radiator_in", "face_centroid"), ("radiator_out", "exit_centroid")):
+        _, A = read_dat(os.path.join(case, "postProcessing", f"cool_flux_{pt}", "*", "surfaceFieldValue.dat"))
+        if A is None or A.shape[1] < 4:
+            return []
+        out.append((A[:, 0], A[:, 1:4], np.asarray(cool[key], float)))
+    return out
+
+
+def cooling_summary(case, cfg, car):
+    cool = car.get("cooling")
+    if not cool:
+        return None
+    U = cfg["U"]
+    res = {k: cool[k] for k in ("face_area", "exit_area", "inlet_area", "duct_depth") if k in cool}
+    for pt in ("radiator_in", "radiator_out"):
+        for nm in ("Q", "p"):
+            _, A = read_dat(os.path.join(case, "postProcessing", f"cool_{nm}_{pt}", "*", "surfaceFieldValue.dat"))
+            if A is not None:
+                nav = max(1, int(0.2 * len(A)))
+                res[f"{nm}_{pt}"] = float(A[-nav:, 1].mean())
+    if "Q_radiator_in" in res:
+        res["Q_full_m3s"] = 2 * res["Q_radiator_in"]
+        res["face_velocity_ratio"] = res["Q_radiator_in"] / (cool["face_area"] * U)
+        res["exit_velocity_ratio"] = res["Q_radiator_in"] / (cool["exit_area"] * U)
+    for pt in ("radiator_in", "radiator_out"):
+        if f"p_{pt}" in res:
+            res[f"Cp_{pt}"] = res[f"p_{pt}"] / (0.5 * U * U)
+    return res
+
+
 def forces(case, cfg, car):
     U = cfg["U"]
     rho = 1.205
@@ -107,6 +145,7 @@ def forces(case, cfg, car):
     wb = car["wheelbase"]
     out = {}
     hist = {}
+    flux = cooling_flux(case, car)
     for d in sorted(glob.glob(os.path.join(case, "postProcessing", "forces_*"))):
         g = os.path.basename(d)[len("forces_"):]
         cf, F = read_dat(os.path.join(d, "*", "force.dat"))
@@ -119,6 +158,15 @@ def forces(case, cfg, car):
         Fpx, Fpz = 2 * F[:n, 4], 2 * F[:n, 6]
         Fvx, Fvz = 2 * F[:n, 7], 2 * F[:n, 9]
         My = 2 * M[:n, 2] if M is not None else np.zeros(n)
+        Fmx = np.zeros(n)
+        if flux and g in ("cooling", "total"):
+            Fmz = np.zeros(n)
+            for itf, Phi, cen in flux:
+                px, pz = (np.interp(it, itf, Phi[:, j]) for j in (0, 2))
+                Fmx += 2 * rho * px
+                Fmz += 2 * rho * pz
+                My += 2 * rho * (cen[2] * px - cen[0] * pz)
+            Fx, Fz = Fx + Fmx, Fz + Fmz
         ClA = -Fz / q
         CdA = Fx / q
         L_r = My / wb          # rear-axle share of the aero load (+ = downwards)
@@ -131,6 +179,7 @@ def forces(case, cfg, car):
             "downforce_N": float(D[sl].mean()), "drag_N": float(Fx[sl].mean()),
             "ClA_front": float(((D - L_r) / q)[sl].mean()), "ClA_rear": float((L_r / q)[sl].mean()),
             "CdA_pressure": float((Fpx / q)[sl].mean()), "CdA_viscous": float((Fvx / q)[sl].mean()),
+            "CdA_momentum": float((Fmx / q)[sl].mean()),
             "ClA_pressure": float((-Fpz / q)[sl].mean()), "ClA_viscous": float((-Fvz / q)[sl].mean()),
             "avg_window": [float(it[n - nav]), float(it[-1])],
         }
@@ -674,6 +723,7 @@ def main(case, out, cfg):
     try:
         f, h, q = forces(case, cfg, car)
         meta["forces"], meta["history"], meta["q"] = f, h, q
+        meta["cooling"] = cooling_summary(case, cfg, car)
         log("forces total", f.get("total"))
     except Exception:
         meta["errors"].append(traceback.format_exc())
