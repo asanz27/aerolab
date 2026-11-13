@@ -23,6 +23,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 from matplotlib import colormaps  # noqa: E402
+from matplotlib.colors import TwoSlopeNorm  # noqa: E402
 from matplotlib.collections import PolyCollection  # noqa: E402
 from PIL import Image  # noqa: E402
 
@@ -114,9 +115,11 @@ def paint(ax, meshes, R, light=(0.35, 0.45, 0.82)):
     ax.axis("off")
 
 
-def face_colors(vals, F, cmap, lo, hi, alpha=1.0):
-    v = vals[F].mean(1)
-    c = colormaps[cmap](np.clip((v - lo) / (hi - lo), 0, 1))
+def face_colors(vals, F, cmap, lo, hi, alpha=1.0, center=None):
+    """center: diverging map pinned at that value (Cp = 0 -> white), each side spanning its half."""
+    v = np.clip(vals[F].mean(1), lo, hi)
+    t = TwoSlopeNorm(center, lo, hi)(v) if center is not None else (v - lo) / (hi - lo)
+    c = colormaps[cmap](np.clip(np.asarray(t, float), 0, 1))
     c[:, 3] = alpha
     return c
 
@@ -125,9 +128,14 @@ def grey(F, g=0.62, alpha=1.0):
     return np.tile([g, g, g + 0.03, alpha], (len(F), 1))
 
 
-def colorbar(fig, cmap, lo, hi, label, pos=(0.30, 0.06, 0.4, 0.022)):
+def colorbar(fig, cmap, lo, hi, label, pos=(0.30, 0.06, 0.4, 0.022), center=None):
     ax = fig.add_axes(pos)
-    ax.imshow(np.linspace(0, 1, 256)[None, :], aspect="auto", cmap=cmap, extent=(lo, hi, 0, 1))
+    if center is not None:
+        ax.imshow(np.linspace(lo, hi, 512)[None, :], aspect="auto", cmap=cmap, norm=TwoSlopeNorm(center, lo, hi),
+                  extent=(lo, hi, 0, 1))
+        ax.axvline(center, color="#0f172a", lw=1.2)
+    else:
+        ax.imshow(np.linspace(0, 1, 256)[None, :], aspect="auto", cmap=cmap, extent=(lo, hi, 0, 1))
     ax.set_yticks([])
     ax.set_xlabel(label, color=FG)
     for s in ax.spines.values():
@@ -162,12 +170,15 @@ def slice_img(D, meta, axis, pos, field):
 def plane_fig(D, meta, axis, pos, field, cmap, title, vectors=False, out=None, crop=None):
     it, v, (a0, a1, b0, b1) = slice_img(D, meta, axis, pos, field)
     lo, hi = meta["fields"][field]["range"]
+    # static pressure: blue only for Cp < 0, red only for Cp > 0 (diverging map pinned at zero)
+    center = 0.0 if field == "Cp" and lo < 0 < hi else None
+    nk = {"norm": TwoSlopeNorm(center, lo, hi)} if center is not None else {"vmin": lo, "vmax": hi}
     fig = plt.figure(figsize=(16, 9), dpi=100)
     ax = fig.add_axes((0.06, 0.16, 0.9, 0.76))
     if axis == "x":  # half plane y in [0, a1] -> mirror to the full width (seen from the front: +y on the right)
         full = np.concatenate([v[:, ::-1], v[:, 1:]], 1)
         ext = (-a1, a1, b0, b1)
-        ax.imshow(full, extent=ext, origin="upper", cmap=cmap, vmin=lo, vmax=hi, interpolation="bilinear")
+        ax.imshow(full, extent=ext, origin="upper", cmap=cmap, interpolation="bilinear", **nk)
         ax.set_xlabel("y [m]"); ax.set_ylabel("z [m]")
         if vectors:
             vp = os.path.join(D, "slices", f"x_{it['i']:03d}_vec.png")
@@ -186,14 +197,14 @@ def plane_fig(D, meta, axis, pos, field, cmap, title, vectors=False, out=None, c
         img = v if axis == "y" else np.concatenate([v[::-1], v[1:]], 0)
         if axis == "z":
             ext = (a0, a1, -b1, b1)
-        ax.imshow(img, extent=ext, origin="upper", cmap=cmap, vmin=lo, vmax=hi, interpolation="bilinear", aspect="equal")
+        ax.imshow(img, extent=ext, origin="upper", cmap=cmap, interpolation="bilinear", aspect="equal", **nk)
         ax.set_xlabel("x [m]  (0 = " + ("eje delantero / front axle" if True else "") + ")")
         ax.set_ylabel("z [m]" if axis == "y" else "y [m]")
     if crop:
         ax.set_xlim(crop[0], crop[1]); ax.set_ylim(crop[2], crop[3])
     ax.set_facecolor("#1b2436")
     ax.set_title(title, color=FG, fontsize=15, pad=10)
-    colorbar(fig, cmap, lo, hi, meta["fields"][field].get("label", field), pos=(0.32, 0.05, 0.36, 0.022))
+    colorbar(fig, cmap, lo, hi, meta["fields"][field].get("label", field), pos=(0.32, 0.05, 0.36, 0.022), center=center)
     save(fig, out)
 
 
@@ -229,15 +240,15 @@ def main():
         colorbar(fig, "turbo", -0.4, 1.0, "Cpt (1 = loss-free air)")
         save(fig, os.path.join(O, name))
     # ------------------------------------------------ surface Cp
-    for name, az, el, title in (("cp_under", 0, -89, "Surface Cp seen from below (blue = suction)"),
-                                ("cp_top", -35, 30, "Surface Cp · front 3/4 (blue = suction)")):
+    for name, az, el, title in (("cp_under", 0, -89, "Surface Cp seen from below (blue = suction, red = overpressure)"),
+                                ("cp_top", -35, 30, "Surface Cp · front 3/4 (blue = suction, red = overpressure)")):
         if not do(name):
             continue
         fig, ax = fig_canvas()
         Rm = view_matrix(az, el)
-        paint(ax, [(full["V"], full["F"], face_colors(full["Cp"], full["F"], "coolwarm", -2.5, 1.0), True)], Rm)
+        paint(ax, [(full["V"], full["F"], face_colors(full["Cp"], full["F"], "coolwarm", -2.5, 1.0, center=0.0), True)], Rm)
         ax.set_title(title, color=FG, fontsize=15)
-        colorbar(fig, "coolwarm", -2.5, 1.0, "Cp")
+        colorbar(fig, "coolwarm", -2.5, 1.0, "Cp", center=0.0)
         save(fig, os.path.join(O, name))
     # ------------------------------------------------ Cpt = 0 wake envelope
     if do("cpt0") and "cpt0" in isos:
