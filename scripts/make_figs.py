@@ -234,8 +234,15 @@ def main():
         ax.set_title("Cpt = 0 envelope: high-loss wakes (tyres, wings, diffuser)", color=FG, fontsize=15)
         save(fig, os.path.join(O, "cpt0"))
     # ------------------------------------------------ planes
+    # "behind the front wing": just downstream of the wing's trailing edge, but still ahead of the tyres
+    x_fw = xf - 0.5
+    parts = meta.get("surface", {}).get("parts", [])
+    if "part" in surf and "frontwing" in parts:
+        sel = surf["part"] == parts.index("frontwing")
+        if sel.shape[0] == surf["V"].shape[0] and sel.any():
+            x_fw = min(float(np.percentile(surf["V"][sel, 0], 95)) + 0.04, xf - R - 0.12)
     planes = [
-        ("x_fw", "x", xf - 0.45 * R / 0.33 * 0.33 if False else xf - 0.5, "Cpt", "turbo", True, "Cross-flow plane behind the front wing (Cpt + in-plane velocity)"),
+        ("x_fw", "x", x_fw, "Cpt", "turbo", True, "Cross-flow plane behind the front wing (Cpt + in-plane velocity)"),
         ("x_wheel", "x", xf + 1.15 * R, "Cpt", "turbo", True, "Cross-flow plane behind the front wheels (Cpt + in-plane velocity)"),
         ("x_mid", "x", 0.5 * (xf + xr), "wx", "coolwarm", True, "Mid-car plane: streamwise vorticity (red/blue = rotation sense)"),
         ("x_rear", "x", xr + 0.9 * R, "Cpt", "turbo", True, "Plane behind the rear axle: diffuser and rear-wing wake (Cpt)"),
