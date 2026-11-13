@@ -58,7 +58,8 @@ def fetch_case(case, dest):
 def summary(meta):
     t = meta.get("forces", {}).get("total", {})
     return {"ClA": t.get("ClA"), "CdA": t.get("CdA"), "balance_front": t.get("balance_front"),
-            "cells": meta.get("mesh", {}).get("cells")}
+            "cells": meta.get("mesh", {}).get("cells"), "h0": meta.get("config", {}).get("h0"),
+            "iters": (meta.get("history", {}).get("iter") or [None])[-1]}
 
 
 def main():
