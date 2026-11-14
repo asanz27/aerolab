@@ -42,6 +42,11 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
    de la sección en 4 cm, y el conducto sigue detrás), el conducto acaba en esa lámina, que pasa a ser la cara del
    radiador. Sin esta regla, el conducto del RB12 seguía por las rendijas del borde de la lámina y la cara del
    radiador quedaba a −96 kPa. El MP4/23 ya acaba en su panel y el MCL39 se estrecha poco a poco (32 %): no cambian.
+   Después se quitan del conducto los pasos de menos de 3 celdas (~3 cm), que son huecos entre dos pieles del modelo y
+   se rellenan (si son más del 15 % del conducto). La toma del RB12 tiene un forro interior trapezoidal: el hueco de
+   1–3 cm entre el forro y la carrocería era el 45 % del conducto y, como el caudal se impone en toda la cara, el aire
+   de esa parte tenía que pasar por la rendija (Cp −8,5 en la cara con malla gruesa). Ahora el conducto es el interior
+   del forro (cara de 222 cm² por lado). En el MP4/23 (11 %) y el MCL39 (6 %) no cambia nada.
 4. **Salida** (`radiator_out`): la carrocería trasera que mira hacia atrás, junto a la caja de cambios y por dentro
    de las ruedas traseras (donde estos coches sacan el aire caliente), con la mitad del área de la cara del radiador
    (aire saliendo a 0,5 U∞ con la relación 0,25). Se toman las caras que miran hacia atrás más cercanas a la cara más

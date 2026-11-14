@@ -357,16 +357,18 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
             ai, ao = tri_area(btri[lab == "radiator_in"]), tri_area(btri[lab == "radiator_out"])
             ci = (btri[lab == "radiator_in"].mean(1) * ai[:, None]).sum(0) / ai.sum()
             co = (btri[lab == "radiator_out"].mean(1) * ao[:, None]).sum(0) / ao.sum()
-            m = cav["ducts"]["sidepod"]["mouth"]
+            sd = cav["ducts"]["sidepod"]
+            m = sd["mouth"]
+            ain = sd.get("inlet_area", m["area"])
             cooling = {"model": "fixed-flow radiator: duct end face = flow-rate outlet, rear exit = flow-rate inlet",
                        "ratio": 0.25, "face_area": float(ai.sum()), "exit_area": float(ao.sum()),
-                       "inlet_area": m["area"], "duct_depth": cav["duct_depth"],
+                       "inlet_area": ain, "duct_depth": cav["duct_depth"],
                        "face_centroid": ci.round(4).tolist(), "exit_centroid": co.round(4).tolist(),
                        "exit_from": "rear-facing bodywork",
-                       **({"duct_closed_by_model_panel_at_x": round(cav["ducts"]["sidepod"]["panel_x"], 4)}
-                          if "panel_x" in cav["ducts"]["sidepod"] else {})}
+                       **({"duct_closed_by_model_panel_at_x": round(sd["panel_x"], 4)} if "panel_x" in sd else {}),
+                       **({"inlet_is_recess_inside_thin_gap": True} if sd.get("recess") else {})}
             log(f"cooling: radiator face {ai.sum()*1e4:.0f} cm2 at x {ci[0]:.2f}, exit {ao.sum()*1e4:.0f} cm2 at "
-                f"({co[0]:.2f}, {co[1]:.2f}, {co[2]:.2f}) ({cooling['exit_from']}), inlet opening {m['area']*1e4:.0f} cm2 (half car)")
+                f"({co[0]:.2f}, {co[1]:.2f}, {co[2]:.2f}) ({cooling['exit_from']}), inlet opening {ain*1e4:.0f} cm2 (half car)")
         else:
             for name in ("radiator_in", "radiator_out"):
                 lab[lab == name] = "inlets" if name == "radiator_in" else "body"

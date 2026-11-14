@@ -133,6 +133,7 @@ def _duct(cavity, outside, lab, m, lo, c, depth, margin, sgn=-1):
     x_face = float(lo[0] + (np.median(mc[:, 0]) + 0.5) * c - sgn * depth)
     i_face = int(np.floor((x_face - lo[0]) / c))
     r = max(1, int(round(margin / c)))
+    fp0 = fp.copy()
     fp = ndimage.binary_dilation(fp, ndimage.generate_binary_structure(2, 2), iterations=r)
     prism = np.zeros_like(cavity)
     if sgn < 0:
@@ -143,7 +144,19 @@ def _duct(cavity, outside, lab, m, lo, c, depth, margin, sgn=-1):
     labd, _ = ndimage.label(cand, S6)
     ids = np.unique(labd[mc[:, 0], mc[:, 1], mc[:, 2]])
     ids = ids[ids > 0]
-    return np.isin(labd, ids), x_face, fp
+    return np.isin(labd, ids), x_face, fp, fp0
+
+
+def drop_thin(mask):
+    """The duct without passages narrower than 3 cells (~3 cm): gaps between two skins of a visual model
+    are not ducts (RB12: a 1-3 cm ring between the inlet's inner liner and the outer bodywork, which choked
+    the imposed radiator flow at Cp -8). Keeps the largest remaining part."""
+    core = ndimage.binary_opening(mask, S26)
+    new = mask & ndimage.binary_dilation(core, S26)
+    lab, n = ndimage.label(new, S6)
+    if n > 1:
+        new = lab == 1 + int(np.argmax(ndimage.sum(new, lab, np.arange(1, n + 1))))
+    return new
 
 
 def blocking_panel(T, W, x_mouth, x_face, fp, lo, c, frac=0.6, win=0.04):
@@ -263,7 +276,7 @@ def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margi
     #  the rear-facing bodywork around the gearbox, chosen on the surface by build_glb.rear_exit)
     for kind, depth, sgn in (("sidepod", duct_depth, -1), ("airbox", duct_depth, -1)):
         if kind in pick:
-            mask, x_face, fp = _duct(cavity, outside, lab, pick[kind], lo, c, depth, margin, sgn)
+            mask, x_face, fp, fp0 = _duct(cavity, outside, lab, pick[kind], lo, c, depth, margin, sgn)
             ducts[kind] = {"mask": mask, "x_face": x_face, "footprint": fp, "mouth": pick[kind]}
             if kind == "sidepod" and T is not None and mask.any():
                 # a panel of the model across the duct that does not seal it: the duct ends at the panel
@@ -281,6 +294,29 @@ def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margi
                     if cut.any():
                         log(f"  sidepod duct closed by a panel of the model at x = {xb:.3f} (was open to x = {x_face:.2f})")
                         ducts[kind].update(mask=cut, x_face=xb, panel_x=xb)
+            if kind == "sidepod" and ducts[kind]["mask"].any():
+                d = ducts[kind]
+                m0 = d["mask"]
+                core = drop_thin(m0)
+                thin = 1 - core.sum() / m0.sum()
+                if thin > 0.5:
+                    # the cavity behind the opening is only a gap between two skins: the inlet is the recess that
+                    # the gap surrounds (open to the front, so the enclosure test calls it outside air), from the
+                    # opening back to the duct end; the gap itself is filled
+                    ix = np.where(m0.any(axis=(1, 2)))[0]
+                    i1 = int(np.floor((d["x_face"] - lo[0]) / c))
+                    fpf = ndimage.binary_fill_holes(fp0)
+                    rec = np.zeros_like(m0)
+                    rec[ix.min():i1] = freeC[ix.min():i1] & fpf[None, :, :]
+                    rec = drop_thin(rec)
+                    if rec.any():
+                        log(f"  sidepod duct: {100 * thin:.0f} % of it was a gap thinner than {3 * c * 100:.0f} cm between two skins;"
+                            f" the inlet is the {rec.sum() * c**3 * 2000:.0f} L recess inside it (gap filled)")
+                        ir = np.where(rec.any(axis=(1, 2)))[0]
+                        d.update(mask=rec, recess=True, inlet_area=float(rec[ir.min():ir.min() + 2].any(axis=0).sum() * c * c))
+                elif thin > 0.15:
+                    log(f"  sidepod duct: {100 * thin:.0f} % in gaps thinner than {3 * c * 100:.0f} cm, filled")
+                    d.update(mask=core)
     keep = np.zeros_like(cavity)
     for d in ducts.values():
         keep |= d["mask"]
