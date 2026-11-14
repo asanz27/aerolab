@@ -51,10 +51,13 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
 5. **Malla**: conducto, cara del radiador y salida a nivel 6 (5,3 mm con h0 = 0,34 m). El paso más estrecho del conducto
    del RB12 mide unos 2 cm; con celdas de nivel 5 (10,6 mm) la malla gruesa lo cortaba y la cara del radiador desaparecía.
 
-En el caso (`make_case.py`), `radiator_in` es una salida con velocidad uniforme normal a la cara
-(`surfaceNormalFixedValue`, `cooling_ratio` · U∞, 0,25 por defecto) y `radiator_out` una entrada con el mismo
-caudal (`flowRateInletVelocity`). (`flowRateOutletVelocity` reescala el perfil que llega a la cara y amplificaba
-las recirculaciones del conducto: divergía en la prueba.) `postpro.py` suma a las fuerzas del grupo `cooling` y al total la
+En el caso (`make_case.py`), `radiator_in` es una salida con velocidad uniforme normal a la cara y caudal
+Q = `cooling_ratio` · U∞ · A_cara (0,25 por defecto; `flowRateInletVelocity` con caudal negativo y sin extrapolar el
+perfil) y `radiator_out` una entrada con el mismo caudal (`flowRateInletVelocity`). (`flowRateOutletVelocity` reescala
+el perfil que llega a la cara y amplificaba las recirculaciones del conducto: divergía en la prueba.) Hasta el 14/11
+la cara llevaba una velocidad fija (`surfaceNormalFixedValue`): el caudal dependía entonces del área que snappy
+asignaba al parche, y en el MP4/4 (cara mallada un 30 % mayor que la del STL) salía un 30 % más de aire del que volvía
+a entrar. Los demás coches quedaban por debajo del 2 %. `postpro.py` suma a las fuerzas del grupo `cooling` y al total la
 cantidad de movimiento que sale por la toma y vuelve a entrar por detrás (Σ φ·U en ambas caras; la presión sobre
 ellas ya la cuentan los `forces`).
 
