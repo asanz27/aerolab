@@ -4,7 +4,8 @@ The hollow results (visual model with an empty interior, no cooling flow) were a
 before the filled re-runs overwrote the result branches. The hollow runs stopped earlier, so besides the final
 values the filled run is also averaged over the same iteration window as the hollow one (last 20 % of the
 hollow's iterations), from its force history. Optional sweep=<case>:<ratio> arguments add the sensitivity
-to the imposed radiator flow (index.json -> "cooling_sweep"). Light-weight (JSON + git), safe to run locally:
+to the imposed radiator flow (index.json -> "cooling_sweep"); the interior-face split of hollow_interior.py, if present
+in hollow.json, is copied to index.json -> "hollow" -> "interior". Light-weight (JSON + git), safe to run locally:
     python scripts/hollow_compare.py <web_data_dir> [sweep=<case>:<ratio> ...]
 """
 from __future__ import annotations
@@ -60,6 +61,10 @@ def main():
                               "hollow_CdA": hf[k].get("CdA"), "filled_CdA": fm["forces"][k].get("CdA")}
                           for k in hf if k in fm["forces"]}}
     index["hollow"] = {"rows": rows, "fine_parts": base, "note": hollow.get("note")}
+    # force on the hollow model's interior faces (hollow_interior.py), only when it was computed on this baseline
+    hi = hollow.get("interior")
+    if base and hi and round(hi.get("h0") or -1, 3) == round(base["h0"] or 0, 3):
+        index["hollow"]["interior"] = {k: hi.get(k) for k in ("ok", "ClA", "Cp", "area_m2", "exterior_change", "hollow_exterior", "check")}
     # optional sensitivity to the imposed cooling flow: sweep=<case>:<face velocity ratio> (same mesh)
     sweep = []
     for a in sys.argv[2:]:

@@ -15,6 +15,8 @@ McLaren MCL39 de 2025). No se ejecuta nada pesado en local: todo el cálculo cor
 | `scripts/postpro.py` | PyVista: superficie con Cp/Cf/y+, cortes, isosuperficies Q y Cpt=0 → datos web compactos |
 | `scripts/collect_web.py` | (local, ligero) baja los resultados `res-<caso>` a la carpeta de datos de la web y filtra las isosuperficies |
 | `scripts/make_figs.py` | (local, matplotlib) figuras estáticas de las estructuras de flujo para el análisis de cada coche |
+| `scripts/hollow_compare.py` | (local, ligero) compara las simulaciones con el modelo hueco (archivadas en `hollow.json`) con las de interior macizo, en la misma ventana de iteraciones; opcionalmente, la sensibilidad al caudal del radiador |
+| `scripts/hollow_interior.py` | (local, NumPy/SciPy) separa el cambio hueco → macizo en la fuerza sobre las caras interiores del modelo hueco y el cambio del flujo exterior, integrando la presión de las dos superficies publicadas |
 | `run.json` | Casos a lanzar; un commit con «[run]» en el mensaje dispara el workflow |
 
 Resultados: ramas huérfanas `res-<caso>` (datos web + logs); progreso en vivo: `st-<caso>`.
@@ -85,6 +87,12 @@ python scripts/collect_web.py ../web/data/fs_mft03 baseline=f03_m4 car=mft03 "me
 Q_WALL=0.012 python scripts/collect_web.py ../web/data/f1_mp44 baseline=p44_m4 car=mp44 "mesh=mp44_c:h0 = 0.40 m" "mesh=mp44:h0 = 0.30 m" "mesh=p44_m3:h0 = 0.25 m" "mesh=p44_m4:h0 = 0.22 m"
 python scripts/collect_web.py ../web/data/f1_mp423 baseline=mp423_f car=mp423 "mesh=mp423_c:h0 = 0.34 m" "mesh=mp423_m:h0 = 0.29 m" "mesh=mp423_f:h0 = 0.25 m"
 python scripts/make_figs.py ../web/data/f1_mp423/mp423_f ../web/data/f1_mp423/figs
+python scripts/collect_web.py ../web/data/f1_mcl39 baseline=mcl39_f car=mcl39 "mesh=mcl39_c:h0 = 0.34 m" "mesh=m39_m:h0 = 0.29 m" "mesh=mcl39_f:h0 = 0.25 m"
+python scripts/collect_web.py ../web/data/f1_rb12 baseline=r12b_f car=rb12 "mesh=r12b_c:h0 = 0.34 m" "mesh=r12b_m:h0 = 0.29 m" "mesh=r12b_f:h0 = 0.25 m"
+# después de cada collect (index.json se reescribe; hollow.json se conserva):
+python scripts/hollow_interior.py ../web/data/f1_mp423 <copia de la superficie hueca mp423_f/surface.fsb.gz>
+python scripts/hollow_compare.py ../web/data/f1_mp423
+python scripts/hollow_compare.py ../web/data/f1_mcl39 sweep=mcl39_m_q15:0.15 sweep=m39_m:0.25 sweep=mcl39_m_q35:0.35
 ```
 
 El mapa aerodinámico del MFT03 se calcula con la malla h0 = 0,21 m: en las mallas más gruesas (0,30 y 0,25 m) el flujo
