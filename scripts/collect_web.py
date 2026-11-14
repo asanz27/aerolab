@@ -20,11 +20,19 @@ def git(*a, cwd=REPO):
     return subprocess.run(["git", *a], cwd=cwd, check=True, capture_output=True, text=True).stdout
 
 
+def remote_meta(case):
+    ref = f"refs/collect/res-{case}"
+    git("fetch", "-q", "--no-write-fetch-head", "origin", f"+res-{case}:{ref}")
+    return json.loads(git("show", f"{ref}:web/meta.json"))
+
+
 def fetch_case(case, dest):
-    git("fetch", "-q", "origin", f"res-{case}")
+    # named ref, not FETCH_HEAD: other git processes (status watchers) may fetch at the same time
+    ref = f"refs/collect/res-{case}"
+    git("fetch", "-q", "--no-write-fetch-head", "origin", f"+res-{case}:{ref}")
     tmp = tempfile.mkdtemp()
     try:
-        git("--work-tree", tmp, "checkout", "FETCH_HEAD", "--", ".")
+        git("--work-tree", tmp, "checkout", ref, "--", ".")
         git("reset", "-q")  # leave the index of the cfd branch untouched
         src = os.path.join(tmp, "web")
         if not os.path.isdir(src):
@@ -79,16 +87,14 @@ def main():
         case, label = spec.split(":", 1)
         m = meta if case == base else json.load(open(os.path.join(out, case, "meta.json"))) if os.path.exists(os.path.join(out, case, "meta.json")) else None
         if m is None:
-            git("fetch", "-q", "origin", f"res-{case}")
-            m = json.loads(git("show", "FETCH_HEAD:web/meta.json"))
+            m = remote_meta(case)
         index["mesh_study"].append({"case": case, "label": label, **summary(m)})
     for spec in amap:
         case, label = spec.split(":", 1)
         if case == base:
             m = meta
         else:
-            git("fetch", "-q", "origin", f"res-{case}")
-            m = json.loads(git("show", "FETCH_HEAD:web/meta.json"))
+            m = remote_meta(case)
         v = m.get("config", {}).get("variant") or m.get("car", {}).get("variant") or {}
         index["aeromap"].append({"case": case, "label": label, "front_rh_mm": v.get("front_rh_mm", 0),
                                  "rear_rh_mm": v.get("rear_rh_mm", 0), **summary(m)})
