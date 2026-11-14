@@ -1,0 +1,49 @@
+[00:01:53] rb12: scale 1:0.992 (tyre 0.658 m, width 1.805 m), length axis z, front +
+[00:01:53] wheelbase 3.473 m, R front 0.327 rear 0.329, track/2 0.729/0.706, tyre inner face y 0.513
+[00:01:53] wheels_front: 56 parts, 34434 triangles
+[00:01:54]   grid [177, 235, 177] = 7 M voxels, h=4.0 mm, r=3
+[00:01:54]   3 M surface samples, 0.17 M surface voxels
+[00:01:55]   solid 1.53 M voxels
+[00:01:56] wheels_rear: 42 parts, 23682 triangles
+[00:01:56]   grid [178, 234, 178] = 7 M voxels, h=4.0 mm, r=3
+[00:01:56]   3 M surface samples, 0.14 M surface voxels
+[00:01:57]   solid 1.60 M voxels
+[00:01:58] body: 823 parts, 98252 triangles
+[00:01:58]   grid [1445, 242, 322] = 113 M voxels, h=3.5 mm, r=2
+[00:02:01]   70 M surface samples, 1.92 M surface voxels
+[00:02:19]   enclosure obstacles: bodywork 37607 of 98252 triangles
+[00:02:20]   enclosed pockets: 57, thick: 1; thin pockets left as air: 3 L
+[00:02:20]     opening    3: 3775.0 cm2 at x 1.07 y 0.12 z 0.35 facing [0.31, -0.95, 0.02]
+[00:02:20]     opening    2: 1890.8 cm2 at x 0.94 y 0.25 z 0.18 facing [-0.6, 0.75, 0.29]
+[00:02:20]     opening   15: 1375.9 cm2 at x 3.13 y 0.04 z 0.28 facing [0.58, -0.67, -0.46]
+[00:02:20]     opening   18:  732.1 cm2 at x 3.14 y 0.14 z 0.35 facing [0.62, 0.62, -0.48]  <- exit
+[00:02:20]     opening    9:  327.4 cm2 at x 1.17 y 0.41 z 0.45 facing [-0.99, -0.12, 0.05]  <- sidepod
+[00:02:20]     opening    8:  292.2 cm2 at x 1.10 y 0.64 z 0.36 facing [0.4, -0.89, 0.24]
+[00:02:20]     opening   14:  215.0 cm2 at x 2.93 y 0.11 z 0.09 facing [0.65, 0.18, -0.74]
+[00:02:20]     opening   13:  169.8 cm2 at x 1.75 y 0.03 z 0.77 facing [-0.57, 0.77, 0.29]
+[00:02:20]     opening    1:  143.3 cm2 at x 0.56 y 0.11 z 0.08 facing [-0.15, 0.05, 0.99]
+[00:02:20]     opening   12:  119.1 cm2 at x 1.58 y 0.03 z 0.55 facing [-0.93, 0.37, 0.0]
+[00:02:20]     opening   10:   55.1 cm2 at x 1.15 y 0.58 z 0.59 facing [-0.27, 0.96, -0.05]
+[00:02:20]     opening   11:   29.8 cm2 at x 1.17 y 0.36 z 0.59 facing [-0.57, 0.82, 0.0]
+[00:02:20]     opening   21:   22.1 cm2 at x 3.42 y 0.03 z 0.40 facing [0.87, 0.46, 0.17]
+[00:02:20]     opening   17:   12.1 cm2 at x 2.99 y 0.19 z 0.28 facing [0.62, 0.47, -0.62]
+[00:02:20]   interior 956 L (full car): filled 931 L, sidepod duct 25 L to x = 1.47; exit opening 732 cm2 at x 3.14
+[00:02:25]   fine air cells removed: 12.59 M
+[00:02:25]   solid 16.09 M voxels
+Traceback (most recent call last):
+  File "/home/runner/work/aerolab/aerolab/geometry/build_rb12.py", line 9, in <module>
+    cli("rb12")
+  File "/home/runner/work/aerolab/aerolab/geometry/build_glb.py", line 437, in cli
+    main(car, a.outdir, a.front_rh_mm, a.rear_rh_mm)
+  File "/home/runner/work/aerolab/aerolab/geometry/build_glb.py", line 329, in main
+    bsurf = finish(bsurf, 450000)
+            ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/work/aerolab/aerolab/geometry/build_glb.py", line 179, in finish
+    surf = surf.decimate(1.0 - target / surf.n_cells)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/_deprecate_positional_args.py", line 204, in inner_f
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/pyvista/core/filters/poly_data.py", line 1831, in decimate
+    raise NotAllTrianglesError(msg)
+pyvista.core.errors.NotAllTrianglesError: Input mesh for decimation must be all triangles.
