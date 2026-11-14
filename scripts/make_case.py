@@ -446,7 +446,9 @@ def fields(c):
         oe = ke ** 0.5 / (0.09 ** 0.25 * 0.01)
         c["cooling_Q_half"] = Q
         c["cooling_ratio"] = ratio
-        cU = f"""    radiator_in  {{ type flowRateOutletVelocity; volumetricFlowRate {Q:.6g}; value uniform ({ratio * U:.5g} 0 0); }}
+        # uniform outflow normal to the radiator face (flowRateOutletVelocity rescales the extrapolated profile,
+        # which amplifies any recirculation at the duct end and diverged in the smoke test)
+        cU = f"""    radiator_in  {{ type surfaceNormalFixedValue; refValue uniform {ratio * U:.6g}; value uniform ({ratio * U:.5g} 0 0); }}
     radiator_out {{ type flowRateInletVelocity; volumetricFlowRate {Q:.6g}; extrapolateProfile false; value uniform ({Ve:.5g} 0 0); }}
 """
         ck = f"""    radiator_in  {{ type zeroGradient; }}

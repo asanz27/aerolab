@@ -42,9 +42,10 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
    de las ruedas traseras (donde estos coches sacan el aire caliente), con la mitad del área de la cara del radiador.
    El mismo criterio para todos los coches: las aberturas traseras de los modelos visuales varían demasiado.
 
-En el caso (`make_case.py`), `radiator_in` es una salida con caudal impuesto (`flowRateOutletVelocity`) y
-`radiator_out` una entrada con el mismo caudal (`flowRateInletVelocity`): velocidad media en el radiador =
-`cooling_ratio` · U∞ (0,25 por defecto). `postpro.py` suma a las fuerzas del grupo `cooling` y al total la
+En el caso (`make_case.py`), `radiator_in` es una salida con velocidad uniforme normal a la cara
+(`surfaceNormalFixedValue`, `cooling_ratio` · U∞, 0,25 por defecto) y `radiator_out` una entrada con el mismo
+caudal (`flowRateInletVelocity`). (`flowRateOutletVelocity` reescala el perfil que llega a la cara y amplificaba
+las recirculaciones del conducto: divergía en la prueba.) `postpro.py` suma a las fuerzas del grupo `cooling` y al total la
 cantidad de movimiento que sale por la toma y vuelve a entrar por detrás (Σ φ·U en ambas caras; la presión sobre
 ellas ya la cuentan los `forces`).
 

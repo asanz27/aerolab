@@ -124,14 +124,20 @@ def cooling_summary(case, cfg, car):
     res = {k: cool[k] for k in ("face_area", "exit_area", "inlet_area", "duct_depth") if k in cool}
     for pt in ("radiator_in", "radiator_out"):
         for nm in ("Q", "p"):
-            _, A = read_dat(os.path.join(case, "postProcessing", f"cool_{nm}_{pt}", "*", "surfaceFieldValue.dat"))
+            pat = os.path.join(case, "postProcessing", f"cool_{nm}_{pt}", "*", "surfaceFieldValue.dat")
+            _, A = read_dat(pat)
             if A is not None:
                 nav = max(1, int(0.2 * len(A)))
                 res[f"{nm}_{pt}"] = float(A[-nav:, 1].mean())
+            for f in sorted(glob.glob(pat))[:1]:          # patch area on the mesh (header line "# Area : ...")
+                for line in open(f):
+                    if line.startswith("# Area"):
+                        res[f"mesh_area_{pt}"] = float(line.split(":")[1])
+                        break
     if "Q_radiator_in" in res:
         res["Q_full_m3s"] = 2 * res["Q_radiator_in"]
-        res["face_velocity_ratio"] = res["Q_radiator_in"] / (cool["face_area"] * U)
-        res["exit_velocity_ratio"] = res["Q_radiator_in"] / (cool["exit_area"] * U)
+        res["face_velocity_ratio"] = res["Q_radiator_in"] / (res.get("mesh_area_radiator_in", cool["face_area"]) * U)
+        res["exit_velocity_ratio"] = -res.get("Q_radiator_out", -res["Q_radiator_in"]) / (res.get("mesh_area_radiator_out", cool["exit_area"]) * U)
     for pt in ("radiator_in", "radiator_out"):
         if f"p_{pt}" in res:
             res[f"Cp_{pt}"] = res[f"p_{pt}"] / (0.5 * U * U)

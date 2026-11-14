@@ -174,11 +174,20 @@ def wrap(T, h, r, y0=0.0, W=None):
     return surf, info
 
 
+def only_triangles(surf):
+    """Drop the lines/vertices that clean() leaves where marching-cubes triangles degenerate."""
+    import pyvista as pv
+    if surf.is_all_triangles and surf.n_lines == 0 and surf.n_verts == 0:
+        return surf
+    return pv.PolyData(surf.points, surf.faces).triangulate().clean()
+
+
 def finish(surf, target):
+    surf = only_triangles(surf)
     if surf.n_cells > target:
         surf = surf.decimate(1.0 - target / surf.n_cells)
     surf = surf.smooth_taubin(n_iter=20, pass_band=0.1)
-    return surf.triangulate().clean()
+    return only_triangles(surf.triangulate().clean())
 
 
 def tris_of(surf):

@@ -138,7 +138,7 @@ def add_fill(T, part, h=0.0035, r=2):
     the duct walls / radiator face / exit are relabelled. Returns (T, part, cooling dict, info)."""
     from scipy import ndimage
     import pyvista as pv
-    from build_glb import sample_points, rear_exit
+    from build_glb import sample_points, rear_exit, only_triangles
     from cavity import fill as fill_cavities, label_cooling, tri_area
     wf = T[part == "wheels_front"].reshape(-1, 3)
     wf = wf[wf[:, 1] > 0]
@@ -173,10 +173,10 @@ def add_fill(T, part, h=0.0035, r=2):
     del F, ext, new
     grid = pv.ImageData(dimensions=shape, spacing=(h, h, h), origin=lo)
     grid.point_data["s"] = f.ravel(order="F")
-    surf = grid.contour([0.5], scalars="s").triangulate().clean()
+    surf = only_triangles(grid.contour([0.5], scalars="s").triangulate().clean())
     if surf.n_cells > 200000:
         surf = surf.decimate(1.0 - 200000 / surf.n_cells)
-    surf = surf.smooth_taubin(n_iter=20, pass_band=0.1).triangulate().clean()
+    surf = only_triangles(surf.smooth_taubin(n_iter=20, pass_band=0.1).triangulate().clean())
     Ff = surf.faces.reshape(-1, 4)[:, 1:]
     Tf = np.asarray(surf.points)[Ff]
     vol = np.einsum("ij,ij->i", Tf[:, 0], np.cross(Tf[:, 1], Tf[:, 2])).sum() / 6.0
