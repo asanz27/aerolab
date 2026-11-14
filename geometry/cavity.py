@@ -146,6 +146,36 @@ def _duct(cavity, outside, lab, m, lo, c, depth, margin, sgn=-1):
     return np.isin(labd, ids), x_face, fp
 
 
+def blocking_panel(T, W, x_mouth, x_face, fp, lo, c, frac=0.6, win=0.04):
+    """A sheet of the visual model across the sidepod duct. Some models close the inlet a few cm in with a single
+    panel that does not seal it, so the enclosure test finds the interior behind it and the duct ran through the
+    panel's edge gaps (RB12: radiator face at -96 kPa). Returns the area-weighted x of the first `win`-long
+    stretch of the duct where the transverse (|n_x| > 0.5) bodywork triangles inside the duct footprint add up
+    to `frac` of the footprint section, or None. A gradual narrowing (MCL39: 32 %) is not a panel."""
+    Tb = T[bodywork_tris(T, W)]
+    cen = Tb.mean(1)
+    n = np.cross(Tb[:, 1] - Tb[:, 0], Tb[:, 2] - Tb[:, 0])
+    a = 0.5 * np.linalg.norm(n, axis=1)
+    nx = n[:, 0] / (2 * a + 1e-30)
+    j = np.floor((np.abs(cen[:, 1]) - lo[1]) / c).astype(int)
+    k = np.floor((cen[:, 2] - lo[2]) / c).astype(int)
+    ok = (j >= 0) & (j < fp.shape[0]) & (k >= 0) & (k < fp.shape[1])
+    inf = np.zeros(len(Tb), bool)
+    inf[ok] = fp[j[ok], k[ok]]
+    sel = inf & (cen[:, 0] > x_mouth) & (cen[:, 0] < x_face) & (np.abs(nx) > 0.5)
+    if not sel.any():
+        return None
+    o = np.argsort(cen[sel, 0])
+    xs, ar = cen[sel, 0][o], a[sel][o]
+    ca = np.concatenate([[0.0], np.cumsum(ar)])
+    jend = np.searchsorted(xs, xs + win)
+    hit = np.where(ca[jend] - ca[:-1] >= frac * fp.sum() * c * c)[0]
+    if not len(hit):
+        return None
+    w = slice(hit[0], jend[hit[0]])
+    return float((xs[w] * ar[w]).sum() / ar[w].sum())
+
+
 def bodywork_tris(T, W):
     """Triangles that can enclose the interior: everything except the wings, beam wing, suspension and
     the diffuser zone (by position, like build_glb.classify). Cluttered exterior regions (between rear
@@ -235,6 +265,22 @@ def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margi
         if kind in pick:
             mask, x_face, fp = _duct(cavity, outside, lab, pick[kind], lo, c, depth, margin, sgn)
             ducts[kind] = {"mask": mask, "x_face": x_face, "footprint": fp, "mouth": pick[kind]}
+            if kind == "sidepod" and T is not None and mask.any():
+                # a panel of the model across the duct that does not seal it: the duct ends at the panel
+                xb = blocking_panel(T, W, pick[kind]["x"], x_face, fp, lo, c)
+                ix = np.where(mask.any(axis=(1, 2)))[0]
+                if xb is not None and lo[0] + (ix.max() + 1) * c > xb + 0.04:
+                    ib = int(np.floor((xb - lo[0]) / c))
+                    cut = mask.copy()
+                    cut[ib:] = False
+                    labc, nc = ndimage.label(cut, S6)
+                    if nc:
+                        ids = np.unique(labc[ix.min():ix.min() + 2])
+                        ids = ids[ids > 0]
+                        cut = np.isin(labc, ids)
+                    if cut.any():
+                        log(f"  sidepod duct closed by a panel of the model at x = {xb:.3f} (was open to x = {x_face:.2f})")
+                        ducts[kind].update(mask=cut, x_face=xb, panel_x=xb)
     keep = np.zeros_like(cavity)
     for d in ducts.values():
         keep |= d["mask"]

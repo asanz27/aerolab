@@ -362,7 +362,9 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
                        "ratio": 0.25, "face_area": float(ai.sum()), "exit_area": float(ao.sum()),
                        "inlet_area": m["area"], "duct_depth": cav["duct_depth"],
                        "face_centroid": ci.round(4).tolist(), "exit_centroid": co.round(4).tolist(),
-                       "exit_from": "rear-facing bodywork"}
+                       "exit_from": "rear-facing bodywork",
+                       **({"duct_closed_by_model_panel_at_x": round(cav["ducts"]["sidepod"]["panel_x"], 4)}
+                          if "panel_x" in cav["ducts"]["sidepod"] else {})}
             log(f"cooling: radiator face {ai.sum()*1e4:.0f} cm2 at x {ci[0]:.2f}, exit {ao.sum()*1e4:.0f} cm2 at "
                 f"({co[0]:.2f}, {co[1]:.2f}, {co[2]:.2f}) ({cooling['exit_from']}), inlet opening {m['area']*1e4:.0f} cm2 (half car)")
         else:

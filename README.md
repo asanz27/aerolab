@@ -38,6 +38,10 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
    piloto) y la salida trasera (mira hacia atrás, junto a la caja de cambios).
 3. La toma del pontón conserva un **conducto** recto (huella frontal de la boca) de hasta 30 cm, que acaba en la
    **cara del radiador** (`radiator_in`). El airbox es un conducto corto cerrado al fondo. Todo lo demás se rellena.
+   Si el modelo cierra la toma con una lámina que no sella (caras transversales dentro de la huella que suman ≥ 60 %
+   de la sección en 4 cm, y el conducto sigue detrás), el conducto acaba en esa lámina, que pasa a ser la cara del
+   radiador. Sin esta regla, el conducto del RB12 seguía por las rendijas del borde de la lámina y la cara del
+   radiador quedaba a −96 kPa. El MP4/23 ya acaba en su panel y el MCL39 se estrecha poco a poco (32 %): no cambian.
 4. **Salida** (`radiator_out`): la carrocería trasera que mira hacia atrás, junto a la caja de cambios y por dentro
    de las ruedas traseras (donde estos coches sacan el aire caliente), con la mitad del área de la cara del radiador
    (aire saliendo a 0,5 U∞ con la relación 0,25). Se toman las caras que miran hacia atrás más cercanas a la cara más
