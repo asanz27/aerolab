@@ -39,8 +39,13 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
 3. La toma del pontón conserva un **conducto** recto (huella frontal de la boca) de hasta 30 cm, que acaba en la
    **cara del radiador** (`radiator_in`). El airbox es un conducto corto cerrado al fondo. Todo lo demás se rellena.
 4. **Salida** (`radiator_out`): la carrocería trasera que mira hacia atrás, junto a la caja de cambios y por dentro
-   de las ruedas traseras (donde estos coches sacan el aire caliente), con la mitad del área de la cara del radiador.
-   El mismo criterio para todos los coches: las aberturas traseras de los modelos visuales varían demasiado.
+   de las ruedas traseras (donde estos coches sacan el aire caliente), con la mitad del área de la cara del radiador
+   (aire saliendo a 0,5 U∞ con la relación 0,25). Se toman las caras que miran hacia atrás más cercanas a la cara más
+   trasera del parche principal, aunque no estén conectadas: tras decimar, un solo parche conectado podía quedarse en
+   46 cm² en vez de 183 (chorro al doble de U∞). El mismo criterio para todos los coches: las aberturas traseras de los
+   modelos visuales varían demasiado.
+5. **Malla**: conducto, cara del radiador y salida a nivel 6 (5,3 mm con h0 = 0,34 m). El paso más estrecho del conducto
+   del RB12 mide unos 2 cm; con celdas de nivel 5 (10,6 mm) la malla gruesa lo cortaba y la cara del radiador desaparecía.
 
 En el caso (`make_case.py`), `radiator_in` es una salida con velocidad uniforme normal a la cara
 (`surfaceNormalFixedValue`, `cooling_ratio` · U∞, 0,25 por defecto) y `radiator_out` una entrada con el mismo

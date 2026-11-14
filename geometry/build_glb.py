@@ -236,7 +236,9 @@ def classify(tri, W, year):
 
 LEVELS = {"frontwing": (6, 6), "rearwing": (5, 6), "beamwing": (5, 6), "bargeboards": (5, 6), "floor": (5, 6),
           "diffuser": (5, 6), "body": (4, 5), "sidepods": (4, 5), "suspension": (5, 5),
-          "wheels_front": (4, 5), "wheels_rear": (4, 5), "inlets": (5, 5), "radiator_in": (5, 5), "radiator_out": (5, 5)}
+          "wheels_front": (4, 5), "wheels_rear": (4, 5), "inlets": (6, 6), "radiator_in": (6, 6), "radiator_out": (6, 6)}
+# Duct, radiator face and exit at level 6: the narrowest section of a sidepod duct can be ~2 cm (RB12), which the
+# level-5 cells of the coarse mesh (h0 = 0.34 m -> 10.6 mm) cut off from the outside (no radiator face left).
 
 
 def components(T):
@@ -294,7 +296,9 @@ def split_parts(car):
 
 def rear_exit(tri, lab, W, target, sym=False):
     """Fallback radiator exit when the model has no rear opening: the rear-most rear-facing bodywork around
-    the gearbox, inboard of the rear wheels, up to `target` m^2 (half car)."""
+    the gearbox, inboard of the rear wheels, up to `target` m^2 (half car). The faces closest to the rear-most
+    face of the largest rear-facing patch are taken from all the rear-facing candidates (a single connected
+    patch can be much smaller than the target after decimation, which made the exit jet 2x faster)."""
     from cavity import tri_area
     c = tri.mean(1)
     n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
@@ -306,10 +310,10 @@ def rear_exit(tri, lab, W, target, sym=False):
     if not cand.any():
         return cand
     from cavity import pick_area, largest_patch
-    cand = largest_patch(tri, cand)
-    if not cand.any():
-        return cand
-    i0 = np.where(cand)[0][np.argmax(c[cand, 0])]          # grow the patch from the rear-most face
+    big = largest_patch(tri, cand)
+    if not big.any():
+        return big
+    i0 = np.where(big)[0][np.argmax(c[big, 0])]            # grow the exit from its rear-most face
     sel = pick_area(tri, cand, c[i0], target)
     if sym:                                                # the mirror-image faces on the y < 0 side
         from scipy.spatial import cKDTree

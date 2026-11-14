@@ -13,7 +13,7 @@ on:
 
 permissions:
   contents: write
-  actions: read
+  actions: write   # cancel superseded runs listed in run.json ("cancel_runs")
 
 jobs:
   plan:
@@ -27,6 +27,14 @@ jobs:
       n3: ${{ steps.p.outputs.n3 }}
     steps:
       - uses: actions/checkout@v4
+      - name: Cancel superseded runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for id in $(python3 -c "import json; print(' '.join(str(i) for i in json.load(open('run.json')).get('cancel_runs', [])))"); do
+            echo "cancelling run $id"
+            gh run cancel "$id" -R "$GITHUB_REPOSITORY" || true
+          done
       - id: p
         run: |
           python3 - <<'EOF' >> "$GITHUB_OUTPUT"
