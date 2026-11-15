@@ -9,6 +9,22 @@ runs into the car and the result is a thin shell full of nearly still air. This 
     leave the box without hitting the skin. Enclosed pockets with no thick core (gaps between wing
     elements or floor fences, the cluttered rear end) are left as outside air: the interior of a car
     is a thick volume.
+    INSIDE THE SKIN ONLY: the ray test also takes deep EXTERIOR recesses (a tunnel under a raised
+    monocoque, channels between floor fences under the sidepods, undercuts), which are seen from the
+    outside in only a few directions. So a cell is kept only where the generalized winding number of the
+    car's outer skin is >= 0.5 (Jacobson et al. 2013: 1 inside a closed outward-oriented surface, 0
+    outside it however deep the recess, ~0.5 across an opening). The outer skin is the model without its
+    inner surfaces (components lying inside the volume the others enclose: cockpit tub, footwell, inner
+    liners, radiators), which visual models often orient towards the space they bound, and without the faces
+    that are hidden or seen only through a small opening (exposure from orthographic views in 128
+    directions, see outer_skin_oriented); each face seen from outside is oriented with that side out
+    (visibility vote, Takayama et al. 2014). The hidden faces matter where a volume is closed by separate
+    parts: an MCL39 sidepod shell open at the bottom sits on the closed floor slab, whose upper face would
+    otherwise make the sidepod interior look outside; the barely exposed ones in the hollows of a printable
+    model (MP4/4 sidepod and nose pockets, open at the back into the engine cover). The ducts are still
+    found on the whole enclosed volume: an inlet recess may be outside the skin by this test.
+    The skin test only removes volume from what the ray test encloses (it never fills more), apart from
+    air left sealed off and streaks 1-2 cells thick inside the fill.
  2. OPENINGS of the interior (cavity cells touching outside air) are classified:
       - sidepod inlet  (forward-facing, beside the chassis between the axles)
       - airbox         (forward-facing, above the driver)
@@ -205,6 +221,243 @@ def bodywork_tris(T, W):
     return ~(fw | rw | bw | diff | susp)
 
 
+# ------------------------------------------------------------------------------------------------ winding number
+_WN = None
+
+
+def _wn_kernel():
+    import numba
+    from numba import prange
+
+    @numba.njit(parallel=True, fastmath=True, cache=True)
+    def k(P, A, B, C):
+        out = np.zeros(P.shape[0])
+        for i in prange(P.shape[0]):
+            px, py, pz = P[i, 0], P[i, 1], P[i, 2]
+            s = 0.0
+            for t in range(A.shape[0]):
+                ax = A[t, 0] - px; ay = A[t, 1] - py; az = A[t, 2] - pz
+                bx = B[t, 0] - px; by = B[t, 1] - py; bz = B[t, 2] - pz
+                cx = C[t, 0] - px; cy = C[t, 1] - py; cz = C[t, 2] - pz
+                la = np.sqrt(ax * ax + ay * ay + az * az)
+                lb = np.sqrt(bx * bx + by * by + bz * bz)
+                lc = np.sqrt(cx * cx + cy * cy + cz * cz)
+                det = ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)
+                div = la * lb * lc + (ax * bx + ay * by + az * bz) * lc + (bx * cx + by * cy + bz * cz) * la \
+                    + (cx * ax + cy * ay + cz * az) * lb
+                s += np.arctan2(det, div)
+            out[i] = s / (2.0 * np.pi)
+        return out
+    return k
+
+
+def winding(P, T):
+    """Generalized winding number of triangle soup T at points P (sum of signed solid angles / 4 pi; van Oosterom &
+    Strackee's formula). numba when available, numpy otherwise (slow)."""
+    global _WN
+    P = np.ascontiguousarray(P, np.float64)
+    T = np.asarray(T, np.float64)
+    A, B, C = (np.ascontiguousarray(T[:, i]) for i in range(3))
+    if len(P) == 0 or len(T) == 0:
+        return np.zeros(len(P))
+    if _WN is None:
+        try:
+            _WN = _wn_kernel()
+        except ImportError:
+            _WN = False
+    if _WN:
+        return _WN(P, A, B, C)
+    out = np.zeros(len(P))
+    step = max(1, int(2e6 // len(T)))
+    for s in range(0, len(P), step):
+        p = P[s:s + step, None, :]
+        a, b, c = A[None] - p, B[None] - p, C[None] - p
+        la, lb, lc = (np.linalg.norm(v, axis=2) for v in (a, b, c))
+        det = np.einsum("ijk,ijk->ij", a, np.cross(b, c))
+        div = la * lb * lc + (a * b).sum(2) * lc + (b * c).sum(2) * la + (c * a).sum(2) * lb
+        out[s:s + step] = np.arctan2(det, div).sum(1) / (2 * np.pi)
+    return out
+
+
+def component_ids(T):
+    """Connected components of a triangle soup (welded shared vertices) -> id per triangle."""
+    V = T.reshape(-1, 3)
+    span = float((V.max(0) - V.min(0)).max()) or 1.0
+    q = np.round(V / (span * 1e-6)).astype(np.int64)
+    _, inv = np.unique(q, axis=0, return_inverse=True)
+    F = inv.ravel().reshape(-1, 3)
+    parent = np.arange(F.max() + 1)
+    for _ in range(1000):
+        m = np.minimum(np.minimum(parent[F[:, 0]], parent[F[:, 1]]), parent[F[:, 2]])
+        old = parent.copy()
+        for col in (F[:, 0], F[:, 1], F[:, 2]):
+            np.minimum.at(parent, col, m)
+        parent = parent[parent]
+        if np.array_equal(parent, old):
+            break
+    return np.unique(parent[F[:, 0]], return_inverse=True)[1].ravel()
+
+
+def outer_skin(T, frac_inner=0.7, nsamp=256, log=print):
+    """Triangles of T that bound the car from outside. A component (connected piece) whose surface lies, for at
+    least `frac_inner` of its area, inside the volume enclosed by the other components (winding number >= 0.5) is an
+    inner surface; a component reported inner only because of other inner ones is put back. Mirror-image pairs are
+    decided together. Returns (bool mask per triangle, stats)."""
+    cid = component_ids(T)
+    n = int(cid.max()) + 1
+    area = tri_area(T)
+    cen = T.mean(1)
+    order = np.argsort(cid, kind="stable")
+    cnt = np.bincount(cid, minlength=n)
+    st = np.concatenate([[0], np.cumsum(cnt)[:-1]])
+    samp = np.concatenate([order[st[i] + np.unique(np.linspace(0, cnt[i] - 1, min(cnt[i], nsamp)).round().astype(int))]
+                           for i in range(n)])
+    sc = cid[samp]                                   # sorted by component
+    P, wa = cen[samp], area[samp]
+    sst = np.searchsorted(sc, np.arange(n + 1))
+    Ts = T[order]
+    w = winding(P, T)
+    for i in range(n):                               # minus each component's own contribution
+        if sst[i + 1] > sst[i]:
+            w[sst[i]:sst[i + 1]] -= winding(P[sst[i]:sst[i + 1]], Ts[st[i]:st[i] + cnt[i]])
+    A = np.bincount(cid, area, n)
+    cc = np.stack([np.bincount(cid, area * cen[:, k], n) for k in range(3)], 1) / np.maximum(A, 1e-30)[:, None]
+    from scipy.spatial import cKDTree
+    d, j = cKDTree(cc).query(cc * np.array([1.0, -1.0, 1.0]))
+    pair = (d < 0.01) & (np.abs(A[j] - A) <= 0.02 * A)
+
+    def frac(wv, sel):
+        a = np.bincount(sc[sel], wa[sel] * (wv[sel] >= 0.5), n) / np.maximum(np.bincount(sc[sel], wa[sel], n), 1e-30)
+        return np.where(pair, 0.5 * (a + a[j]), a)
+    inner = frac(w, np.ones(len(P), bool)) >= frac_inner
+    for _ in range(4):
+        si = inner[sc]
+        if not si.any():
+            break
+        wi = np.zeros(len(P))
+        wi[si] = winding(P[si], T[~inner[cid]])
+        f2 = frac(wi, si)
+        back = inner & (f2 < frac_inner)
+        if not back.any():
+            break
+        inner &= ~back
+    m = ~inner[cid]
+    stats = {"components": n, "inner_components": int(inner.sum()), "inner_area_m2": round(float(area[~m].sum()), 3),
+             "outer_area_m2": round(float(area[m].sum()), 3)}
+    log(f"  outer skin: {n} components, {stats['inner_components']} inner ({stats['inner_area_m2']:.1f} m2) left out,"
+        f" {stats['outer_area_m2']:.1f} m2 kept")
+    return m, stats
+
+
+_RS = None
+
+
+def _raster_kernel():
+    import numba
+
+    @numba.njit(cache=True)
+    def k(U, V, D, nu, nv, px, u0, v0, zbuf, ibuf):
+        for t in range(U.shape[0]):
+            ua, ub, uc = (U[t, 0] - u0) / px, (U[t, 1] - u0) / px, (U[t, 2] - u0) / px
+            va, vb, vc = (V[t, 0] - v0) / px, (V[t, 1] - v0) / px, (V[t, 2] - v0) / px
+            den = (vb - vc) * (ua - uc) + (uc - ub) * (va - vc)
+            if abs(den) < 1e-12:
+                continue
+            i0 = max(0, int(np.floor(min(ua, ub, uc)))); i1 = min(nu - 1, int(np.ceil(max(ua, ub, uc))))
+            j0 = max(0, int(np.floor(min(va, vb, vc)))); j1 = min(nv - 1, int(np.ceil(max(va, vb, vc))))
+            for i in range(i0, i1 + 1):
+                x = i + 0.5
+                for j in range(j0, j1 + 1):
+                    y = j + 0.5
+                    l1 = ((vb - vc) * (x - uc) + (uc - ub) * (y - vc)) / den
+                    l2 = ((vc - va) * (x - uc) + (ua - uc) * (y - vc)) / den
+                    l3 = 1.0 - l1 - l2
+                    if l1 < 0 or l2 < 0 or l3 < 0:
+                        continue
+                    d = l1 * D[t, 0] + l2 * D[t, 1] + l3 * D[t, 2]
+                    if d < zbuf[i, j]:
+                        zbuf[i, j] = d
+                        ibuf[i, j] = t
+    return k
+
+
+def exterior_visibility(T, ndir=128, px=0.003):
+    """Projected area of each triangle seen from outside the car on its front side (normal towards the viewer) and on
+    its back side, summed over `ndir` orthographic z-buffer views (Fibonacci sphere of directions): the visibility
+    vote of Takayama et al. 2014 for facet orientation. Returns (front, back), or None without numba."""
+    global _RS
+    if _RS is None:
+        try:
+            _RS = _raster_kernel()
+        except ImportError:
+            _RS = False
+    if not _RS:
+        return None
+    N = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    front, back = np.zeros(len(T)), np.zeros(len(T))
+    kk = np.arange(ndir) + 0.5
+    phi, th = np.arccos(1 - 2 * kk / ndir), np.pi * (1 + 5 ** 0.5) * kk
+    for d in np.stack([np.cos(th) * np.sin(phi), np.sin(th) * np.sin(phi), np.cos(phi)], 1):
+        a = np.array([1.0, 0, 0]) if abs(d[0]) < 0.9 else np.array([0, 1.0, 0])
+        u = np.cross(d, a); u /= np.linalg.norm(u); v = np.cross(d, u)
+        U, V, D = (np.ascontiguousarray(T @ e) for e in (u, v, d))    # rays travel along +d: first hit = smallest D
+        u0, v0 = U.min() - px, V.min() - px
+        nu, nv = int((U.max() - u0) / px) + 2, int((V.max() - v0) / px) + 2
+        zbuf = np.full((nu, nv), np.inf)
+        ibuf = np.full((nu, nv), -1, np.int64)
+        _RS(U, V, D, nu, nv, px, u0, v0, zbuf, ibuf)
+        cnt = np.bincount(ibuf[ibuf >= 0], minlength=len(T)) * px * px
+        f = (N @ d) < 0
+        front += np.where(f, cnt, 0.0)
+        back += np.where(f, 0.0, cnt)
+    return front, back
+
+
+def outer_skin_oriented(T, expo_min=0.01, ndir=128, log=print):
+    """The outer skin for the inside test: the triangles seen from outside, each oriented with its outside-seen side
+    as the front, without the inner components (outer_skin). Hidden faces - e.g. the top of a floor panel under a
+    sidepod shell that sits on it - would make the space they close look outside. So would the inner faces of a
+    hollow of the model that are seen only through its opening (MP4/4, printable model: the pockets inside the
+    sidepods and the nose open at the back into the engine cover): a face counts only if its exposure, the projected
+    area seen from outside summed over the views / (area x views), is at least `expo_min` (~0.1-0.23 for a face in
+    the open; 0.0085-0.069 (p10-p90) for the walls of the tunnel under the MP4/23 monocoque, which stays outside;
+    < 0.002 for 90 % of the MP4/4 sidepod pocket walls and 0.004 (median) for its nose pocket, filled with 0.01 but
+    not with 0.004). Returns (triangles, stats)."""
+    m, stats = outer_skin(T, log=log)
+    vis = exterior_visibility(T, ndir=ndir)
+    To = np.array(T, np.float64)
+    if vis is not None:
+        fr, bk = vis
+        flip = bk > fr
+        To[flip] = To[flip][:, ::-1]
+        a = tri_area(T)
+        seen = (fr + bk) >= expo_min * a * ndir
+        m &= seen
+        stats.update(exposed_area_fraction=round(float(a[seen].sum() / a.sum()), 3), exposure_min=expo_min, flipped=int(flip.sum()))
+        log(f"  outer skin: {100 * a[seen].sum() / a.sum():.0f} % of the area exposed to the outside (>= {expo_min}),"
+            f" {flip.sum()} faces turned to face out; {m.sum()} triangles used")
+    return To[m], stats
+
+
+def cell_winding(cells, lo, c, T):
+    """Winding number at the centres of the given coarse cells: on 2x2x2 blocks, then cell by cell in the blocks
+    close to 0.5 or next to a block on the other side of it."""
+    blk = cells // 2
+    ub, inv = np.unique(blk, axis=0, return_inverse=True)
+    inv = inv.ravel()
+    wb = winding(lo + (2 * ub + 1.0) * c, T)
+    shp = ub.max(0) + 3
+    ins, out = np.zeros(shp, bool), np.zeros(shp, bool)
+    ins[tuple(ub.T)] = wb >= 0.5
+    out[tuple(ub.T)] = wb < 0.5
+    mixed = ndimage.binary_dilation(ins, S26) & ndimage.binary_dilation(out, S26)
+    ref = mixed[tuple(ub.T)] | (np.abs(wb - 0.5) < 0.3)
+    w = wb[inv]
+    r = ref[inv]
+    w[r] = winding(lo + (cells[r] + 0.5) * c, T)
+    return w, float(r.mean())
+
+
 def _raster(T, lo, c, shape):
     from build_glb import sample_points
     occ = np.zeros(shape, bool)
@@ -216,7 +469,7 @@ def _raster(T, lo, c, shape):
     return occ
 
 
-def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margin=0.03, log=print):
+def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margin=0.03, wn=True, log=print):
     """ext: fine air mask of the half model (bool, y index 0 at lo[1] < 0); h: fine voxel size; T: the
     body triangles (their bodywork subset is the obstacle set of the enclosure test).
     Returns (new air mask, info dict for region labelling)."""
@@ -257,6 +510,47 @@ def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margi
         outside = freeC & ~cavity
         del dist, dropped
     del labc
+    wn_info = None
+    insk = cavity                                     # the part of the enclosed volume that is filled
+    if T is not None and wn and cavity.any():
+        # inside the outer skin only (see the module docstring). The openings and ducts below still come from the
+        # whole enclosed volume: a shallow inlet recess (MP4/23: 7 cm in front of its panel) is outside the skin by
+        # this test, but it is where the radiator duct starts (and air either way).
+        import time
+        t0 = time.time()
+        Tskin, wn_info = outer_skin_oriented(T, log=log)
+        cells = np.argwhere(cavity)
+        w, fref = cell_winding(cells, lo, c, Tskin)
+        R = np.zeros_like(cavity)
+        R[tuple(cells[w < 0.5].T)] = True
+        # streaks 1-2 cells thick inside the filled volume are refilled; thin slots between two skins stay air
+        thin = R & ~(ndimage.binary_dilation(ndimage.binary_opening(R, S6), S6) & R)
+        refill = np.zeros_like(R)
+        if thin.any():
+            box = np.ones((3, 3, 3), np.uint8)
+            n_in = ndimage.convolve((cavity & ~R).astype(np.uint8), box, mode="constant")
+            n_sk = ndimage.convolve(solidC.astype(np.uint8), box, mode="constant")
+            refill = thin & (n_in > n_sk)
+            R &= ~refill
+        out_cells = np.argwhere(R)
+        del R
+        insk = cavity.copy()
+        insk[tuple(out_cells.T)] = False
+        # air left with no path to the outside air (sealed by the interior on every side) is interior too
+        air = freeC & ~insk
+        laba, _ = ndimage.label(air, S6)
+        ids = np.unique(laba[out_core & air])
+        sealed = air & ~np.isin(laba, ids[ids > 0])
+        insk |= sealed
+        del air, laba
+        wn_info.update(exterior_removed_L=round(float(len(out_cells) * c**3 * 2000), 1),
+                       streaks_refilled_L=round(float(refill.sum() * c**3 * 2000), 1),
+                       sealed_added_L=round(float(sealed.sum() * c**3 * 2000), 1), wn_threshold=0.5)
+        log(f"  inside-the-skin test: {wn_info['exterior_removed_L']:.0f} L of the enclosed volume is outside the car's"
+            f" skin (winding number < 0.5) and stays air; {wn_info['streaks_refilled_L']:.0f} L of thin streaks and"
+            f" {wn_info['sealed_added_L']:.0f} L of sealed air filled ({100 * fref:.0f} % of cells refined,"
+            f" {time.time() - t0:.0f} s)")
+        del sealed
     # 2. openings
     lab, mouths = _mouths(cavity, outside, lo, c)
     for m in mouths:
@@ -320,9 +614,10 @@ def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margi
     keep = np.zeros_like(cavity)
     for d in ducts.values():
         keep |= d["mask"]
-    fillC = cavity & ~keep
+    fillC = insk & ~keep
     exit_cells = None
-    log(f"  interior {cavity.sum() * c**3 * 2000:.0f} L (full car): filled {fillC.sum() * c**3 * 2000:.0f} L, "
+    log(f"  interior {cavity.sum() * c**3 * 2000:.0f} L enclosed, {insk.sum() * c**3 * 2000:.0f} L inside the skin (full car):"
+        f" filled {fillC.sum() * c**3 * 2000:.0f} L, "
         + ", ".join(f"{k2} duct {d['mask'].sum() * c**3 * 2000:.0f} L to x = {d['x_face']:.2f}" for k2, d in ducts.items())
         + (f"; exit opening {pick['exit']['area']*1e4:.0f} cm2 at x {pick['exit']['x']:.2f}" if "exit" in pick else "; no rear opening"))
     # 3. fine level: grow both decisions into the partly-solid cells next to the skin, never across it
@@ -340,8 +635,8 @@ def fill(ext, h, lo, W, T=None, k=3, K=3, core_cells=3.0, duct_depth=0.30, margi
     del labf
     log(f"  fine air cells removed: {(ext & ~new).sum() / 1e6:.2f} M")
     return new, {"lo": lo, "c": c, "K": K, "core_cells": core_cells, "duct_depth": duct_depth, "mouths": mouths,
-                 "ducts": ducts, "exit_cells": exit_cells, "exit": pick.get("exit"), "cavity": cavity, "filled": fillC,
-                 "escapes": cnt}
+                 "ducts": ducts, "exit_cells": exit_cells, "exit": pick.get("exit"), "cavity": insk, "enclosed": cavity, "filled": fillC,
+                 "escapes": cnt, "skin_test": wn_info}
 
 
 # ------------------------------------------------------------------------------------------------ labelling

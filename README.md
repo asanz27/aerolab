@@ -36,6 +36,29 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
    sus 26 direcciones como mucho 3 salen sin chocar con la carrocería (chasis, pontones, fondo, tapa motor; sin
    alerones, suspensión, bargeboards ni difusor, para que las zonas exteriores llenas de piezas sigan siendo aire).
    Las bolsas finas (sin núcleo de al menos 3 celdas) también siguen siendo aire.
+   **Solo hacia dentro de la piel**: el test de rayos también toma huecos exteriores profundos, que desde fuera se
+   ven en pocas direcciones (el paso bajo el monocasco elevado del MP4/23, canales entre deflectores bajo los
+   pontones, rebajes). Por eso una celda solo se rellena si el *número de giro generalizado* (generalized winding
+   number, Jacobson et al. 2013) de la piel exterior del coche es ≥ 0,5: vale 1 dentro de una superficie cerrada
+   orientada hacia fuera, 0 fuera de ella por profundo que sea el hueco y ~0,5 en el plano de una abertura. La piel
+   exterior es el modelo sin sus superficies interiores (piezas que quedan, en ≥ 70 % de su área, dentro del volumen
+   que encierran las demás: bañera del piloto, hueco de los pies, forros, radiadores), que los modelos visuales suelen
+   orientar hacia el espacio que rodean, y sin las caras que no se ven desde fuera (vistas ortográficas desde 128
+   direcciones); cada cara vista desde fuera se orienta con esa cara hacia fuera (voto de visibilidad, Takayama et al.
+   2014). Las caras ocultas importan cuando un volumen lo cierran piezas separadas: el pontón del MCL39 es una concha
+   abierta por abajo apoyada en la losa cerrada del fondo, cuya cara superior hacía que el interior del pontón
+   pareciera exterior. Por lo mismo, una cara solo cuenta si su *exposición* (área proyectada vista desde fuera,
+   sumada en las vistas, / (área × vistas)) es ≥ 0,01 (una cara al aire libre: ~0,1–0,23): en el MP4/4 (modelo
+   imprimible) los huecos de los pontones y del morro se abren por detrás a la tapa del motor, y sus caras interiores,
+   que solo se ven por esa abertura (exposición < 0,002 en el 90 % del área de los pontones; mediana 0,004 en el
+   morro), hacían que el hueco pareciera exterior. Las paredes del paso bajo el monocasco del MP4/23 tienen
+   0,0085–0,069 (p10–p90): casi todas siguen contando y el paso sigue siendo aire. Las estelas de
+   1–2 celdas dentro del relleno se rellenan; las rendijas finas entre dos pieles siguen siendo aire. El aire que
+   queda encerrado sin salida al exterior se rellena. Comprobado con los cortes del
+   modelo hueco: lo que sigue relleno tenía el aire casi parado (≤ 1,5 % de puntos a más de 0,2 U∞) y lo que pasa a
+   ser aire incluye el paso del MP4/23 (92 % a más de 0,2 U∞).
+   El alisado de la superficie (gaussiana de 1,5 vóxeles) se aplica solo al relleno: aplicado a piel + relleno cerraba
+   rendijas exteriores estrechas entre paneles de la piel.
 2. **Aberturas** del interior: la toma del pontón (mira hacia delante, al lado del chasis), el airbox (sobre el
    piloto) y la salida trasera (mira hacia atrás, junto a la caja de cambios).
 3. La toma del pontón conserva un **conducto** recto (huella frontal de la boca) de hasta 30 cm, que acaba en la

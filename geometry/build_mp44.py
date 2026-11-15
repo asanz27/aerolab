@@ -214,7 +214,7 @@ def add_fill(T, part, h=0.0035, r=2):
         part2[part2 == "radiator_in"] = "inlets"
         part2[part2 == "radiator_out"] = "body"
     wrapinfo = {"interior_filled": True, "fill_voxel_m": h, "enclosure_max_escapes": info["K"], "enclosure_cell_m": round(info["c"], 4),
-                "core_cells": info["core_cells"],
+                "core_cells": info["core_cells"], "inside_skin_test": info.get("skin_test"),
                 "openings_used": [{k2: mm[k2] for k2 in ("kind", "area", "x", "y", "z", "n")} for mm in info["mouths"] if mm.get("kind")]}
     return T2, part2, cooling, wrapinfo
 

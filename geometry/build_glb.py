@@ -163,8 +163,10 @@ def wrap(T, h, r, y0=0.0, W=None):
     if skin is None:
         f = ndimage.gaussian_filter(solid.astype(np.float32), 0.6)
     else:
-        # skin keeps its sharpness; the filled interior (caps, duct ends) is smoothed over ~5 mm
-        f = np.maximum(ndimage.gaussian_filter(skin.astype(np.float32), 0.6), ndimage.gaussian_filter(solid.astype(np.float32), 1.5))
+        # skin keeps its sharpness; only the filled interior (caps, duct ends) is smoothed over ~5 mm. (Smoothing
+        # skin + fill together at 1.5 voxels closed narrow outside gaps between skin panels: filling outwards.)
+        f = np.maximum(ndimage.gaussian_filter(skin.astype(np.float32), 0.6),
+                       ndimage.gaussian_filter((solid & ~skin).astype(np.float32), 1.5))
         del skin
     del solid
     grid = pv.ImageData(dimensions=shape, spacing=(h, h, h), origin=lo)
@@ -410,6 +412,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         "wrap": {"body_voxel_m": h_body, "body_close_voxels": r_body, "wheel_voxel_m": 0.004, "wheel_close_voxels": 3,
                  "interior_filled": cav is not None,
                  **({"enclosure_max_escapes": cav["K"], "enclosure_cell_m": round(cav["c"], 4), "core_cells": cav["core_cells"],
+                     "inside_skin_test": cav.get("skin_test"),
                      "openings_used": [{k2: m[k2] for k2 in ("kind", "area", "x", "y", "z", "n")} for m in cav["mouths"] if m.get("kind")]} if cav else {})},
         **({"cooling": cooling, "patch_types": {"radiator_in": "patch", "radiator_out": "patch"}} if cooling else {}),
         "levels": {k: list(LEVELS.get(k, (4, 5))) for k in names},
