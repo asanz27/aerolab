@@ -84,6 +84,7 @@ status() {
   {
     echo "case: $NAME   stage: $1   job: $STAGE/$NSTAGES   elapsed: $(( ($(date +%s) - JOB_START) / 60 )) min"
     echo "memory used now (MB): $(free -m | awk 'NR==2{print $3}')   max so far: $(sort -n "$CASE/mem.log" 2>/dev/null | tail -1)"
+    free -m | awk 'NR==3 && $2>0{print "swap used (MB): "$3" of "$2}'
     df -h / /mnt 2>/dev/null | tail -2
   } > "$S/status.txt"
   cp "$CASE"/timings.json "$S/" 2>/dev/null
@@ -133,6 +134,18 @@ unpack_state() {
   dec < "$STATE_DIR/state.bin" | zstd -d -q | tar -xf - || return 1
   rm -f "$STATE_DIR/state.bin"
 }
+
+# optional extra swap (cfg.swap_gb): the finest meshes peak close to the runner's 16 GB in
+# snappyHexMesh (hollow MCL39 at h0 0.25: 15.6 GB); without swap the runner stops answering and dies
+SWAP_GB=$(jget swap_gb 0)
+if [ "${SWAP_GB%.*}" -gt 0 ] 2>/dev/null; then
+  if sudo fallocate -l "${SWAP_GB%.*}G" /cfd_swap && sudo chmod 600 /cfd_swap && sudo mkswap /cfd_swap > /dev/null && sudo swapon /cfd_swap; then
+    echo "extra swap: ${SWAP_GB%.*} GB"
+  else
+    echo "could not add the extra swap"
+  fi
+  free -m
+fi
 
 # memory sampler
 ( while true; do free -m | awk 'NR==2{print $3}' >> "$CASE/mem.log"; sleep 15; done ) > /dev/null 2>&1 &
