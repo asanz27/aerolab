@@ -296,12 +296,20 @@ def split_parts(car):
     return parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr)
 
 
-def rear_exit(tri, lab, W, target, sym=False):
-    """Fallback radiator exit when the model has no rear opening: the rear-most rear-facing bodywork around
-    the gearbox, inboard of the rear wheels, up to `target` m^2 (half car). The faces closest to the rear-most
-    face of the largest rear-facing patch are taken from all the rear-facing candidates (a single connected
-    patch can be much smaller than the target after decimation, which made the exit jet 2x faster)."""
-    from cavity import tri_area
+EXIT_VIEW_MIN = 0.10
+
+
+def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN):
+    """Radiator exit: the rear-most rear-facing bodywork around the gearbox, inboard of the rear wheels, up to
+    `target` m^2 (half car). The faces closest to the rear-most face of the largest rear-facing patch are taken
+    from all the rear-facing candidates (a single connected patch can be much smaller than the target after
+    decimation, which made the exit jet 2x faster). Only faces open to the outside behind the car are candidates:
+    rear view fraction (cavity.rear_view_fraction: share of the face seen from within 45 deg of straight behind)
+    >= `view_min`. A face in a closed pocket of the bodywork gives the exit jet nowhere to go: on the RB12 coarse
+    mesh the 10 % of the exit area in pockets ahead of the gearbox-cover recess (view fraction 0, p90 0.07) put
+    the exit face at Cp 1.23 on average; the faces in the recess, which is open towards the back, have 0.1-0.25.
+    If too few faces pass, the threshold is halved (then dropped)."""
+    from cavity import tri_area, rear_view_fraction
     c = tri.mean(1)
     n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
     n /= np.linalg.norm(n, axis=1)[:, None] + 1e-30
@@ -311,6 +319,21 @@ def rear_exit(tri, lab, W, target, sym=False):
         cand &= c[:, 1] > 0
     if not cand.any():
         return cand
+    if view_min > 0:
+        # occluders: the rear of the car (a face seen from behind can only be hidden by what is behind it)
+        near = c[:, 0] > W["xr"] - 1.3
+        fr = rear_view_fraction(tri[near])
+        if fr is not None:
+            a = tri_area(tri)
+            view = np.zeros(len(tri))
+            view[near] = fr
+            for vm in (view_min, 0.5 * view_min):
+                ok = cand & (view >= vm)
+                log(f"  rear exit: {a[ok].sum() * 1e4:.0f} of {a[cand].sum() * 1e4:.0f} cm2 of rear-facing candidates seen from "
+                    f"behind (view fraction >= {vm:.2f}); target {target * 1e4:.0f} cm2")
+                if a[ok].sum() >= target:
+                    cand = ok
+                    break
     from cavity import pick_area, largest_patch
     big = largest_patch(tri, cand)
     if not big.any():

@@ -413,6 +413,40 @@ def exterior_visibility(T, ndir=128, px=0.003):
     return front, back
 
 
+def rear_view_fraction(T, ang=45.0, ndir=2048, px=0.003):
+    """For each triangle, the share of its front side (normal towards the viewer) seen from behind the car: seen
+    projected area / unobstructed projected area, summed over the orthographic views within `ang` deg of straight
+    behind (+x; directions of a Fibonacci sphere of `ndir`). 1 for a rear-facing face in the open, 0 for one hidden
+    in a closed pocket. Returns None without numba."""
+    global _RS
+    if _RS is None:
+        try:
+            _RS = _raster_kernel()
+        except ImportError:
+            _RS = False
+    if not _RS:
+        return None
+    N = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    seen, full = np.zeros(len(T)), np.zeros(len(T))
+    kk = np.arange(ndir) + 0.5
+    phi, th = np.arccos(1 - 2 * kk / ndir), np.pi * (1 + 5 ** 0.5) * kk
+    D = np.stack([np.cos(th) * np.sin(phi), np.sin(th) * np.sin(phi), np.cos(phi)], 1)
+    for d in D[D[:, 0] < -np.cos(np.radians(ang))]:        # rays travelling forwards: the viewer is behind the car
+        a = np.array([1.0, 0, 0]) if abs(d[0]) < 0.9 else np.array([0, 1.0, 0])
+        u = np.cross(d, a); u /= np.linalg.norm(u); v = np.cross(d, u)
+        U, V, Dd = (np.ascontiguousarray(T @ e) for e in (u, v, d))
+        u0, v0 = U.min() - px, V.min() - px
+        nu, nv = int((U.max() - u0) / px) + 2, int((V.max() - v0) / px) + 2
+        zbuf = np.full((nu, nv), np.inf)
+        ibuf = np.full((nu, nv), -1, np.int64)
+        _RS(U, V, Dd, nu, nv, px, u0, v0, zbuf, ibuf)
+        cnt = np.bincount(ibuf[ibuf >= 0], minlength=len(T)) * px * px
+        nd = N @ d
+        seen += np.where(nd < 0, cnt, 0.0)
+        full += np.maximum(0.0, -nd / 2)
+    return np.minimum(seen / (full + 1e-30), 1.0)
+
+
 def outer_skin_oriented(T, expo_min=0.01, ndir=128, log=print):
     """The outer skin for the inside test: the triangles seen from outside, each oriented with its outside-seen side
     as the front, without the inner components (outer_skin). Hidden faces - e.g. the top of a floor panel under a

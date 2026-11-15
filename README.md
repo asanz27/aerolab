@@ -77,7 +77,12 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
    (aire saliendo a 0,5 U∞ con la relación 0,25). Se toman las caras que miran hacia atrás más cercanas a la cara más
    trasera del parche principal, aunque no estén conectadas: tras decimar, un solo parche conectado podía quedarse en
    46 cm² en vez de 183 (chorro al doble de U∞). El mismo criterio para todos los coches: las aberturas traseras de los
-   modelos visuales varían demasiado.
+   modelos visuales varían demasiado. Solo cuentan las caras que se ven desde detrás del coche: fracción vista
+   (área proyectada vista / área proyectada sin obstáculos, sumada en las vistas a menos de 45° de la dirección +x)
+   ≥ 0,10 (0,05 si no llega al área). En la malla gruesa del macizo nuevo, el 10 % de la salida del RB12 caía en
+   bolsillos cerrados por delante del hueco de la tapa trasera (fracción vista 0, p90 0,07): el chorro no tenía
+   por dónde salir, esas caras estaban a Cp ≥ 1 en la superficie y la media de la cara de salida a Cp 1,23 (el resto
+   de la cara, a −0,26 de mediana). Las caras del hueco, abierto hacia atrás, tienen 0,1–0,25.
 5. **Malla**: conducto, cara del radiador y salida a nivel 6 (5,3 mm con h0 = 0,34 m). El paso más estrecho del conducto
    del RB12 mide unos 2 cm; con celdas de nivel 5 (10,6 mm) la malla gruesa lo cortaba y la cara del radiador desaparecía.
 
