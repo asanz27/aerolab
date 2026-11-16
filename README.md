@@ -112,15 +112,16 @@ de los resultados (la que muestra la web).
 
 ```bash
 python scripts/collect_web.py ../web/data/fs_mft03 baseline=f03_m4 car=mft03 "mesh=f03_m1:h0 = 0.30 m" "mesh=f03_m2:h0 = 0.25 m" "mesh=f03_m3:h0 = 0.21 m" "mesh=f03_m4:h0 = 0.18 m" map=f03_m3:ref map=f03_rhl21:heave_low map=f03_rhh21:heave_high map=f03_dive21:dive map=f03_rake21:rake
-Q_WALL=0.012 python scripts/collect_web.py ../web/data/f1_mp44 baseline=p44_m4 car=mp44 "mesh=mp44_c:h0 = 0.40 m" "mesh=mp44:h0 = 0.30 m" "mesh=p44_m3:h0 = 0.25 m" "mesh=p44_m4:h0 = 0.22 m"
-python scripts/collect_web.py ../web/data/f1_mp423 baseline=mp423_f car=mp423 "mesh=mp423_c:h0 = 0.34 m" "mesh=mp423_m:h0 = 0.29 m" "mesh=mp423_f:h0 = 0.25 m"
-python scripts/make_figs.py ../web/data/f1_mp423/mp423_f ../web/data/f1_mp423/figs
-python scripts/collect_web.py ../web/data/f1_mcl39 baseline=mcl39_f car=mcl39 "mesh=mcl39_c:h0 = 0.34 m" "mesh=m39_m:h0 = 0.29 m" "mesh=mcl39_f:h0 = 0.25 m"
-python scripts/collect_web.py ../web/data/f1_rb12 baseline=r12b_f car=rb12 "mesh=r12b_c:h0 = 0.34 m" "mesh=r12b_m:h0 = 0.29 m" "mesh=r12b_f:h0 = 0.25 m"
+Q_WALL=0.012 python scripts/collect_web.py ../web/data/f1_mp44 baseline=mp44_f2 car=mp44 "mesh=mp44_c2:h0 = 0.40 m" "mesh=mp44_m2:h0 = 0.30 m" "mesh=mp44_m3_2:h0 = 0.25 m" "mesh=mp44_f2:h0 = 0.22 m"
+python scripts/collect_web.py ../web/data/f1_mp423 baseline=mp423_f2 car=mp423 "mesh=mp423_c2:h0 = 0.34 m" "mesh=mp423_m2:h0 = 0.29 m" "mesh=mp423_f2:h0 = 0.25 m"
+python scripts/make_figs.py ../web/data/f1_mp423/mp423_f2 ../web/data/f1_mp423/figs
+python scripts/collect_web.py ../web/data/f1_mcl39 baseline=mcl39_f2 car=mcl39 "mesh=mcl39_c2:h0 = 0.34 m" "mesh=mcl39_m2:h0 = 0.29 m" "mesh=mcl39_f2:h0 = 0.25 m"
+python scripts/collect_web.py ../web/data/f1_rb12 baseline=rb12_f2 car=rb12 "mesh=rb12_c2:h0 = 0.34 m" "mesh=rb12_m2:h0 = 0.29 m" "mesh=rb12_f2:h0 = 0.25 m"
 # después de cada collect (index.json se reescribe; hollow.json se conserva):
 python scripts/hollow_interior.py ../web/data/f1_mp423 <copia de la superficie hueca mp423_f/surface.fsb.gz>
 python scripts/hollow_compare.py ../web/data/f1_mp423
-python scripts/hollow_compare.py ../web/data/f1_mcl39 sweep=mcl39_m_q15:0.15 sweep=m39_m:0.25 sweep=mcl39_m_q35:0.35
+# el barrido de caudal del MCL39 (mcl39_m_q15, m39_m, mcl39_m_q35) se hizo con el primer relleno, que también
+# tapaba huecos exteriores: no se mezcla con el relleno actual (sweep=<caso>:<relación> cuando se repita)
 ```
 
 El mapa aerodinámico del MFT03 se calcula con la malla h0 = 0,21 m: en las mallas más gruesas (0,30 y 0,25 m) el flujo
