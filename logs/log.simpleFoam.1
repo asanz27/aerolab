@@ -1,0 +1,75 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : simpleFoam -parallel
+Date   : Nov 16 2026
+Time   : 21:42:47
+Host   : ip-10-0-132-204
+PID    : 5302
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_mp44_c3
+nProcs : 4
+Hosts  :
+(
+    (ip-10-0-132-204 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: no convergence criteria found. Calculations will run for 100 steps.
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type RAS
+Selecting RAS turbulence model kOmegaSST
+Selecting patchDistMethod meshWave
+[3] 
+[3] 
+[3] --> FOAM FATAL IO ERROR: (openfoam-2606)
+[3] Lookup:blending enumeration binomial2 is not in enumeration: (stepwise max binomial exponential tanh)
+[3] 
+[3] 
+[3] file: processor3/0/omega/boundaryField/(ground|frontwing|rearwing|floor|diffuser|body|sidepods|wheels_front|wheels_rear|suspension|inlets) at line 18.
+[3] 
+[3]     From EnumType Foam::Enum<EnumType>::getOrDefault(const Foam::word&, const Foam::dictionary&, EnumType, bool) const [with EnumType = Foam::wallFunctionBlenders::blenderType]
+[3]     in file ./src/OpenFOAM/lnInclude/Enum.C at line 212.
+[3] 
+FOAM parallel run exiting
+[3] 
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 3 in communicator MPI_COMM_WORLD
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
