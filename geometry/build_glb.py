@@ -139,14 +139,18 @@ def wrap(T, h, r, y0=0.0, W=None):
         occ[idx[:, 0], idx[:, 1], idx[:, 2]] = True
         npts += len(P)
     log(f"  {npts/1e6:.0f} M surface samples, {occ.sum()/1e6:.2f} M surface voxels")
-    far = ndimage.distance_transform_edt(~occ) > r
+    # "farther than r voxels from the skin" and "within r voxels of the outside air": dilations by a ball of radius r
+    # (the same voxel sets as thresholding a Euclidean distance transform, without its ~20 bytes per voxel)
+    g = np.indices((2 * r + 1,) * 3) - r
+    ball = (g ** 2).sum(0) <= r * r
+    far = ~ndimage.binary_dilation(occ, ball)
     lab, _ = ndimage.label(far)
     del far
     # outside-air seeds: every box face except y-min (the symmetry plane cuts through the car)
     border = np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))
     ext0 = np.isin(lab, border[border > 0])
     del lab
-    ext = (ndimage.distance_transform_edt(~ext0) <= r) & ~occ
+    ext = ndimage.binary_dilation(ext0, ball) & ~occ
     del ext0, occ
     info, skin = None, None
     if W is not None:
@@ -195,6 +199,21 @@ def finish(surf, target):
 def tris_of(surf):
     F = surf.faces.reshape(-1, 4)[:, 1:]
     return np.asarray(surf.points)[F]
+
+
+def outward(tri):
+    """Closed triangle surface with outward normals (positive signed volume). snappyHexMesh's gap refinement
+    (gapMode outside) tells the air side of a gap from the surface normals."""
+    vol = np.einsum("ij,ij->i", tri[:, 0], np.cross(tri[:, 1], tri[:, 2])).sum() / 6.0
+    return tri if vol >= 0 else tri[:, ::-1].copy()
+
+
+def gap_box(tri, pad=0.01):
+    """Box (half car, y >= 0) around a wing's triangles, for the slot-gap refinement region."""
+    V = tri.reshape(-1, 3)
+    lo, hi = V.min(0) - pad, V.max(0) + pad
+    lo[1] = max(lo[1], 0.0)
+    return [lo.round(4).tolist(), hi.round(4).tolist()]
 
 
 def write_stl_bin(path, tri, name):
@@ -296,6 +315,66 @@ def split_parts(car):
     return parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr)
 
 
+# Wings are wrapped on their own, finer grid: the body grid (3.5 mm, closing radius 2 voxels) closes every gap narrower
+# than ~14-17 mm, i.e. all the slots between wing elements (5-15 mm in these models: section cuts of the raw meshes).
+# At 1.25 mm and 1 voxel only gaps below ~3.5 mm close (the joints between touching pieces), the slots stay open.
+WING_H, WING_R = 0.00125, 1
+WING_TARGET = 300000
+
+
+def wing_box(W):
+    """Boxes (CFD axes, half car) holding the front wing, the rear + beam wing and, before 2022, the bargeboards and
+    turning vanes ahead of the sidepods (thin vanes 1-3 cm apart: on the body grid some came out perforated or
+    fused with their neighbours): (lo, hi)."""
+    xf, xr, R = W["xf"], W["xr"], W["R"]
+    out = {"fw": ((-9.0, -9.0, -9.0), (xf - 0.75 * R, 9.0, 0.50)),
+           "rw": ((xr - 0.10, -0.70, 0.30), (9.0, 0.70, 9.0))}
+    if W.get("year", 2025) < 2022:
+        out["bg"] = ((xf + 0.20, 0.12, -0.05), (xf + 1.35, 0.85, 0.55))
+    return out
+
+
+def split_wings(body, W):
+    """Move the body pieces lying (>= 80 % of their area) in a wing box to that wing's list."""
+    from cavity import tri_area
+    boxes = wing_box(W)
+    wings = {k: [] for k in boxes}
+    rest = []
+    for piece in body:
+        a = tri_area(piece)
+        c = piece.mean(1)
+        dest = None
+        for k, (lo, hi) in boxes.items():
+            inside = np.all((c >= lo) & (c <= hi), axis=1)
+            if a.sum() > 0 and a[inside].sum() >= 0.8 * a.sum():
+                dest = k
+                break
+        (wings[dest] if dest else rest).append(piece)
+    return wings, rest
+
+
+def wrap_wings(wings, W, year):
+    """Fine wrap of each wing group -> {region: triangles} (front wing; rear wing above z 0.58, beam wing below)."""
+    out = {}
+    for k, lst in wings.items():
+        if not lst:
+            continue
+        T = np.concatenate(lst)
+        log(f"{k} wing: {len(lst)} pieces, {len(T)} triangles -> fine wrap {WING_H*1000:.2f} mm, r={WING_R}")
+        tri = outward(tris_of(finish(wrap(T, WING_H, WING_R)[0], WING_TARGET)))
+        if k == "fw":
+            out.setdefault("frontwing", []).append(tri)
+        elif k == "bg":                    # vanes ahead of the sidepods: the usual position-based regions
+            lab = classify(tri, W, year)
+            for name in np.unique(lab):
+                out.setdefault(str(name), []).append(tri[lab == name])
+        else:
+            up = tri.mean(1)[:, 2] > 0.58
+            out.setdefault("rearwing", []).append(tri[up])
+            out.setdefault("beamwing", []).append(tri[~up])
+    return {k: np.concatenate(v) for k, v in out.items()}
+
+
 EXIT_VIEW_MIN = 0.10
 
 
@@ -351,21 +430,25 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN):
     return sel
 
 
-def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True):
+def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True, fine_wings=True):
     cfg = CARS[car]
     os.makedirs(outdir, exist_ok=True)
     parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car)
     regions = {}
+    wing_tri = {}
+    if fine_wings:
+        wing_pieces, body = split_wings(body, W)
+        wing_tri = wrap_wings(wing_pieces, W, cfg["year"])
     for k, lst in wheels.items():
         T = np.concatenate(lst).copy()
         T[..., 2] -= SINK
         log(f"{k}: {len(lst)} parts, {len(T)} triangles")
-        regions[k] = tris_of(finish(wrap(T, 0.004, 3)[0], 120000))
+        regions[k] = outward(tris_of(finish(wrap(T, 0.004, 3)[0], 120000)))
     Tb = np.concatenate(body)
     log(f"body: {len(body)} parts, {len(Tb)} triangles")
     bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None)
     bsurf = finish(bsurf, 450000)
-    btri = tris_of(bsurf)
+    btri = outward(tris_of(bsurf))
     lab = classify(btri, W, cfg["year"])
     cooling = None
     if cav is not None:
@@ -400,6 +483,8 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
             log("cooling: no sidepod inlet duct found - interior filled, no radiator flow")
     for k in np.unique(lab):
         regions[k] = btri[lab == k]
+    for k, tri in wing_tri.items():       # finely wrapped wings join the regions of the same name
+        regions[k] = np.concatenate([regions[k], tri]) if k in regions else tri
     if abs(front_mm) > 1e-9 or abs(rear_mm) > 1e-9:
         dF, dR = front_mm / 1000.0, rear_mm / 1000.0
         th = np.arctan2(dR - dF, xr - xf)
@@ -433,12 +518,15 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         "length": L, "width": float(2 * bhi[1]), "height": float(bhi[2]),
         "frontal_area": round(area, 4), "parts": names, "closure": info,
         "wrap": {"body_voxel_m": h_body, "body_close_voxels": r_body, "wheel_voxel_m": 0.004, "wheel_close_voxels": 3,
+                 **({"wing_voxel_m": WING_H, "wing_close_voxels": WING_R, "wing_regions": sorted(wing_tri)} if wing_tri else {}),
                  "interior_filled": cav is not None,
                  **({"enclosure_max_escapes": cav["K"], "enclosure_cell_m": round(cav["c"], 4), "core_cells": cav["core_cells"],
                      "inside_skin_test": cav.get("skin_test"),
                      "openings_used": [{k2: m[k2] for k2 in ("kind", "area", "x", "y", "z", "n")} for m in cav["mouths"] if m.get("kind")]} if cav else {})},
         **({"cooling": cooling, "patch_types": {"radiator_in": "patch", "radiator_out": "patch"}} if cooling else {}),
         "levels": {k: list(LEVELS.get(k, (4, 5))) for k in names},
+        "gap_boxes": {f"gap_{k}": gap_box(regions[k]) for k in ("frontwing", "rearwing", "beamwing", "bargeboards")
+                      if k in info and (k != "bargeboards" or "bg" in wing_box(W))},
         "force_groups": {**{k: [k] for k in names if not k.startswith("radiator_")},
                          **({"cooling": ["radiator_in", "radiator_out"]} if cooling else {})},
         "no_layers": [k for k in ("suspension", "radiator_in", "radiator_out") if k in names],

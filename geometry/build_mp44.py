@@ -256,6 +256,9 @@ def main(outdir, front_mm=0.0, rear_mm=0.0, fill_interior=True):
         "length": float(hi[0] - lo[0]), "width": float(hi[1] - lo[1]), "height": float(hi[2]),
         "frontal_area": round(area, 4), "parts": names, "closure": info,
         "levels": {k: list(LEVELS[k]) for k in names},
+        # slot-gap refinement regions (the printable model's wing elements are fused: little to refine, kept for consistency)
+        "gap_boxes": {f"gap_{k}": [np.maximum(T[part == k].reshape(-1, 3).min(0) - 0.01, [-9, 0, -9]).round(4).tolist(),
+                                   (T[part == k].reshape(-1, 3).max(0) + 0.01).round(4).tolist()] for k in ("frontwing", "rearwing") if k in names},
         "force_groups": {k: [p for p in v if p in names] for k, v in FORCE_GROUPS.items()
                          if any(p in names for p in v) and (k != "cooling" or cooling)},
         "no_layers": [k for k in ("suspension", "radiator_in", "radiator_out") if k in names],

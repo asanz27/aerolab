@@ -420,6 +420,13 @@ def surface_export(case, r, cfg, webdir, parts):
         fields["Cfx"].append(wss[best, 0] / q)
         fields["yplus"].append(yp[best])
         stats[name] = {"verts": int(s.n_points), "tris": int(s.n_cells), "cfd_faces": int(len(cc))}
+        if len(yp):                                     # area-weighted y+ distribution of the CFD faces
+            fa = 0.5 * np.linalg.norm(np.cross(b - a, c - a), axis=1)
+            o = np.argsort(yp)
+            cw = np.cumsum(fa[o]) / max(fa.sum(), 1e-30)
+            stats[name]["yplus_p"] = {str(q): round(float(yp[o][min(np.searchsorted(cw, q / 100), len(o) - 1)]), 2) for q in (5, 25, 50, 75, 95)}
+            stats[name]["yplus_frac"] = {k: round(float(fa[(yp >= lo_) & (yp < hi_)].sum() / max(fa.sum(), 1e-30)), 3)
+                                         for k, (lo_, hi_) in {"lt1": (0, 1), "1_5": (1, 5), "5_30": (5, 30), "30_300": (30, 300), "ge300": (300, 1e9)}.items()}
         voff += s.n_points
     V = np.vstack(allV)
     F = np.vstack(allF).astype(np.uint32)
@@ -450,9 +457,45 @@ FIELD_DEF = {
     "Cp": {"label": "Cp estática", "range": [-2.5, 1.0], "cmap": "cp"},
     "U": {"label": "|U| / U∞", "range": [0.0, 1.6], "cmap": "speed"},
     "Ux": {"label": "Ux / U∞", "range": [-0.3, 1.5], "cmap": "speed"},
+    "Uy": {"label": "Uy / U∞", "range": [-0.6, 0.6], "cmap": "div"},
+    "Uz": {"label": "Uz / U∞", "range": [-0.6, 0.6], "cmap": "div"},
     "wx": {"label": "ωx · L / U∞", "range": [-60.0, 60.0], "cmap": "div"},
     "hel": {"label": "Helicidad normalizada", "range": [-1.0, 1.0], "cmap": "div"},
 }
+# Plane images are 8-bit. With the "asinh" encoding the 254 levels are packed around a reference value (free stream
+# for Cpt, |U| and Ux, zero for the rest): pixel p -> t = (p-1)/254 -> v = ref + a sinh(A0 + t (A1 - A0)), with
+# A0,1 = asinh((lo|hi - ref)/a), a = (hi - lo)/40. Near the reference the step is ~6x finer than a linear map (so the
+# viewer's x0.1 colour scale still has ~60-140 levels); at the ends of the range it is ~3x coarser.
+# Odd fields change sign in the mirrored half of the car (y -> -y): Uy, wx, hel.
+ENC_REF = {"Cpt": 1.0, "Cp": 0.0, "U": 1.0, "Ux": 1.0, "Uy": 0.0, "Uz": 0.0, "wx": 0.0, "hel": 0.0}
+ODD = ["Uy", "wx", "hel"]
+
+
+def enc_params(f):
+    lo, hi = FIELD_DEF[f]["range"]
+    ref = ENC_REF[f]
+    a = (hi - lo) / 40.0
+    return ref, a, float(np.arcsinh((lo - ref) / a)), float(np.arcsinh((hi - ref) / a))
+
+
+def enc8(v, f, mask):
+    """8-bit plane image of field f (0 = solid / no data) with the asinh encoding."""
+    ref, a, A0, A1 = enc_params(f)
+    t = (np.arcsinh((v - ref) / a) - A0) / (A1 - A0)
+    img = (1 + np.round(np.clip(t, 0, 1) * 254)).astype(np.uint8)
+    img[~mask] = 0
+    return img
+
+
+def field_meta(dense):
+    out = {}
+    for f, d in FIELD_DEF.items():
+        out[f] = dict(d)
+        if dense:
+            ref, a, A0, A1 = enc_params(f)
+            out[f]["enc"] = {"type": "asinh", "ref": ref, "a": a, "A0": A0, "A1": A1}
+        out[f]["odd"] = f in ODD
+    return out
 
 
 def add_derived(m, U):
@@ -465,6 +508,8 @@ def add_derived(m, U):
     pd["Cpt"] = (p + 0.5 * um**2) / q
     pd["Umag"] = um / U
     pd["Ux_n"] = u[:, 0] / U
+    pd["Uy_n"] = u[:, 1] / U
+    pd["Uz_n"] = u[:, 2] / U
     if "vorticity" in pd:
         w = np.asarray(pd["vorticity"])
         pd["wx"] = w[:, 0] * 1.0 / U
@@ -477,7 +522,8 @@ def add_derived(m, U):
     return m
 
 
-SRC = {"Cpt": "Cpt", "Cp": "Cp", "U": "Umag", "Ux": "Ux_n", "wx": "wx", "hel": "hel"}
+SRC = {"Cpt": "Cpt", "Cp": "Cp", "U": "Umag", "Ux": "Ux_n", "Uy": "Uy_n", "Uz": "Uz_n", "wx": "wx", "hel": "hel"}
+SRC_OLD = ("Cpt", "Cp", "U", "Ux", "wx", "hel")      # fields of the linear-encoded (pre-2026-11) post-processing
 
 
 def png8(path, img):
@@ -559,34 +605,48 @@ def slices_export(vol, cfg, webdir):
     sdir = os.path.join(webdir, "slices")
     os.makedirs(sdir, exist_ok=True)
     res = cfg.get("slice_res", 0.005)
+    dense = bool(cfg.get("post2"))
     cat = {"x": [], "y": [], "z": []}
+    ys, zs = np.array(POST["y_slices"]), np.array(POST["z_slices"])
+    if dense:
+        # evenly spaced longitudinal planes every 5 cm; horizontal planes every 1 cm under the floor, then 3 and 5 cm
+        ymax = min(float(POST["x_ext"][1]), 1.25)
+        ys = np.round(np.arange(0.0, ymax + 1e-9, 0.05), 3)
+        zmax = float(POST["z_ext"][3]) - 0.05
+        zs = np.round(np.unique(np.r_[0.006, np.arange(0.01, 0.1001, 0.01), np.arange(0.12, 0.3001, 0.03),
+                                      np.arange(0.35, zmax + 1e-9, 0.05)]), 3)
     plan = {
         "x": (np.round(np.arange(POST["x_slices"][0], POST["x_slices"][1], cfg.get("dx_slices", 0.05)), 3), tuple(POST["x_ext"])),
-        "y": (np.array(POST["y_slices"]), tuple(POST["y_ext"])),
-        "z": (np.array(POST["z_slices"]), tuple(POST["z_ext"])),
+        "y": (np.sort(ys), tuple(POST["y_ext"])),
+        "z": (np.sort(zs), tuple(POST["z_ext"])),
     }
-    jobs, chunks, off = [], [], 0
-    for axis, (positions, ext) in plan.items():
-        for k, pos in enumerate(positions):
-            P, na, nb = plane_points(axis, float(pos), ext, res)
-            jobs.append((axis, k, float(pos), na, nb, off))
-            chunks.append(P)
-            off += len(P)
-    allP = np.vstack(chunks)
-    log("probing", len(allP), "points on", len(jobs), "planes")
-    keep = set(SRC.values()) | {"U"}
-    smp = pv.PolyData(allP).sample(light_volume(vol), pass_cell_data=False, pass_point_data=False)
-    mask_all = np.asarray(smp.point_data["vtkValidPointMask"]).astype(bool)
-    arrays = {n: np.asarray(smp.point_data[n]) for n in keep}
-    log("probe done")
-    for axis, k, pos, na, nb, o in jobs:
+    fields = {f: s for f, s in SRC.items() if dense or f in SRC_OLD}
+    keep = set(fields.values()) | {"U"}
+    for ax_, (positions, ext) in plan.items():      # one probe per axis (bounded memory with the dense planes)
+      jobs, chunks, off = [], [], 0
+      for k, pos in enumerate(positions):
+          P, na, nb = plane_points(ax_, float(pos), ext, res)
+          jobs.append((ax_, k, float(pos), na, nb, off))
+          chunks.append(P)
+          off += len(P)
+      allP = np.vstack(chunks)
+      log("probing", len(allP), "points on", len(jobs), ax_, "planes")
+      smp = pv.PolyData(allP).sample(light_volume(vol), pass_cell_data=False, pass_point_data=False)
+      mask_all = np.asarray(smp.point_data["vtkValidPointMask"]).astype(bool)
+      arrays = {n: np.asarray(smp.point_data[n]) for n in keep}
+      del smp, allP, chunks
+      log("probe done")
+      for axis, k, pos, na, nb, o in jobs:
         sl = slice(o, o + na * nb)
         mask = mask_all[sl].reshape(nb, na)
-        for f, src in SRC.items():
-            lo, hi = FIELD_DEF[f]["range"]
+        for f, src in fields.items():
             v = arrays[src][sl].reshape(nb, na)
-            img = (1 + np.round(np.clip((v - lo) / (hi - lo), 0, 1) * 254)).astype(np.uint8)
-            img[~mask] = 0
+            if dense:
+                img = enc8(v, f, mask)
+            else:
+                lo, hi = FIELD_DEF[f]["range"]
+                img = (1 + np.round(np.clip((v - lo) / (hi - lo), 0, 1) * 254)).astype(np.uint8)
+                img[~mask] = 0
             png8(os.path.join(sdir, f"{axis}_{k:03d}_{f}.png"), img[::-1])  # row 0 = top (max b)
         if axis == "x":
             u = arrays["U"][sl].reshape(nb, na, 3) / cfg["U"]
@@ -684,6 +744,97 @@ def streams_export(vol, cfg, webdir):
     return {"file": "streams.fsb.gz", "n": len(lines)}
 
 
+VOL_RANGE = {"u": (-0.4, 1.6), "v": (-0.8, 0.8), "w": (-0.8, 0.8), "cpt": (-0.4, 1.0)}
+
+
+def volume_export(vol, cfg, webdir, h=0.02):
+    """Velocity (and Cpt) on a regular h-grid around the half car, for stream lines traced in the browser from a
+    seed region the viewer places (uint8 per component; 0 = solid / outside). x fastest, then y, then z."""
+    import pyvista as pv
+    x0, x1 = POST["y_ext"][0], POST["y_ext"][1]
+    y1 = min(float(POST["x_ext"][1]), 1.30)
+    z1 = min(float(POST["z_ext"][3]), 1.40)
+    nx, ny, nz = int(round((x1 - x0) / h)) + 1, int(round(y1 / h)) + 1, int(round(z1 / h)) + 1
+    U = cfg["U"]
+    bufs, nvalid = {}, 0
+    out = {k: np.zeros(nx * ny * nz, np.uint8) for k in VOL_RANGE}
+    xs = x0 + h * np.arange(nx)
+    ys = h * np.arange(ny)
+    zs = h * np.arange(nz)
+    Z, Y, X = np.meshgrid(zs, ys, xs, indexing="ij")   # x fastest
+    P = np.c_[X.ravel(), Y.ravel(), Z.ravel()]
+    del X, Y, Z
+    s = pv.PolyData(P).sample(light_volume(vol), pass_cell_data=False, pass_point_data=False)   # one probe
+    m = np.asarray(s.point_data["vtkValidPointMask"]).astype(bool)
+    u = np.asarray(s.point_data["U"]) / U
+    cpt = np.asarray(s.point_data["Cpt"])
+    for k, a in (("u", u[:, 0]), ("v", u[:, 1]), ("w", u[:, 2]), ("cpt", cpt)):
+        lo, hi = VOL_RANGE[k]
+        q = (1 + np.round(np.clip((a - lo) / (hi - lo), 0, 1) * 254)).astype(np.uint8)
+        q[~m] = 0
+        out[k][:] = q
+    nvalid = int(m.sum())
+    del s, u, cpt, P
+    for k, (lo, hi) in VOL_RANGE.items():
+        bufs[k] = (out[k], {"min": lo, "max": hi, "code": "1..255 linear, 0 = no data"})
+    size = write_fsb(os.path.join(webdir, "volume.fsb.gz"), bufs,
+                     {"grid": {"origin": [x0, 0.0, 0.0], "h": h, "n": [nx, ny, nz]}})
+    log("volume", nx, ny, nz, f"{nvalid/(nx*ny*nz):.2f} valid", f"{size/1e6:.2f} MB")
+    return {"file": "volume.fsb.gz", "origin": [x0, 0.0, 0.0], "h": h, "n": [nx, ny, nz], "ranges": VOL_RANGE}
+
+
+def mesh_cuts(vol_full, webdir, car):
+    """Cell outlines of the mesh on y-planes through the wings (slots and prism layers), as PNG images."""
+    from PIL import Image, ImageDraw
+    cuts = []
+    sec = POST.get("wing_sections", {})
+    odir = os.path.join(webdir, "meshcut")
+    os.makedirs(odir, exist_ok=True)
+    targets = []
+    for wing, (names, ys) in sec.items():
+        if not ys:
+            continue
+        for y in ys[: 2]:
+            targets.append((wing, names, float(y)))
+    bb = {k: v for k, v in car.get("gap_boxes", {}).items()}
+    cc = vol_full.cell_centers().points
+    for wing, names, y in targets:
+        box = None
+        for k, (lo, hi) in bb.items():
+            if any(k.endswith(n) for n in names):
+                box = (lo, hi) if box is None else ([min(a, b) for a, b in zip(box[0], lo)], [max(a, b) for a, b in zip(box[1], hi)])
+        if box is None:
+            continue
+        lo, hi = box
+        x0, x1, z0, z1 = lo[0], hi[0], lo[2], hi[2]
+        m = (cc[:, 0] > x0 - 0.02) & (cc[:, 0] < x1 + 0.02) & (np.abs(cc[:, 1] - y) < 0.03) & (cc[:, 2] > z0 - 0.02) & (cc[:, 2] < z1 + 0.02)
+        if not m.any():
+            continue
+        sub = vol_full.extract_cells(np.where(m)[0])
+        s = sub.slice(normal="y", origin=(0, y, 0), generate_triangles=False)
+        if s.n_cells == 0:
+            continue
+        W = 3000
+        sc = W / (x1 - x0)
+        Hh = int((z1 - z0) * sc) + 1
+        img = Image.new("L", (W, Hh), 255)
+        d = ImageDraw.Draw(img)
+        P = np.asarray(s.points)
+        faces = s.faces
+        i = 0
+        while i < len(faces):
+            n = faces[i]
+            ids = faces[i + 1:i + 1 + n]
+            i += n + 1
+            q = [((P[j, 0] - x0) * sc, (z1 - P[j, 2]) * sc) for j in ids]
+            d.line(q + [q[0]], fill=40, width=1)
+        name = f"mesh_{wing}_y{y:.2f}.png"
+        img.save(os.path.join(odir, name), optimize=True)
+        cuts.append({"file": f"meshcut/{name}", "wing": wing, "y": y, "x": [x0, x1], "z": [z0, z1], "cells": int(s.n_cells)})
+        log("mesh cut", name, s.n_cells)
+    return cuts
+
+
 def lines_export(vol, patches, cfg):
     U = cfg["U"]
     q = 0.5 * U * U
@@ -724,8 +875,10 @@ def main(case, out, cfg):
     set_post(car)
     rc = json.load(open(os.path.join(case, "run_config.json")))
     cfg = {**rc, **cfg}
+    dense = bool(cfg.get("post2"))
     meta = {"case": cfg.get("name"), "config": {k: v for k, v in cfg.items() if k not in ("groups",)}, "car": car,
-            "U": cfg["U"], "rho": 1.205, "nu": 1.5e-5, "fields": FIELD_DEF, "errors": []}
+            "U": cfg["U"], "rho": 1.205, "nu": 1.5e-5,
+            "fields": {k: v for k, v in field_meta(dense).items() if dense or k in SRC_OLD}, "errors": []}
     try:
         f, h, q = forces(case, cfg, car)
         meta["forces"], meta["history"], meta["q"] = f, h, q
@@ -756,6 +909,11 @@ def main(case, out, cfg):
     try:
         vol = read_internal(r)
         log("internal mesh", vol.n_cells, vol.array_names)
+        if cfg.get("post2"):
+            try:
+                meta["mesh_cuts"] = mesh_cuts(vol, webdir, car)
+            except Exception:
+                meta["errors"].append("mesh_cuts: " + traceback.format_exc())
         vol = clip_region(vol, tuple(POST["clip"]))
         vol = vol.cell_data_to_point_data() if "U" not in vol.point_data else vol
         vol = add_derived(vol, cfg["U"])
@@ -770,6 +928,8 @@ def main(case, out, cfg):
         ("lines", lambda: lines_export(vol, patches, cfg)),
         ("streams", lambda: streams_export(vol, cfg, webdir)),
     ]
+    if cfg.get("post2"):
+        steps.append(("volume", lambda: volume_export(vol, cfg, webdir)))
     U = cfg["U"]
     iso_list = []
     for nm, sc, val, cf in (("q_low", "Q", 0.25 * U * U * 100, ["Cpt", "wx"]), ("q_high", "Q", U * U * 100, ["Cpt", "wx"]),

@@ -50,6 +50,15 @@ FORCE_GROUPS = {
 NO_LAYERS = ["suspension", "engine"]
 
 
+def gap_box(tri, pad=0.01):
+    """Box (half car, y >= 0) around a wing's triangles, for the slot-gap refinement region."""
+    V = tri.reshape(-1, 3)
+    V = V[V[:, 1] >= -pad]
+    lo, hi = V.min(0) - pad, V.max(0) + pad
+    lo[1] = max(lo[1], 0.0)
+    return [lo.round(4).tolist(), hi.round(4).tolist()]
+
+
 def write_stl_bin(path, tri, name):
     tri = np.asarray(tri, dtype=np.float32)
     n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
@@ -100,6 +109,9 @@ def build(front_mm=0.0, rear_mm=0.0):
             print("missing solid", solid)
             continue
         T = d[solid].astype(np.float64)
+        # closed solid: outward normals (positive signed volume), which the slot-gap refinement relies on
+        if np.einsum("ij,ij->i", T[:, 0], np.cross(T[:, 1], T[:, 2])).sum() < 0:
+            T = T[:, ::-1].copy()
         if reg.startswith("wheels"):
             T[..., 2] -= SINK
         regions.setdefault(reg, []).append(T)
@@ -145,6 +157,7 @@ def main(outdir, front_mm=0.0, rear_mm=0.0):
         "length": float(hi[0] - lo[0]), "width": float(hi[1] - lo[1]), "height": float(hi[2]),
         "frontal_area": round(area, 4), "parts": list(regions.keys()), "closure": info,
         "levels": {k: list(LEVELS[k]) for k in regions}, "force_groups": {k: [p for p in v if p in regions] for k, v in FORCE_GROUPS.items()},
+        "gap_boxes": {f"gap_{k}": gap_box(regions[k]) for k in ("frontwing", "nosewing", "rw_wings") if k in regions},
         "no_layers": NO_LAYERS, "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm},
         "post": {
             "wing_sections": {"FW": [["frontwing"], [0.10, 0.25, 0.45, 0.62]], "RW": [["rw_wings"], [0.05, 0.20, 0.35]]},

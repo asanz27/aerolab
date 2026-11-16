@@ -1,21 +1,16 @@
 {
- "tag": "mcl39-fine-swap",
+ "tag": "wall-slots-coarse",
+ "_doc": "Hybrid wall treatment (wings y+ 1-5, other walls 30-100), wings wrapped at 1.25 mm (open slots) with slot-gap refinement, post v2 (Uy/Uz, asinh-encoded planes, dense Y/Z planes, 2 cm velocity volume, mesh cuts). Coarse meshes: check runs.",
  "cases": [
-  {
-   "name": "mcl39_f2",
-   "car": "mcl39",
-   "private": true,
-   "U": 50.0,
-   "iters1": 100,
-   "layers": 3,
-   "simplec": true,
-   "h0": 0.25,
-   "iters": 3000,
-   "post": "full",
-   "slice_res": 0.007,
-   "dx_slices": 0.075,
-   "stages": 3,
-   "swap_gb": 16
-  }
+  {"name": "mcl39_c3", "car": "mcl39", "private": true, "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.34, "iters": 3000,
+   "wall": "hybrid", "gap_max_level": 8, "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 2, "swap_gb": 16},
+  {"name": "rb12_c3", "car": "rb12", "private": true, "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.34, "iters": 3000,
+   "wall": "hybrid", "gap_max_level": 8, "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 2, "swap_gb": 16},
+  {"name": "mp423_c3", "car": "mp423", "private": true, "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.34, "iters": 3000,
+   "wall": "hybrid", "gap_max_level": 8, "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 2, "swap_gb": 16},
+  {"name": "mp44_c3", "car": "mp44", "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.30, "iters": 3000,
+   "wall": "hybrid", "gap_max_level": 8, "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 2, "swap_gb": 16},
+  {"name": "f03_c3", "car": "mft03", "private": true, "U": 20.0, "iters1": 100, "simplec": true, "h0": 0.30, "iters": 3000,
+   "wall": "hybrid", "gap_max_level": 8, "post": "full", "post2": true, "slice_res": 0.005, "dx_slices": 0.05, "stages": 2, "swap_gb": 16}
  ]
 }

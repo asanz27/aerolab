@@ -53,6 +53,35 @@ BOXES = {
 LOCATION = (5.1234, 1.8765, 2.3456)
 PATCH_TYPES = {}     # part -> OpenFOAM patch type when not a wall (e.g. the radiator face / exit)
 COOLING = None       # fixed-flow radiator: {"face_area", "exit_area", ...} from car.json
+GAP_BOXES = {}       # name -> (lo, hi): slot-gap refinement regions around the wings (car.json "gap_boxes")
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def wall_layers(c):
+    """Hybrid wall treatment (cfg wall = "hybrid"): {part: (n, first, ratio)} with absolute first-layer heights.
+    Resolved parts (wings): first cell centre at y+ ~ yplus_resolved for the 90th-percentile friction velocity of the
+    previous run, growing at ratio_resolved until the last layer is final_rel_resolved x the local surface cell.
+    Other walls: first cell centre at y+ ~ yplus_wf for the median friction velocity, n_wf layers (wall functions).
+    See geometry/wall_layers.json."""
+    spec = json.load(open(os.path.join(ROOT, "geometry", "wall_layers.json")))
+    car = spec["cars"].get(c.get("car", ""), {"U_ref": 50.0, "resolved": [], "u": {}})
+    nu = spec["nu"]
+    scale = (c["U"] / car["U_ref"]) ** 0.9
+    out = {}
+    for p in LAYER_PARTS:
+        u50, u90 = car["u"].get(p, [1.5, 2.5])
+        u50, u90 = max(u50, 0.5) * scale, max(u90, 1.0) * scale
+        cell = c["h0"] / 2 ** SURF_LEVELS[p][1]
+        if p in car["resolved"]:
+            first = 2.0 * spec["yplus_resolved"] * nu / u90
+            r = spec["ratio_resolved"]
+            n = 1 + math.ceil(math.log(spec["final_rel_resolved"] * cell / first) / math.log(r))
+        else:
+            first = min(2.0 * spec["yplus_wf"] * nu / u50, spec["first_cap_rel"] * cell)
+            r = spec["ratio_wf"]
+            n = spec["n_wf"]
+        out[p] = (int(n), float(first), float(r))
+    return out
 
 
 def load_car(case):
@@ -79,6 +108,8 @@ def load_car(case):
         LOCATION = tuple(car["location_in_mesh"])
     PATCH_TYPES = {k: v for k, v in car.get("patch_types", {}).items() if k in ALL_PARTS}
     COOLING = car.get("cooling") if all(p in ALL_PARTS for p in ("radiator_in", "radiator_out")) else None
+    global GAP_BOXES
+    GAP_BOXES = {k: (tuple(v[0]), tuple(v[1])) for k, v in car.get("gap_boxes", {}).items()}
 
 # domain (half car, symmetry plane at y=0)
 X0, X1, Y1, Z1 = -5.6, 12.0, 4.0, 4.0
@@ -126,6 +157,27 @@ def snappy(c):
     regs = "\n".join(f"        {n} {{ mode inside; levels ((1e15 {lv})); }}" for n, (_, _, lv) in boxes.items())
     nl = c.get("layers", 3)
     layers = "\n".join(f'        "{p}" {{ nSurfaceLayers {nl}; }}' for p in LAYER_PARTS)
+    hybrid = c.get("wall") == "hybrid"
+    if hybrid:
+        # absolute first-layer heights per part (y+ targets); slots between wing elements refined to >= 4 cells across
+        wl = wall_layers(c)
+        c["wall_layers"] = {p: {"n": n, "first_m": f, "ratio": r} for p, (n, f, r) in wl.items()}
+        layers = "\n".join(f'        "{p}" {{ nSurfaceLayers {n}; thicknessModel firstAndExpansion; firstLayerThickness {f:.4g}; '
+                           f'expansionRatio {r}; minThickness {0.5 * f:.4g}; }}' for p, (n, f, r) in wl.items())
+        gmax = int(c.get("gap_max_level", 8))
+        for name, (lo, hi) in GAP_BOXES.items():
+            geo += f"\n    {name} {{ type searchableBox; min ({lo[0]} {lo[1]} {lo[2]}); max ({hi[0]} {hi[1]} {hi[2]}); }}"
+            wl_ = max([SURF_LEVELS[p][1] for p in ALL_PARTS if name.endswith(p)] or [6])
+            gm = min(gmax, 7) if name.endswith("bargeboards") else gmax     # vanes 1-3 cm apart: one level less
+            regs += f"\n        {name} {{ mode inside; levels ((1e15 0)); gapLevel (4 {wl_} {gm}); gapMode outside; }}"
+    lay_glob = ("""    relativeSizes false;
+    thicknessModel firstAndExpansion;
+    firstLayerThickness 0.0005;
+    expansionRatio 1.2;
+    minThickness 0.0001;""" if hybrid else """    relativeSizes true;
+    expansionRatio 1.25;
+    finalLayerThickness 0.45;
+    minThickness 0.08;""")
     return HDR.format(cls="dictionary", obj="snappyHexMeshDict") + f"""
 castellatedMesh true;
 snap            true;
@@ -174,14 +226,11 @@ snapControls
 
 addLayersControls
 {{
-    relativeSizes true;
     layers
     {{
 {layers}
     }}
-    expansionRatio 1.25;
-    finalLayerThickness 0.45;
-    minThickness 0.08;
+{lay_glob}
     nGrow 0;
     featureAngle 130;
     slipFeatureAngle 30;
@@ -493,6 +542,9 @@ boundaryField
 }}
 """
     walls = "(ground|" + "|".join(walls_only) + ")"
+    # hybrid walls (y+ ~ 1-5 on the wings, 30-100 elsewhere): omega blended between its viscous-sublayer and log-layer
+    # values (Menter & Esch binomial blending), with Spalding's continuous law for nut - valid at any y+
+    omb = "blending binomial2; n 2; " if c.get("wall") == "hybrid" else ""
     out["k"] = HDR.format(cls="volScalarField", obj="k") + f"""
 dimensions      [0 2 -2 0 0 0 0];
 internalField   uniform {k:.6g};
@@ -516,7 +568,7 @@ boundaryField
     outlet  {{ type inletOutlet; inletValue uniform {om:.6g}; value uniform {om:.6g}; }}
     top     {{ type slip; }}
     side    {{ type slip; }}
-    "{walls}" {{ type omegaWallFunction; value uniform {om:.6g}; }}
+    "{walls}" {{ type omegaWallFunction; {omb}value uniform {om:.6g}; }}
 {co}}}
 """
     out["nut"] = HDR.format(cls="volScalarField", obj="nut") + f"""

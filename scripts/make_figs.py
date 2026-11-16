@@ -162,9 +162,19 @@ def slice_img(D, meta, axis, pos, field):
     img = np.array(Image.open(os.path.join(D, "slices", f"{axis}_{it['i']:03d}_{field}.png")))
     if img.ndim == 3:
         img = img[..., 0]
-    lo, hi = meta["fields"][field]["range"]
-    v = np.where(img > 0, lo + (img.astype(float) - 1) / 254 * (hi - lo), np.nan)
+    fd = meta["fields"][field]
+    lo, hi = fd["range"]
+    t = (img.astype(float) - 1) / 254
+    enc = fd.get("enc")
+    if enc and enc.get("type") == "asinh":     # values packed around a reference (postpro.enc8)
+        val = enc["ref"] + enc["a"] * np.sinh(enc["A0"] + t * (enc["A1"] - enc["A0"]))
+    else:
+        val = lo + t * (hi - lo)
+    v = np.where(img > 0, val, np.nan)
     return it, v, S["ext"]
+
+
+ODD = ("Uy", "wx", "hel")   # change sign in the mirrored half (y -> -y)
 
 
 def plane_fig(D, meta, axis, pos, field, cmap, title, vectors=False, out=None, crop=None):
@@ -176,7 +186,8 @@ def plane_fig(D, meta, axis, pos, field, cmap, title, vectors=False, out=None, c
     fig = plt.figure(figsize=(16, 9), dpi=100)
     ax = fig.add_axes((0.06, 0.16, 0.9, 0.76))
     if axis == "x":  # half plane y in [0, a1] -> mirror to the full width (seen from the front: +y on the right)
-        full = np.concatenate([v[:, ::-1], v[:, 1:]], 1)
+        sgn = -1.0 if field in ODD else 1.0       # odd fields flip sign in the mirrored half
+        full = np.concatenate([sgn * v[:, ::-1], v[:, 1:]], 1)
         ext = (-a1, a1, b0, b1)
         ax.imshow(full, extent=ext, origin="upper", cmap=cmap, interpolation="bilinear", **nk)
         ax.set_xlabel("y [m]"); ax.set_ylabel("z [m]")
@@ -194,8 +205,13 @@ def plane_fig(D, meta, axis, pos, field, cmap, title, vectors=False, out=None, c
                     ax.quiver(s * yy[m], zz[m], s * vy[m], vz[m], color="white", alpha=0.75, scale=6, width=0.0012, headwidth=3.5)
     else:
         ext = (a0, a1, b0, b1)
-        img = v if axis == "y" else np.concatenate([v[::-1], v[1:]], 0)
+        img = v
         if axis == "z":
+            # plane rows run from y = b1 (row 0) down to y = 0: that half on top, its mirror image below. (Until
+            # 2026-11-16 the halves were stacked the other way round, which drew y = 0 at the edges and y = b1 at
+            # the centre line of every horizontal-plane figure.)
+            sgn = -1.0 if field in ODD else 1.0
+            img = np.concatenate([v, sgn * v[::-1][1:]], 0)
             ext = (a0, a1, -b1, b1)
         ax.imshow(img, extent=ext, origin="upper", cmap=cmap, interpolation="bilinear", aspect="equal", **nk)
         ax.set_xlabel("x [m]  (0 = " + ("eje delantero / front axle" if True else "") + ")")
