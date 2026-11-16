@@ -1,0 +1,60 @@
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: no convergence criteria found. Calculations will run for 100 steps.
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type RAS
+Selecting RAS turbulence model kOmegaSST
+Selecting patchDistMethod meshWave
+[0] [1] 
+[1] 
+[1] --> FOAM FATAL IO ERROR: (openfoam-2606)
+[1] Lookup:blending enumeration binomial2 is not in enumeration: (stepwise max binomial exponential tanh)
+[1] 
+[1] 
+[1] file: processor1/0/omega/boundaryField/(ground|frontwing|nosewing|rw_wings|rw_plates|floor|diffuser|body|enginecover|intake|engine|driver|suspension|wheels_front|wheels_rear) at line 18.
+[1] 
+[1]     From EnumType Foam::Enum<EnumType>::getOrDefault(const Foam::word&, const Foam::dictionary&, EnumType, bool) const [with EnumType = Foam::wallFunctionBlenders::blenderType]
+[1]     in file ./src/OpenFOAM/lnInclude/Enum.C at line 212.
+[1] 
+FOAM parallel run exiting
+[1] 
+
+[0] 
+[0] --> FOAM FATAL IO ERROR: (openfoam-2606)
+[0] Lookup:blending enumeration binomial2 is not in enumeration: (stepwise max binomial exponential tanh)
+[0] 
+[0] 
+[0] file: processor0/0/omega/boundaryField/(ground|frontwing|nosewing|rw_wings|rw_plates|floor|diffuser|body|enginecover|intake|engine|driver|suspension|wheels_front|wheels_rear) at line 18.
+[0] 
+[0]     From EnumType Foam::Enum<EnumType>::getOrDefault(const Foam::word&, const Foam::dictionary&, EnumType, bool) const [with EnumType = Foam::wallFunctionBlenders::blenderType]
+[0]     in file ./src/OpenFOAM/lnInclude/Enum.C at line 212.
+[0] 
+FOAM parallel run exiting
+[0] 
+[ip-10-0-133-52:05473] [[65184,0],0] ORTE_ERROR_LOG: Data unpack would read past end of buffer in file ../../../orte/util/show_help.c at line 501
+[ip-10-0-133-52:05473] [[65184,0],0] ORTE_ERROR_LOG: Data unpack would read past end of buffer in file ../../../orte/util/show_help.c at line 501
