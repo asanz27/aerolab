@@ -806,7 +806,9 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         cl = label_cooling(bt, cav)
         for name in ("inlets", "radiator_in", "radiator_out"):
             if name in cl:
-                lab[cl[name]] = name
+                # never the internal faces where the detail zones were cut out (they lie inside the zone solids and
+                # would double the radiator face area, hence the imposed flow rate)
+                lab[cl[name] & ~internal] = name
         if (lab == "radiator_in").any() and not (lab == "radiator_out").any():
             lab[rear_exit(bt, lab, W, 0.5 * tri_area(btri[lab == "radiator_in"]).sum(), exclude=internal)] = "radiator_out"
         if (lab == "radiator_in").any() and (lab == "radiator_out").any():

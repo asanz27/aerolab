@@ -171,7 +171,10 @@ def snappy(c):
         lv_over = c.get("slot_levels", {})
         for name, d in REFINE.items():
             geo += f"\n    {d['file']} {{ type triSurfaceMesh; name {name}; }}"
-            regs += f"\n        {name} {{ mode inside; levels ((1e15 {int(lv_over.get(name, d['level']))})); }}"
+            # distance mode: the slot surfaces of several zones overlap and are not one closed surface (inside mode
+            # needs one); they hug the gaps, so every cell within a few mm of them is a slot cell
+            dist = float(c.get("slot_dist", {}).get(name, 0.006 if name == "slots_wide" else 0.004))
+            regs += f"\n        {name} {{ mode distance; levels (({dist} {int(lv_over.get(name, d['level']))})); }}"
         gmax = int(c.get("gap_max_level", 8))
         for name, (lo, hi) in (GAP_BOXES.items() if c.get("gap_refine") else []):
             geo += f"\n    {name} {{ type searchableBox; min ({lo[0]} {lo[1]} {lo[2]}); max ({hi[0]} {hi[1]} {hi[2]}); }}"
