@@ -1,0 +1,60 @@
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Read mesh in = 0.01 s
+
+Overall mesh bounding box  : (-8.8000002 0 0) (17.72 5.44 5.44)
+Relative tolerance         : 1e-06
+Absolute matching distance : 2.7613359e-05
+
+Reading refinement surfaces.
+Read refinement surfaces in = 2.07 s
+
+Reading refinement shells.
+Refinement level 2 for all cells inside box_far
+Refinement level 3 for all cells inside box_wake
+Refinement level 4 for all cells inside box_near
+Refinement level 4 for all cells inside box_rw
+Refinement level 5 for all cells inside box_floor
+Refinement level 5 for all cells inside box_fwgnd
+[0] 
+[0] 
+[0] --> FOAM FATAL ERROR: (openfoam-2606)
+[0] Shell slots_wide.stl does not support testing for inside
+Probably it is not closed.
+[0] 
+[0]     From void Foam::shellSurfaces::setAndCheckLevels(Foam::label, const Foam::List<Foam::Tuple2<double, int> >&)
+[0]     in file shellSurfaces/shellSurfaces.C at line 132.
+[0] 
+FOAM parallel run exiting
+[0] 
+[runnervm8axu0:04931] [[38445,0],0] ORTE_ERROR_LOG: Data unpack would read past end of buffer in file ../../../orte/util/show_help.c at line 507
+--------------------------------------------------------------------------
+MPI_ABORT was invoked on rank 3 in communicator MPI_COMM_WORLD
+with errorcode 1.
+
+NOTE: invoking MPI_ABORT causes Open MPI to kill all MPI processes.
+You may or may not see output from other processes, depending on
+exactly when Open MPI kills them.
+--------------------------------------------------------------------------
+[3] 
+[3] 
+[3] --> FOAM FATAL ERROR: (openfoam-2606)
+[3] Shell slots_wide.stl does not support testing for inside
+Probably it is not closed.
+[3] 
+[3]     From void Foam::shellSurfaces::setAndCheckLevels(Foam::label, const Foam::List<Foam::Tuple2<double, int> >&)
+[3]     in file shellSurfaces/shellSurfaces.C at line 132.
+[3] 
+FOAM parallel run exiting
+[3] 
