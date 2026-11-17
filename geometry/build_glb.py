@@ -169,6 +169,7 @@ ZONE_RAY_STRIDE, ZONE_RAY_LEN, ZONE_RAYS_OPEN = 3, 0.30, 3   # ray test of the r
 ZONE_THICK = 0.010                    # half-thickness above which a reopened pocket is the inside of a part
 ZONE_MIN_CM3 = 2.0                    # smallest reopened gap kept
 ZONE_ONE_PIECE = 0.8                  # rays hitting one piece for more than this share: inside that piece
+ZONE_RAYS_SHEET = 9                   # ...unless this many rays see open air: the coarse wrap's offset along a surface
 _DIRS = np.array([(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if (i, j, k) != (0, 0, 0)], float)
 _DIRS /= np.linalg.norm(_DIRS, axis=1)[:, None]
 
@@ -283,8 +284,9 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
             smp = pts[:: max(1, len(pts) // 200)]
         esc, share, nhit = ray_escapes(smp, wall_id, outside, int(round(ZONE_RAY_LEN / hf)))
         # open to outside air through a few directions AND between different pieces of the model (a slot between two
-        # elements); air whose walls all belong to one piece is the inside of that piece (hollow endplate, element)
-        ok = (esc >= ZONE_RAYS_OPEN) & (share <= ZONE_ONE_PIECE) & (nhit >= 4)
+        # elements); air whose walls all belong to one piece is the inside of that piece (hollow endplate, element),
+        # except the thin sheet the coarse wrap added along a surface, which sees open air in about half the directions
+        ok = ((esc >= ZONE_RAYS_OPEN) & (share <= ZONE_ONE_PIECE) & (nhit >= 4)) | (esc >= ZONE_RAYS_SHEET)
         from scipy.spatial import cKDTree
         _, nn = cKDTree(smp).query(pts, k=1)
         good = ok[nn]

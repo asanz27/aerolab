@@ -34,7 +34,8 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   bargeboards antes de 2022 y de las zonas que señaló la revisión de geometría de cada coche (fondo delantero, borde del
   fondo, difusor, ruedas; 1,5 mm, `detail_zones` en `CARS`) el sólido se rehace fino y solo se reabre el aire que el
   cierre tapó y que es una ranura: rayos en 26 direcciones que salen al aire libre y chocan con al menos dos piezas
-  distintas del modelo; los interiores de piezas huecas (elementos con el borde de salida abierto, placas de doble piel,
+  distintas del modelo, o la lámina que el envolvente grueso añadía a lo largo de una superficie (ve aire libre en 9 o
+  más direcciones); los interiores de piezas huecas (elementos con el borde de salida abierto, placas de doble piel,
   morros) siguen macizos, igual que lo que decidió rellenar el interior macizo.
 - **Regiones de ranura** (`slots_wide.stl`, `slots_narrow.stl`): cierre morfológico del sólido fino menos el sólido;
   refinan a nivel 7 los huecos de menos de 15 mm y a nivel 8 los de menos de 6 mm (`"slot_levels"` para cambiarlo).
