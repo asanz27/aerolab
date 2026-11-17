@@ -1,0 +1,60 @@
+Exec   : snappyHexMesh -overwrite -parallel
+Date   : Nov 17 2026
+Time   : 09:01:35
+Host   : runnervm8axu0
+PID    : 5101
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_rb12_c4
+nProcs : 4
+Hosts  :
+(
+    (runnervm8axu0 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Read mesh in = 0.01 s
+
+Overall mesh bounding box  : (-8.5 0 0) (17.34 5.44 5.44)
+Relative tolerance         : 1e-06
+Absolute matching distance : 2.696095e-05
+
+Reading refinement surfaces.
+Read refinement surfaces in = 2.45 s
+
+Reading refinement shells.
+Refinement level 2 for all cells inside box_far
+Refinement level 3 for all cells inside box_wake
+Refinement level 4 for all cells inside box_near
+Refinement level 4 for all cells inside box_rw
+Refinement level 5 for all cells inside box_floor
+Refinement level 5 for all cells inside box_fwgnd
+[0] 
+[0] 
+[0] --> FOAM FATAL ERROR: (openfoam-2606)
+[0] Shell slots_wide.stl does not support testing for inside
+Probably it is not closed.
+[0] 
+[0]     From void Foam::shellSurfaces::setAndCheckLevels(Foam::label, const Foam::List<Foam::Tuple2<double, int> >&)
+[0]     in file shellSurfaces/shellSurfaces.C at line 132.
+[0] 
+FOAM parallel run exiting
+[0] 
+[runnervm8axu0:05098] [[38532,0],0] ORTE_ERROR_LOG: Out of resource in file ../../../orte/util/show_help.c at line 501
