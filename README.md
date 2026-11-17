@@ -23,9 +23,28 @@ Resultados: ramas huérfanas `res-<caso>` (datos web + logs); progreso en vivo: 
 
 ## Trabajos encadenados
 
-Un trabajo de Actions dura como mucho 6 h. Con `"stages": 2` o `3` en `run.json`, el solver guarda el estado
+Un trabajo de Actions dura como mucho 6 h. Con `"stages": 2`, `3` o `4` en `run.json`, el solver guarda el estado
 (`writeNow`) antes del límite, lo comprime (tar + zstd) y lo pasa como *artifact* (2 días de retención) al
 trabajo siguiente, que continúa las iteraciones. Solo el último trabajo reconstruye, postprocesa y publica.
+
+## Pared híbrida y ranuras abiertas (`"wall": "hybrid"`, `"post2": true`)
+
+- **Zonas de detalle** (`build_glb.py`, `carve_zone`): el envolvente de la carrocería (3,5 mm, radio de cierre
+  2 vóxeles) cerraba toda ranura de menos de ~14-17 mm. En cajas alrededor de los alerones (1,25 mm, automáticas), de los
+  bargeboards antes de 2022 y de las zonas que señaló la revisión de geometría de cada coche (fondo delantero, borde del
+  fondo, difusor, ruedas; 1,5 mm, `detail_zones` en `CARS`) el sólido se rehace fino y solo se reabre el aire que el
+  cierre tapó y que es una ranura: rayos en 26 direcciones que salen al aire libre y chocan con al menos dos piezas
+  distintas del modelo; los interiores de piezas huecas (elementos con el borde de salida abierto, placas de doble piel,
+  morros) siguen macizos, igual que lo que decidió rellenar el interior macizo.
+- **Regiones de ranura** (`slots_wide.stl`, `slots_narrow.stl`): cierre morfológico del sólido fino menos el sólido;
+  refinan a nivel 7 los huecos de menos de 15 mm y a nivel 8 los de menos de 6 mm (`"slot_levels"` para cambiarlo).
+- **Capas con altura absoluta** (`geometry/wall_layers.json`): alerones con capa límite resuelta (primera celda a
+  y⁺ ≈ 2 para el percentil 90 de la velocidad de fricción medida en las simulaciones anteriores, 15-16 capas ×1,35);
+  el resto con funciones de pared (y⁺ ≈ 50 para la mediana, 4 capas ×1,2). En todas las paredes `nutUSpaldingWallFunction`
+  y `omegaWallFunction` con `blending binomial2`, válidas para cualquier y⁺.
+- **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
+  y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
+  alerones y distribución de y⁺ ponderada por área en cada pieza.
 
 ## Interior macizo y radiador de caudal fijo (modelos visuales)
 

@@ -31,18 +31,40 @@ CARS = {
     "mp423": {
         "name": "McLaren MP4/23 (2008)", "npz": "mp423.npz", "tread": r"^TREAD_", "drop": r"led\d|CLEARLED",
         "tyre_d": 0.660, "width": 1.800, "year": 2008,
+        # detail zones from the geometry review (gaps the 3.5 mm wrap closed): forward floor, sidepod-top winglets and
+        # chimneys, diffuser and rear-wheel area, front-wheel area (front wing, rear wing and bargeboards are automatic)
+        "detail_zones": [[[-0.20, 0.0, 0.0], [1.05, 0.70, 0.30]], [[1.30, 0.40, 0.40], [3.00, 0.80, 0.75]],
+                         [[2.35, 0.15, 0.0], [3.35, 0.70, 0.50]], [[-0.25, 0.35, 0.10], [0.25, 0.65, 0.50]]],
         "source": {"title": "2008 Mclaren MP4/23", "author": "Dave Love SketchFab", "url": "https://skfb.ly/pKX8v",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
     "rb12": {
         "name": "Red Bull RB12 (2016)", "npz": "rb12.npz", "tread": r"\|Tyre\.", "drop": r"CLEARLED|TAG_DRS|kers_|DISPLAY|LCD|BLACK\.|driver_number",
         "tyre_d": 0.660, "width": 1.800, "year": 2016,
+        # detail zones (review): T-tray / forward floor, front suspension and nose, diffuser and rear-wheel area,
+        # sidepod side vanes
+        "detail_zones": [[[0.30, 0.0, -0.02], [1.10, 0.40, 0.30]], [[-0.60, 0.03, 0.15], [0.60, 0.50, 0.75]],
+                         [[2.90, 0.03, 0.0], [3.75, 0.70, 0.50]], [[1.60, 0.45, 0.25], [2.00, 0.70, 0.50]]],
         "source": {"title": "2016 Redbull RB12", "author": "Dave Love SketchFab", "url": "https://sketchfab.com/3d-models/d9b5ce8c5d234deeb9cb57f5029dad57",
+                   "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
+    },
+    "mp45": {
+        "name": "McLaren MP4/5 (1989)", "npz": "mp45.npz", "tread": r"^(front|back)_wheels\|", "drop": r"^$", "tyres_only": True,
+        "tyre_d": 0.660, "width": 2.130, "year": 1989,
+        # detail zones (review): diffuser and rear-wheel area, front-wheel area, sidepod side
+        "detail_zones": [[[1.95, 0.03, 0.0], [2.90, 0.65, 0.45]], [[-0.15, 0.40, 0.10], [0.30, 0.85, 0.50]],
+                         [[1.60, 0.25, 0.30], [1.95, 0.55, 0.60]]],
+        "source": {"title": "McLaren MP4/5 || Formula 1", "author": "dark_igorek", "url": "https://sketchfab.com/3d-models/mclaren-mp45-formula-1-3059d4532ecd48ca8da41e1cac971f22",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
     "mcl39": {
         "name": "McLaren MCL39 (2025)", "npz": "mcl39.npz", "tread": r"\|Tyre_tread", "drop": r"clearled|led|display|lcd",
         "tyre_d": 0.720, "width": 2.000, "year": 2025,
+        # detail zones (review): floor edge, rear floor and diffuser centre, T-tray, front suspension and brake ducts,
+        # sidepod vanes, rear-wheel / diffuser side
+        "detail_zones": [[[1.50, 0.45, 0.0], [3.30, 0.85, 0.32]], [[2.50, 0.03, 0.0], [3.50, 0.45, 0.35]],
+                         [[0.40, 0.03, 0.0], [1.30, 0.20, 0.20]], [[-0.40, 0.10, 0.10], [0.45, 0.80, 0.80]],
+                         [[0.90, 0.45, 0.10], [1.30, 0.80, 0.45]], [[3.35, 0.40, 0.10], [4.00, 0.60, 0.45]]],
         "source": {"title": "2025 McLaren MCL39", "author": "Abu Saif (abuhossain844)", "url": "https://sketchfab.com/3d-models/710fc591067848d0b3068ae3fb160ede",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
@@ -68,6 +90,11 @@ def load(car):
     la = 0 if ext[0] > ext[2] else 2
     ta = 2 if la == 0 else 0
     tread = np.concatenate([t.reshape(-1, 3) for n, t in zip(names, tris) if re.search(cfg["tread"], n)])
+    if cfg.get("tyres_only"):
+        # the wheel objects also hold rims, brakes and drive shafts: keep the pieces as tall as the tallest (the tyres)
+        pcs = [c for n, t in zip(names, tris) if re.search(cfg["tread"], n) for c in components(t)]
+        hz = np.array([np.ptp(c.reshape(-1, 3)[:, 1]) for c in pcs])
+        tread = np.concatenate([c.reshape(-1, 3) for c, z in zip(pcs, hz) if z >= 0.85 * hz.max()])
     # scale: mean of tyre diameter and overall width (tyre outer faces) vs the era's regulation values
     d_model = tread[:, 1].max() - tread[:, 1].min()
     w_model = tread[:, ta].max() - tread[:, ta].min()
@@ -117,32 +144,229 @@ def sample_points(T, h):
             yield P.reshape(-1, 3)
 
 
-def wrap(T, h, r, y0=0.0, W=None):
-    """Watertight half-model (y >= y0) surface of triangle soup T on an h-voxel grid, closing radius r voxels.
-    With W (wheel geometry dict) the hollow interior is filled and the cooling inlets kept as blind ducts
-    (cavity.py). Returns (surface, cavity info or None)."""
+def sample_points_ids(T, ids, h):
+    """sample_points with the id of the triangle each point comes from."""
+    e = np.stack([np.linalg.norm(T[:, 1] - T[:, 0], axis=1), np.linalg.norm(T[:, 2] - T[:, 1], axis=1),
+                  np.linalg.norm(T[:, 0] - T[:, 2], axis=1)], 1).max(1)
+    m = np.maximum(1, np.ceil(e / (0.45 * h)).astype(int))
+    yield T.reshape(-1, 3), np.repeat(ids, 3)
+    for mm in np.unique(m):
+        sel = T[m == mm]
+        sid = ids[m == mm]
+        i, j = np.meshgrid(np.arange(mm + 1), np.arange(mm + 1), indexing="ij")
+        k = (i + j) <= mm
+        a, b = i[k] / mm, j[k] / mm
+        c = 1 - a - b
+        step = max(1, int(4e6 // max(1, len(a))))
+        for s0 in range(0, len(sel), step):
+            S = sel[s0:s0 + step]
+            P = S[:, 0, None, :] * a[None, :, None] + S[:, 1, None, :] * b[None, :, None] + S[:, 2, None, :] * c[None, :, None]
+            yield P.reshape(-1, 3), np.repeat(sid[s0:s0 + step], len(a))
+
+
+ZONE_H, ZONE_M, ZONE_BAND = 0.0015, 0.012, 7
+ZONE_RAY_STRIDE, ZONE_RAY_LEN, ZONE_RAYS_OPEN = 3, 0.30, 3   # ray test of the reopened pockets (see carve_zone)
+ZONE_THICK = 0.010                    # half-thickness above which a reopened pocket is the inside of a part
+ZONE_MIN_CM3 = 2.0                    # smallest reopened gap kept
+ZONE_ONE_PIECE = 0.8                  # rays hitting one piece for more than this share: inside that piece
+_DIRS = np.array([(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if (i, j, k) != (0, 0, 0)], float)
+_DIRS /= np.linalg.norm(_DIRS, axis=1)[:, None]
+
+
+def ray_escapes(smp, wall_id, outside, kmax):
+    """For voxel samples, 26 straight rays: how many reach outside air before a wall voxel (leaving the grid counts as
+    blocked), the share of the wall hits that land on the most-hit piece of the model, and the number of hits."""
+    shape = np.array(wall_id.shape)
+    n = len(smp)
+    esc = np.zeros(n, int)
+    hits = np.full((n, len(_DIRS)), -1, np.int64)
+    base = smp.astype(float)
+    for di, d in enumerate(_DIRS):
+        alive = np.ones(n, bool)
+        for k in range(1, kmax + 1):
+            a = np.where(alive)[0]
+            if not len(a):
+                break
+            q = np.rint(base[a] + d * k).astype(np.int64)
+            inb = np.all((q >= 0) & (q < shape), axis=1)
+            alive[a[~inb]] = False
+            a, q = a[inb], q[inb]
+            o = outside[q[:, 0], q[:, 1], q[:, 2]]
+            wid = wall_id[q[:, 0], q[:, 1], q[:, 2]]
+            w = wid >= 0
+            esc[a[o]] += 1
+            hits[a[w & ~o], di] = wid[w & ~o]
+            alive[a[o | w]] = False
+    # share of the most frequent piece among the hits (rows sorted; longest run of equal ids)
+    hs = np.sort(hits, axis=1)
+    nhit = (hs >= 0).sum(1)
+    best = np.zeros(n, int); run = np.ones(n, int)
+    for c in range(1, hs.shape[1]):
+        same = (hs[:, c] == hs[:, c - 1]) & (hs[:, c] >= 0)
+        run = np.where(same, run + 1, 1)
+        best = np.maximum(best, np.where(hs[:, c] >= 0, run, 0))
+    best = np.maximum(best, (hs[:, 0] >= 0).astype(int))
+    share = best / np.maximum(nhit, 1)
+    return esc, share, nhit
+ZONE_TRIS = []      # closed surfaces of the detail zones (filled by carve_zone)
+ZONE_CUTS = []      # boxes removed from the coarse solid (their faces are internal, inside the zone surfaces)
+
+
+ZONE_MAXVOX = 1.3e8
+
+
+def zone_chunks(zlo, zhi, hf):
+    """Split a detail-zone box along its longest side into chunks of at most ZONE_MAXVOX fine voxels (with margins).
+    Neighbouring chunks overlap by twice the margin; the coarse solid is removed over the whole box."""
+    n = int(np.ceil(np.prod((zhi - zlo + 2 * ZONE_M) / hf) / ZONE_MAXVOX))
+    if n <= 1:
+        return [(zlo, zhi)]
+    k = int(np.argmax(zhi - zlo))
+    edges = np.linspace(zlo[k], zhi[k], n + 1)
+    out = []
+    for a, b in zip(edges[:-1], edges[1:]):
+        lo_, hi_ = zlo.copy(), zhi.copy()
+        lo_[k], hi_[k] = a, b
+        out.append((lo_, hi_))
+    return out
+
+
+def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
+    """Detail zone: inside the box (+ margin ZONE_M) the solid is rebuilt on a ZONE_H grid. Outside air reaches every
+    gap wider than ~3 fine voxels: flood fill of the fine air from the coarse body's outside air, allowed only through
+    fine air that is outside air or coarse solid within ZONE_BAND coarse voxels of the surface (gaps the coarse wrap
+    closed, not the filled interior). The fine solid (= not outside air) is a closed surface overlapping the coarse body
+    by 1.5 margins; the caller removes the zone interior from the coarse solid. Its triangles go to ZONE_TRIS and the
+    gaps found in it to the slot refinement regions."""
     from scipy import ndimage
     import pyvista as pv
-    V = T.reshape(-1, 3)
+    blo, bhi = zlo - ZONE_M, zhi + ZONE_M
+    blo[1] = max(blo[1], lo[1])
+    hf = hf or ZONE_H
+    shape = np.ceil((bhi - blo) / hf).astype(int) + 1
+    c = T.mean(1)
+    sel = np.all((c > blo - 0.05) & (c < bhi + 0.05), axis=1)
+    # model surface voxels, tagged with the connected piece of the model they belong to
+    oid = np.full(shape, -1, np.int32)
+    tid = ids[sel] if ids is not None else np.zeros(int(sel.sum()), np.int32)
+    for P, pid in sample_points_ids(T[sel], tid, hf):
+        idx = np.floor((P - blo) / hf).astype(np.int64)
+        ok = np.all((idx >= 0) & (idx < shape), axis=1)
+        oid[idx[ok, 0], idx[ok, 1], idx[ok, 2]] = pid[ok]
+    ball = np.zeros((3, 3, 3), bool); ball[1, 1, :] = ball[1, :, 1] = ball[:, 1, 1] = True
+    wall_id = ndimage.grey_dilation(oid + 1, footprint=ball) - 1      # the 1-voxel dilated surface keeps a piece id
+    del oid
+    air = wall_id < 0
+    ix = [np.clip(np.floor((blo[k] + hf * np.arange(shape[k]) - lo[k]) / h).astype(int), 0, solid.shape[k] - 1) for k in range(3)]
+    cs = solid[np.ix_(*ix)]
+    cb = band[np.ix_(*ix)]
+    allowed = air & (~cs | cb)
+    lab, _ = ndimage.label(allowed)
+    seeds = np.unique(lab[allowed & ~cs])
+    ext = np.isin(lab, seeds[seeds > 0])
+    del lab, allowed, cb
+    # pockets of outside air the coarse wrap made solid: reopen only what is open, as in the interior fill (cavity.py):
+    # from samples of the pockets, rays in 26 directions; a sample sees open air if >= ZONE_RAYS_OPEN of them reach
+    # outside air before the model's surface. Slots between elements are open through their mouths; the inside of a
+    # hollow part (wing elements with open trailing edges or tips, double-skin floors, fins) is enclosed and stays solid
+    # even when it is connected to a slot. Every pocket voxel takes the verdict of its nearest sample.
+    outside = ext & ~cs
+    L = ext & cs
+    del ext
+    pts = np.argwhere(L)
+    reopen = np.zeros(shape, bool)
+    vreal = vfake = 0.0
+    if len(pts):
+        st = ZONE_RAY_STRIDE
+        smp = pts[np.all(pts % st == 0, axis=1)]
+        if len(smp) < 50:
+            smp = pts[:: max(1, len(pts) // 200)]
+        esc, share, nhit = ray_escapes(smp, wall_id, outside, int(round(ZONE_RAY_LEN / hf)))
+        # open to outside air through a few directions AND between different pieces of the model (a slot between two
+        # elements); air whose walls all belong to one piece is the inside of that piece (hollow endplate, element)
+        ok = (esc >= ZONE_RAYS_OPEN) & (share <= ZONE_ONE_PIECE) & (nhit >= 4)
+        from scipy.spatial import cKDTree
+        _, nn = cKDTree(smp).query(pts, k=1)
+        good = ok[nn]
+        reopen[tuple(pts[good].T)] = True
+        # gaps are thin: whatever holds a ball of radius ZONE_THICK is the inside of a part with openings (a nose with
+        # seams, an open-backed fairing) and stays solid (morphological opening of the reopened set)
+        k = max(2, int(round(ZONE_THICK / hf)))
+        core = ndimage.binary_erosion(reopen, iterations=k)
+        if core.any():
+            reopen &= ~(ndimage.binary_dilation(core, iterations=k + 1) & reopen)
+        del core
+        # slivers along the inside of a shell (seams of a nose, a fairing): drop reopened pieces under ZONE_MIN_CM3
+        lab, n = ndimage.label(reopen, np.ones((3, 3, 3)))
+        if n:
+            cnt = np.bincount(lab.ravel())
+            small = np.where(cnt * hf ** 3 < ZONE_MIN_CM3 * 1e-6)[0]
+            reopen[np.isin(lab, small[small > 0])] = False
+        del lab
+        vreal = reopen.sum() * hf ** 3
+        vfake = len(pts) * hf ** 3 - vreal
+    del L, pts
+    nreal = int(vreal > 0)
+    del wall_id
+    S = ~(outside | reopen)
+    del outside, reopen
+    log(f"  detail zone {zlo.round(2).tolist()} - {zhi.round(2).tolist()}: {np.prod(shape)/1e6:.0f} M voxels at {hf*1000:.1f} mm, "
+        f"{vreal*1e6:.0f} cm3 of closed gaps reopened; {vfake*1e6:.0f} cm3 of enclosed hollow-part insides kept solid")
+    del cs
+    S[0], S[-1], S[:, 0], S[:, -1], S[:, :, 0], S[:, :, -1] = False, False, False, False, False, False
+    for name, (st, vol) in slot_regions(S, blo, hf).items():
+        SLOTS.setdefault(name, []).append(st)
+    f = ndimage.gaussian_filter(S.astype(np.float32), 0.6)
+    del S
+    grid = pv.ImageData(dimensions=shape, spacing=(hf, hf, hf), origin=blo)
+    grid.point_data["s"] = f.ravel(order="F")
+    del f
+    surf = grid.contour([0.5], scalars="s").triangulate().clean()
+    if surf.n_cells:
+        # wing boxes (fine grid) keep more triangles than the other detail zones
+        target = target or (250000 if hf <= WING_H + 1e-9 else 120000)
+        ZONE_TRIS.append(outward(tris_of(finish(surf, target))))
+
+
+def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_ids=None):
+    """Watertight half-model (y >= y0) surface of triangle soup T on an h-voxel grid, closing radius r voxels.
+    With W (wheel geometry dict) the hollow interior is filled and the cooling inlets kept as blind ducts
+    (cavity.py). T_extra (the finely wrapped wings): obstacles for the outside-air flood fill and the interior fill,
+    exactly as if they were part of the body, but the solid that exists only because of them (within r voxels of
+    their triangles and not within r voxels of T) is removed: the body keeps its shape and its filled interior,
+    the wings and the gaps between their elements are left to the fine wrap. Returns (surface, cavity info or None)."""
+    from scipy import ndimage
+    import pyvista as pv
+    V = T.reshape(-1, 3) if T_extra is None else np.concatenate([T.reshape(-1, 3), T_extra.reshape(-1, 3)])
     pad = (r + 3) * h
     lo = V.min(0) - pad
     hi = V.max(0) + pad
     lo[1] = y0 - 2 * h
     shape = np.ceil((hi - lo) / h).astype(int) + 1
     log(f"  grid {shape.tolist()} = {np.prod(shape)/1e6:.0f} M voxels, h={h*1000:.1f} mm, r={r}")
-    occ = np.zeros(shape, bool)
-    npts = 0
-    for P in sample_points(T[T[..., 1].max(1) >= lo[1]], h):
-        P = P[P[:, 1] >= lo[1]]
-        idx = np.floor((P - lo) / h).astype(np.int64)
-        np.clip(idx, 0, shape - 1, out=idx)
-        occ[idx[:, 0], idx[:, 1], idx[:, 2]] = True
-        npts += len(P)
+    def raster(TT):
+        o = np.zeros(shape, bool)
+        n = 0
+        for P in sample_points(TT[TT[..., 1].max(1) >= lo[1]], h):
+            P = P[P[:, 1] >= lo[1]]
+            idx = np.floor((P - lo) / h).astype(np.int64)
+            np.clip(idx, 0, shape - 1, out=idx)
+            o[idx[:, 0], idx[:, 1], idx[:, 2]] = True
+            n += len(P)
+        return o, n
+    occ, npts = raster(T)
     log(f"  {npts/1e6:.0f} M surface samples, {occ.sum()/1e6:.2f} M surface voxels")
     # "farther than r voxels from the skin" and "within r voxels of the outside air": dilations by a ball of radius r
     # (the same voxel sets as thresholding a Euclidean distance transform, without its ~20 bytes per voxel)
     g = np.indices((2 * r + 1,) * 3) - r
     ball = (g ** 2).sum(0) <= r * r
+    only_extra = None
+    if T_extra is not None and len(T_extra):
+        occ_x, nx_ = raster(T_extra)
+        only_extra = ndimage.binary_dilation(occ_x, ball) & ~ndimage.binary_dilation(occ, ball)
+        occ |= occ_x
+        del occ_x
+        log(f"  + {nx_/1e6:.0f} M samples of the finely wrapped parts (obstacles only): {only_extra.sum()/1e6:.2f} M voxels left to them")
     far = ~ndimage.binary_dilation(occ, ball)
     lab, _ = ndimage.label(far)
     del far
@@ -156,14 +380,45 @@ def wrap(T, h, r, y0=0.0, W=None):
     if W is not None:
         from cavity import fill as fill_cavities
         skin = ~ext
-        ext, info = fill_cavities(ext, h, lo, W, T=T, k=max(1, int(round(0.0105 / h))), log=log)
+        ext, info = fill_cavities(ext, h, lo, W, T=T if T_extra is None else np.concatenate([T, T_extra]),
+                                  k=max(1, int(round(0.0105 / h))), log=log)
     solid = ~ext
     del ext
+    if only_extra is not None:
+        solid &= ~only_extra
+        if skin is not None:
+            skin &= ~only_extra
+        del only_extra
     for a in (solid, skin):
         if a is not None:
             a[0], a[-1], a[:, -1], a[:, :, 0], a[:, :, -1] = False, False, False, False, False
             a[:, 0] = False
     log(f"  solid {solid.sum()/1e6:.2f} M voxels")
+    kept = (solid.copy(), lo.copy()) if keep_solid else None
+    if zones:
+        T_all = T if T_extra is None else np.concatenate([T, T_extra])
+        band = solid & ~ndimage.binary_erosion(solid, iterations=ZONE_BAND)   # solid within ~25 mm of its surface
+        if skin is not None:
+            # only what the closing radius bridged may reopen, never the interior the cavity fill decided to fill
+            band &= skin
+        for z in zones:                    # every zone reads the untouched coarse solid
+            zlo, zhi = np.array(z[0], float), np.array(z[1], float)
+            hz = float(z[2]) if len(z) > 2 else ZONE_H
+            for clo, chi in zone_chunks(zlo, zhi, hz):
+                carve_zone(T_all, clo, chi, solid, band, lo, h, hf=hz,
+                           ids=None if T_ids is None or T_extra is not None else T_ids)
+        del band
+        for z in zones:
+            zlo, zhi = np.array(z[0], float), np.array(z[1], float)
+            # the zone interior (box shrunk by half the margin) now comes from the fine solid
+            a = np.ceil((zlo + 0.5 * ZONE_M - lo) / h - 0.5).astype(int)
+            b = np.floor((zhi - 0.5 * ZONE_M - lo) / h - 0.5).astype(int) + 1
+            a = np.clip(a, 0, np.array(solid.shape)); b = np.clip(b, 0, np.array(solid.shape))
+            if np.all(b > a):
+                ZONE_CUTS.append((lo + (a + 0.5) * h, lo + (b - 0.5) * h))
+                solid[a[0]:b[0], a[1]:b[1], a[2]:b[2]] = False
+                if skin is not None:
+                    skin[a[0]:b[0], a[1]:b[1], a[2]:b[2]] = False
     if skin is None:
         f = ndimage.gaussian_filter(solid.astype(np.float32), 0.6)
     else:
@@ -177,6 +432,8 @@ def wrap(T, h, r, y0=0.0, W=None):
     grid.point_data["s"] = f.ravel(order="F")
     del f
     surf = grid.contour([0.5], scalars="s").triangulate().clean()
+    if keep_solid:
+        return surf, info, kept
     return surf, info
 
 
@@ -287,6 +544,10 @@ def split_parts(car):
     cfg = CARS[car]
     parts, s = load(car)
     tread = np.concatenate([t.reshape(-1, 3) for n, t in parts if re.search(cfg["tread"], n)])
+    if cfg.get("tyres_only"):                      # tyres only (see load)
+        pcs = [c for n, t in parts if re.search(cfg["tread"], n) for c in components(t)]
+        hz = np.array([np.ptp(c.reshape(-1, 3)[:, 2]) for c in pcs])
+        tread = np.concatenate([c.reshape(-1, 3) for c, z in zip(pcs, hz) if z >= 0.85 * hz.max()])
     tl = tread[tread[:, 1] > 0]
     split = (tl[:, 0].min() + tl[:, 0].max()) / 2
     fr, rr = tl[tl[:, 0] < split], tl[tl[:, 0] >= split]
@@ -320,6 +581,7 @@ def split_parts(car):
 # At 1.25 mm and 1 voxel only gaps below ~3.5 mm close (the joints between touching pieces), the slots stay open.
 WING_H, WING_R = 0.00125, 1
 WING_TARGET = 300000
+SLOTS = {}    # refinement-region name -> list of closed triangle surfaces (filled by wrap_wings)
 
 
 def wing_box(W):
@@ -334,10 +596,13 @@ def wing_box(W):
     return out
 
 
-def split_wings(body, W):
+def split_wings(body, W, zones=()):
     """Move the body pieces lying (>= 80 % of their area) in a wing box to that wing's list."""
     from cavity import tri_area
     boxes = wing_box(W)
+    # further fine-wrap zones of this car (geometry review: vanes, fences, strakes, brake-duct winglets...)
+    for i, (lo, hi) in enumerate(zones):
+        boxes[f"z{i}"] = (tuple(lo), tuple(hi))
     wings = {k: [] for k in boxes}
     rest = []
     for piece in body:
@@ -353,6 +618,47 @@ def split_wings(body, W):
     return wings, rest
 
 
+def slot_regions(solid, lo, h, wide_mm=15.0, narrow_mm=6.0, min_cm3=0.2):
+    """Air in the narrow gaps of a finely wrapped part (slots between wing elements, between vanes): the morphological
+    closing of the solid minus the solid, on a 2h grid. Returns {"slots_wide": triangles, "slots_narrow": triangles}:
+    closed surfaces around the gaps narrower than wide_mm / narrow_mm, used as snappyHexMesh refinement regions
+    (explicit, instead of the automatic gap refinement, which also refined inside thin parts and far beyond the slots)."""
+    from scipy import ndimage
+    import pyvista as pv
+    sh = (np.array(solid.shape) // 2) * 2
+    S = solid[:sh[0], :sh[1], :sh[2]].reshape(sh[0] // 2, 2, sh[1] // 2, 2, sh[2] // 2, 2).max(axis=(1, 3, 5))
+    H = 2 * h
+    pad = 6
+    S = np.pad(S, pad)
+    org = lo - pad * H
+    out = {}
+    for name, w_mm in (("slots_wide", wide_mm), ("slots_narrow", narrow_mm)):
+        k = max(1, int(round(0.5 * w_mm / 1000 / H)))
+        closed = ndimage.binary_erosion(ndimage.binary_dilation(S, iterations=k), iterations=k)
+        gap = closed & ~S
+        lab, n = ndimage.label(gap)
+        if n:
+            cnt = np.bincount(lab.ravel())
+            small = np.where(cnt * H ** 3 < min_cm3 * 1e-6)[0]
+            gap[np.isin(lab, small)] = False
+        del lab
+        gap = ndimage.binary_dilation(gap, iterations=1)       # cover the whole gap, a little beyond its mouths
+        vol = gap.sum() * H ** 3
+        if vol <= 0:
+            continue
+        f = ndimage.gaussian_filter(gap.astype(np.float32), 0.5)
+        grid = pv.ImageData(dimensions=f.shape, spacing=(H, H, H), origin=org)
+        grid.point_data["s"] = f.ravel(order="F")
+        surf = grid.contour([0.5], scalars="s").triangulate().clean()
+        if surf.n_cells == 0:
+            continue
+        if surf.n_cells > 150000:
+            surf = surf.decimate(1.0 - 150000 / surf.n_cells)
+        out[name] = (outward(tris_of(only_triangles(surf))), float(vol))
+        log(f"  {name}: gaps < {w_mm:.0f} mm, {vol*1e6:.0f} cm3 (half car)")
+    return out
+
+
 def wrap_wings(wings, W, year):
     """Fine wrap of each wing group -> {region: triangles} (front wing; rear wing above z 0.58, beam wing below)."""
     out = {}
@@ -361,10 +667,14 @@ def wrap_wings(wings, W, year):
             continue
         T = np.concatenate(lst)
         log(f"{k} wing: {len(lst)} pieces, {len(T)} triangles -> fine wrap {WING_H*1000:.2f} mm, r={WING_R}")
-        tri = outward(tris_of(finish(wrap(T, WING_H, WING_R)[0], WING_TARGET)))
+        surf, _, (sol, slo) = wrap(T, WING_H, WING_R, keep_solid=True)
+        tri = outward(tris_of(finish(surf, WING_TARGET)))
+        for name, (st, vol) in slot_regions(sol, slo, WING_H).items():
+            SLOTS.setdefault(name, []).append(st)
+        del sol
         if k == "fw":
             out.setdefault("frontwing", []).append(tri)
-        elif k == "bg":                    # vanes ahead of the sidepods: the usual position-based regions
+        elif k == "bg" or k.startswith("z"):   # vanes and other details: the usual position-based regions
             lab = classify(tri, W, year)
             for name in np.unique(lab):
                 out.setdefault(str(name), []).append(tri[lab == name])
@@ -378,7 +688,7 @@ def wrap_wings(wings, W, year):
 EXIT_VIEW_MIN = 0.10
 
 
-def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN):
+def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=None):
     """Radiator exit: the rear-most rear-facing bodywork around the gearbox, inboard of the rear wheels, up to
     `target` m^2 (half car). The faces closest to the rear-most face of the largest rear-facing patch are taken
     from all the rear-facing candidates (a single connected patch can be much smaller than the target after
@@ -394,6 +704,8 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN):
     n /= np.linalg.norm(n, axis=1)[:, None] + 1e-30
     cand = ((n[:, 0] > 0.6) & (c[:, 0] > W["xr"] - 0.9) & (c[:, 0] < W["xr"] + 0.25) & (np.abs(c[:, 1]) > 0.08)
             & (np.abs(c[:, 1]) < 0.40) & (c[:, 2] > 0.15) & (c[:, 2] < 0.70) & np.isin(lab, ["body", "sidepods"]))
+    if exclude is not None:                                # internal faces (inside the detail-zone solids)
+        cand &= ~exclude
     if sym:                                                # full-car surface: pick on the y > 0 side, mirror by |y|
         cand &= c[:, 1] > 0
     if not cand.any():
@@ -430,14 +742,32 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN):
     return sel
 
 
-def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True, fine_wings=True):
+def auto_zones(Tb, W):
+    """Detail zones of every car: the front wing, the rear + beam wing and, before 2022, the bargeboard region.
+    Finite boxes around the model's triangles in the wing_box regions (wings on a 1.25 mm grid)."""
+    C = Tb.mean(1)
+    out = []
+    for k, (lo, hi) in wing_box(W).items():
+        m = np.all((C >= lo) & (C <= hi), axis=1) & (Tb[..., 1].max(1) >= 0)
+        if m.sum() < 50:
+            continue
+        V = Tb[m].reshape(-1, 3)
+        V = V[V[:, 1] >= -0.005]
+        zlo, zhi = V.min(0) - 0.015, V.max(0) + 0.015
+        zlo = np.maximum(zlo, np.array(lo) - 0.015); zhi = np.minimum(zhi, np.array(hi) + 0.015)
+        zlo[1] = max(zlo[1], -0.005)
+        out.append((zlo.round(3).tolist(), zhi.round(3).tolist(), WING_H if k in ("fw", "rw") else ZONE_H))
+    return out
+
+
+def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True, fine_wings=False):
     cfg = CARS[car]
     os.makedirs(outdir, exist_ok=True)
     parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car)
     regions = {}
-    wing_tri = {}
+    wing_tri, wing_pieces = {}, {}
     if fine_wings:
-        wing_pieces, body = split_wings(body, W)
+        wing_pieces, body = split_wings(body, W, cfg.get("fine_zones", ()))
         wing_tri = wrap_wings(wing_pieces, W, cfg["year"])
     for k, lst in wheels.items():
         T = np.concatenate(lst).copy()
@@ -446,9 +776,27 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         regions[k] = outward(tris_of(finish(wrap(T, 0.004, 3)[0], 120000)))
     Tb = np.concatenate(body)
     log(f"body: {len(body)} parts, {len(Tb)} triangles")
-    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None)
+    Tw = np.concatenate([p for lst in wing_pieces.values() for p in lst]) if fine_wings and any(wing_pieces.values()) else None
+    ZONE_TRIS.clear()
+    ZONE_CUTS.clear()
+    zones = auto_zones(Tb, W) + [tuple(z) for z in cfg.get("detail_zones", ())]
+    for z in zones:
+        log(f"detail zone {z[0]} - {z[1]} at {1000 * (z[2] if len(z) > 2 else ZONE_H):.2f} mm")
+    Tb_ids = np.concatenate([np.full(len(p), i, np.int32) for i, p in enumerate(body)])   # connected piece of each triangle
+    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None, T_extra=Tw, zones=zones, T_ids=Tb_ids)
     bsurf = finish(bsurf, 450000)
     btri = outward(tris_of(bsurf))
+    # detail zones: their closed surfaces join the body surface; the faces of the body where the zones were cut out lie
+    # inside the zone solids (internal: never candidates for the cooling exit)
+    nA = len(btri)
+    if ZONE_TRIS:
+        btri = np.concatenate([btri] + ZONE_TRIS)
+    internal = np.zeros(len(btri), bool)
+    cA = btri[:nA].mean(1)
+    for clo, chi in ZONE_CUTS:
+        inside = np.all((cA > clo - 2 * h_body) & (cA < chi + 2 * h_body), axis=1)
+        on_cut = np.any(np.abs(cA - clo) < 1.5 * h_body, axis=1) | np.any(np.abs(cA - chi) < 1.5 * h_body, axis=1)
+        internal[:nA] |= inside & on_cut
     lab = classify(btri, W, cfg["year"])
     cooling = None
     if cav is not None:
@@ -460,7 +808,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
             if name in cl:
                 lab[cl[name]] = name
         if (lab == "radiator_in").any() and not (lab == "radiator_out").any():
-            lab[rear_exit(bt, lab, W, 0.5 * tri_area(btri[lab == "radiator_in"]).sum())] = "radiator_out"
+            lab[rear_exit(bt, lab, W, 0.5 * tri_area(btri[lab == "radiator_in"]).sum(), exclude=internal)] = "radiator_out"
         if (lab == "radiator_in").any() and (lab == "radiator_out").any():
             ai, ao = tri_area(btri[lab == "radiator_in"]), tri_area(btri[lab == "radiator_out"])
             ci = (btri[lab == "radiator_in"].mean(1) * ai[:, None]).sum(0) / ai.sum()
@@ -485,11 +833,12 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         regions[k] = btri[lab == k]
     for k, tri in wing_tri.items():       # finely wrapped wings join the regions of the same name
         regions[k] = np.concatenate([regions[k], tri]) if k in regions else tri
+    slots = {k: np.concatenate(v) for k, v in SLOTS.items() if v}
     if abs(front_mm) > 1e-9 or abs(rear_mm) > 1e-9:
         dF, dR = front_mm / 1000.0, rear_mm / 1000.0
         th = np.arctan2(dR - dF, xr - xf)
         cth, sth = np.cos(th), np.sin(th)
-        for k, tri in regions.items():
+        for k, tri in list(regions.items()) + list(slots.items()):
             if k.startswith("wheels"):
                 continue
             xx, zz = tri[..., 0] - xf, tri[..., 2].copy()
@@ -503,6 +852,12 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         info[k] = {"tris": int(len(tri))}
         log(f"{k:13s} tris={len(tri):7d}")
     names = list(info)
+    # slot-gap refinement regions (closed surfaces, not walls): level 7 for gaps < 15 mm, 8 for gaps < 6 mm
+    refine = {}
+    for k, tri in slots.items():
+        write_stl_bin(os.path.join(outdir, f"{k}.stl"), tri, k)
+        refine[k] = {"file": f"{k}.stl", "level": 8 if k == "slots_narrow" else 7}
+        log(f"{k:13s} tris={len(tri):7d} (refinement region)")
     V = np.concatenate([regions[k].reshape(-1, 3) for k in names])
     blo, bhi = V.min(0), V.max(0)
     sys.path.insert(0, HERE)
@@ -519,12 +874,14 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         "frontal_area": round(area, 4), "parts": names, "closure": info,
         "wrap": {"body_voxel_m": h_body, "body_close_voxels": r_body, "wheel_voxel_m": 0.004, "wheel_close_voxels": 3,
                  **({"wing_voxel_m": WING_H, "wing_close_voxels": WING_R, "wing_regions": sorted(wing_tri)} if wing_tri else {}),
+        "detail_zones": [[list(z[0]), list(z[1]), (z[2] if len(z) > 2 else ZONE_H)] for z in zones],
                  "interior_filled": cav is not None,
                  **({"enclosure_max_escapes": cav["K"], "enclosure_cell_m": round(cav["c"], 4), "core_cells": cav["core_cells"],
                      "inside_skin_test": cav.get("skin_test"),
                      "openings_used": [{k2: m[k2] for k2 in ("kind", "area", "x", "y", "z", "n")} for m in cav["mouths"] if m.get("kind")]} if cav else {})},
         **({"cooling": cooling, "patch_types": {"radiator_in": "patch", "radiator_out": "patch"}} if cooling else {}),
         "levels": {k: list(LEVELS.get(k, (4, 5))) for k in names},
+        "refine_regions": refine,
         "gap_boxes": {f"gap_{k}": gap_box(regions[k]) for k in ("frontwing", "rearwing", "beamwing", "bargeboards")
                       if k in info and (k != "bargeboards" or "bg" in wing_box(W))},
         "force_groups": {**{k: [k] for k in names if not k.startswith("radiator_")},

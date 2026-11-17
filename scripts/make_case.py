@@ -53,7 +53,8 @@ BOXES = {
 LOCATION = (5.1234, 1.8765, 2.3456)
 PATCH_TYPES = {}     # part -> OpenFOAM patch type when not a wall (e.g. the radiator face / exit)
 COOLING = None       # fixed-flow radiator: {"face_area", "exit_area", ...} from car.json
-GAP_BOXES = {}       # name -> (lo, hi): slot-gap refinement regions around the wings (car.json "gap_boxes")
+GAP_BOXES = {}       # name -> (lo, hi): boxes around the wings (car.json "gap_boxes"; gapLevel refinement only on request)
+REFINE = {}          # name -> {"file", "level"}: closed surfaces around the slot gaps (car.json "refine_regions")
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -108,8 +109,10 @@ def load_car(case):
         LOCATION = tuple(car["location_in_mesh"])
     PATCH_TYPES = {k: v for k, v in car.get("patch_types", {}).items() if k in ALL_PARTS}
     COOLING = car.get("cooling") if all(p in ALL_PARTS for p in ("radiator_in", "radiator_out")) else None
-    global GAP_BOXES
+    global GAP_BOXES, REFINE
     GAP_BOXES = {k: (tuple(v[0]), tuple(v[1])) for k, v in car.get("gap_boxes", {}).items()}
+    REFINE = {k: v for k, v in car.get("refine_regions", {}).items()
+              if os.path.exists(os.path.join(case, "constant", "triSurface", v["file"]))}
 
 # domain (half car, symmetry plane at y=0)
 X0, X1, Y1, Z1 = -5.6, 12.0, 4.0, 4.0
@@ -164,8 +167,13 @@ def snappy(c):
         c["wall_layers"] = {p: {"n": n, "first_m": f, "ratio": r} for p, (n, f, r) in wl.items()}
         layers = "\n".join(f'        "{p}" {{ nSurfaceLayers {n}; thicknessModel firstAndExpansion; firstLayerThickness {f:.4g}; '
                            f'expansionRatio {r}; minThickness {0.5 * f:.4g}; }}' for p, (n, f, r) in wl.items())
+        # explicit slot regions (closed surfaces from the geometry build): level 7 in gaps < 15 mm, 8 in gaps < 6 mm
+        lv_over = c.get("slot_levels", {})
+        for name, d in REFINE.items():
+            geo += f"\n    {d['file']} {{ type triSurfaceMesh; name {name}; }}"
+            regs += f"\n        {name} {{ mode inside; levels ((1e15 {int(lv_over.get(name, d['level']))})); }}"
         gmax = int(c.get("gap_max_level", 8))
-        for name, (lo, hi) in GAP_BOXES.items():
+        for name, (lo, hi) in (GAP_BOXES.items() if c.get("gap_refine") else []):
             geo += f"\n    {name} {{ type searchableBox; min ({lo[0]} {lo[1]} {lo[2]}); max ({hi[0]} {hi[1]} {hi[2]}); }}"
             wl_ = max([SURF_LEVELS[p][1] for p in ALL_PARTS if name.endswith(p)] or [6])
             gm = min(gmax, 7) if name.endswith("bargeboards") else gmax     # vanes 1-3 cm apart: one level less

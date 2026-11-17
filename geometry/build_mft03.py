@@ -137,6 +137,24 @@ def main(outdir, front_mm=0.0, rear_mm=0.0):
         write_stl_bin(os.path.join(outdir, f"{name}.stl"), T, name)
         info[name] = {"tris": int(len(T))}
         print(f"{name:14s} tris={len(T):8d}")
+    # slot-gap refinement regions around the wing elements (closed surfaces; see build_glb.slot_regions)
+    refine = {}
+    try:
+        import build_glb as BG
+        BG.log = lambda *a: print(*a)
+        acc = {}
+        for grp in (("frontwing", "nosewing"), ("rw_wings", "rw_plates")):
+            T = np.concatenate([regions[k] for k in grp if k in regions])
+            T = T[T[..., 1].max(1) >= -0.005]
+            _, _, (sol, slo) = BG.wrap(T, BG.WING_H, BG.WING_R, keep_solid=True)
+            for name, (st, vol) in BG.slot_regions(sol, slo, BG.WING_H).items():
+                acc.setdefault(name, []).append(st)
+            del sol
+        for name, lst in acc.items():
+            write_stl_bin(os.path.join(outdir, f"{name}.stl"), np.concatenate(lst), name)
+            refine[name] = {"file": f"{name}.stl", "level": 8 if name == "slots_narrow" else 7}
+    except Exception as e:                                  # no slot refinement rather than no geometry
+        print("slot regions failed:", e)
     allT = np.concatenate(list(regions.values()))
     V = allT.reshape(-1, 3)
     lo, hi = V.min(0), V.max(0)
@@ -158,6 +176,7 @@ def main(outdir, front_mm=0.0, rear_mm=0.0):
         "frontal_area": round(area, 4), "parts": list(regions.keys()), "closure": info,
         "levels": {k: list(LEVELS[k]) for k in regions}, "force_groups": {k: [p for p in v if p in regions] for k, v in FORCE_GROUPS.items()},
         "gap_boxes": {f"gap_{k}": gap_box(regions[k]) for k in ("frontwing", "nosewing", "rw_wings") if k in regions},
+        "refine_regions": refine,
         "no_layers": NO_LAYERS, "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm},
         "post": {
             "wing_sections": {"FW": [["frontwing"], [0.10, 0.25, 0.45, 0.62]], "RW": [["rw_wings"], [0.05, 0.20, 0.35]]},
