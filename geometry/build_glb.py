@@ -258,6 +258,7 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
         oid[idx[ok, 0], idx[ok, 1], idx[ok, 2]] = pid[ok]
     ball = np.zeros((3, 3, 3), bool); ball[1, 1, :] = ball[1, :, 1] = ball[:, 1, 1] = True
     wall_id = ndimage.grey_dilation(oid + 1, footprint=ball) - 1      # the 1-voxel dilated surface keeps a piece id
+    thick = (wall_id >= 0) & (oid < 0)        # the dilation layer: watertight walls for the fills, peeled off at the end
     del oid
     air = wall_id < 0
     ix = [np.clip(np.floor((blo[k] + hf * np.arange(shape[k]) - lo[k]) / h).astype(int), 0, solid.shape[k] - 1) for k in range(3)]
@@ -312,8 +313,15 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
     del L, pts
     nreal = int(vreal > 0)
     del wall_id
-    S = ~(outside | reopen)
+    air = outside | reopen
     del outside, reopen
+    # peel the dilation layer where it faces air (it made every part ~1 voxel thicker per side and every slot 2 voxels
+    # narrower); a peeled voxel that a closing would fill back (a notch, a diagonal-only link of a thin sheet) stays
+    peel = thick & ~air & ndimage.binary_dilation(air, structure=ball)
+    del thick
+    S = ~air & ~peel
+    S |= peel & ndimage.binary_closing(S, structure=ball)
+    del air, peel
     log(f"  detail zone {zlo.round(2).tolist()} - {zhi.round(2).tolist()}: {np.prod(shape)/1e6:.0f} M voxels at {hf*1000:.1f} mm, "
         f"{vreal*1e6:.0f} cm3 of closed gaps reopened; {vfake*1e6:.0f} cm3 of enclosed hollow-part insides kept solid")
     del cs
@@ -485,6 +493,10 @@ def gap_box(tri, pad=0.01):
 def write_stl_bin(path, tri, name):
     tri = np.asarray(tri, dtype=np.float32)
     nrm = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
+    # triangles collapsed to a point by the decimation (all three vertices equal in single precision): no normal,
+    # and their edges counted as non-manifold; dropping them leaves no hole
+    ok = np.linalg.norm(nrm, axis=1) > 2e-12
+    tri, nrm = tri[ok], nrm[ok]
     nrm /= np.linalg.norm(nrm, axis=1)[:, None] + 1e-30
     rec = np.zeros(len(tri), dtype=[("n", "<f4", 3), ("v", "<f4", (3, 3)), ("a", "<u2")])
     rec["n"], rec["v"] = nrm, tri
