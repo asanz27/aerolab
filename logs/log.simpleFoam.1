@@ -1,0 +1,300 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : simpleFoam -parallel
+Date   : Nov 18 2026
+Time   : 22:07:20
+Host   : ip-10-0-138-10
+PID    : 6251
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_mcl39_c8
+nProcs : 4
+Hosts  :
+(
+    (ip-10-0-138-10 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: no convergence criteria found. Calculations will run for 100 steps.
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type RAS
+Selecting RAS turbulence model kOmegaSST
+Selecting patchDistMethod meshWave
+RAS
+{
+    RASModel        kOmegaSST;
+    turbulence      on;
+    printCoeffs     on;
+    alphaK1         0.85;
+    alphaK2         1;
+    alphaOmega1     0.5;
+    alphaOmega2     0.856;
+    gamma1          0.55555556;
+    gamma2          0.44;
+    beta1           0.075;
+    beta2           0.0828;
+    betaStar        0.09;
+    a1              0.31;
+    b1              1;
+    c1              10;
+    F3              false;
+    decayControl    false;
+    kInf            0;
+    omegaInf        0;
+}
+
+No MRF models present
+
+No finite volume options present
+
+Starting time loop
+
+forces forces_wheels_front:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_wheels_rear:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_beamwing:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_body:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_diffuser:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_floor:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_frontwing:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_inlets:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_rearwing:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_sidepods:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_suspension:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_cooling:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_total:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+
+surfaceFieldValue cool_flux_radiator_in:
+    operation     = weightedSum
+    weight field  = (phi)
+
+
+surfaceFieldValue cool_Q_radiator_in:
+    operation     = sum
+
+
+surfaceFieldValue cool_p_radiator_in:
+    operation     = areaAverage
+
+
+surfaceFieldValue cool_flux_radiator_out:
+    operation     = weightedSum
+    weight field  = (phi)
+
+
+surfaceFieldValue cool_Q_radiator_out:
+    operation     = sum
+
+
+surfaceFieldValue cool_p_radiator_out:
+    operation     = areaAverage
+
+
+wallShearStress wallShearStress:
+    processing all (12) wall patches
+
+Time = 1
+
+smoothSolver:  Solving for Ux, Initial residual = 0.062878739, Final residual = 0.0029251015, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.29722848, Final residual = 0.028648894, No Iterations 2
+smoothSolver:  Solving for Uz, Initial residual = 0.21111064, Final residual = 0.020619664, No Iterations 2
+GAMG:  Solving for p, Initial residual = 1, Final residual = 0.046119113, No Iterations 3
+time step continuity errors : sum local = 0.019706795, global = -0.0011868236, cumulative = -0.0011868236
+smoothSolver:  Solving for omega, Initial residual = 0.033623409, Final residual = 0.00085760195, No Iterations 2
+bounding omega, min: -165.47319 max: 13298285 average: 2544.5248
+smoothSolver:  Solving for k, Initial residual = 1, Final residual = 0.029598648, No Iterations 2
+ExecutionTime = 21.36 s  ClockTime = 22 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1892.092 174.16239 -1197.0859)
+        Pressure : (1729.5564 171.73072 -1198.5352)
+        Viscous  : (162.53564 2.4316682 1.4492967)
+    Sum of moments
+        Total    : (-651.4347 3679.8175 -227.0361)
+        Pressure : (-650.18783 3609.1435 -145.04645)
+        Viscous  : (-1.2468692 70.673984 -81.989646)
+    writing force and moment files.
+
+Time = 2
+
+smoothSolver:  Solving for Ux, Initial residual = 0.035592684, Final residual = 0.0014903707, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.08846356, Final residual = 0.0023808536, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.056803451, Final residual = 0.001568399, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.26075734, Final residual = 0.0095312571, No Iterations 4
+time step continuity errors : sum local = 0.0077655225, global = 1.5040236e-05, cumulative = -0.0011717833
+smoothSolver:  Solving for omega, Initial residual = 0.017494619, Final residual = 0.00062543928, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.20237737, Final residual = 0.0077749783, No Iterations 2
+ExecutionTime = 45.52 s  ClockTime = 47 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (3545.7934 630.91746 -3188.1564)
+        Pressure : (3377.1499 627.89785 -3190.7136)
+        Viscous  : (168.64353 3.0196165 2.5571784)
+    Sum of moments
+        Total    : (-1611.9474 9096.9698 45.054123)
+        Pressure : (-1610.7791 9026.0173 129.26399)
+        Viscous  : (-1.1682612 70.952492 -84.209872)
+    writing force and moment files.
+
+Time = 3
+
+smoothSolver:  Solving for Ux, Initial residual = 0.031831285, Final residual = 0.0016742369, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.04422151, Final residual = 0.002223385, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.02527825, Final residual = 0.0012582567, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.17749455, Final residual = 0.0088103959, No Iterations 45
+time step continuity errors : sum local = 0.010718052, global = 0.0028291585, cumulative = 0.0016573752
+smoothSolver:  Solving for omega, Initial residual = 0.010515155, Final residual = 0.00048338508, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.087514869, Final residual = 0.0041489243, No Iterations 2
+ExecutionTime = 83.51 s  ClockTime = 86 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (3139.1196 899.01242 -3392.8468)
+        Pressure : (2974.1389 895.3922 -3396.5035)
+        Viscous  : (164.98077 3.6202124 3.656753)
+    Sum of moments
+        Total    : (-1756.2084 9361.5123 679.05345)
+        Pressure : (-1755.2357 9295.0024 759.88178)
+        Viscous  : (-0.97268341 66.509857 -80.828324)
+    writing force and moment files.
+
+Time = 4
+
+smoothSolver:  Solving for Ux, Initial residual = 0.01663257, Final residual = 0.00092228316, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.030136936, Final residual = 0.0018763808, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.016085639, Final residual = 0.00098614185, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.1702081, Final residual = 0.0044931496, No Iterations 4
+time step continuity errors : sum local = 0.005889175, global = 0.00027513072, cumulative = 0.0019325059
+smoothSolver:  Solving for omega, Initial residual = 0.0068251666, Final residual = 0.00037872203, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.045527694, Final residual = 0.0025824719, No Iterations 2
+ExecutionTime = 107.45 s  ClockTime = 110 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1559.2414 1015.8666 -2732.5483)
+        Pressure : (1398.9399 1011.7978 -2736.6687)
+        Viscous  : (160.30156 4.068853 4.1204483)
+    Sum of moments
+        Total    : (-1476.2727 7011.5055 1546.6432)
+        Pressure : (-1475.3166 6948.0267 1624.7231)
+        Viscous  : (-0.95608151 63.47882 -78.079898)
+    writing force and moment files.
+
+Time = 5
+
+smoothSolver:  Solving for Ux, Initial residual = 0.011876949, Final residual = 0.00058274088, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.01717861, Final residual = 0.00091964535, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0095895105, Final residual = 0.0005296973, No Iterations 4
+[0] [stack trace]
+=============
+[0] #1  Foam::sigFpe::sigHandler(int) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #2  ? in /lib/x86_64-linux-gnu/libc.so.6
+[0] #3  Foam::GAMGSolver::scale(Foam::Field<double>&, Foam::Field<double>&, Foam::lduMatrix const&, Foam::FieldField<Foam::Field, double> const&, Foam::UPtrList<Foam::lduInterfaceField const> const&, Foam::Field<double> const&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #4  Foam::GAMGSolver::Vcycle(Foam::PtrList<Foam::lduMatrix::smoother> const&, Foam::Field<double>&, Foam::Field<double> const&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::PtrList<Foam::Field<double>>&, Foam::PtrList<Foam::Field<double>>&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #5  Foam::GAMGSolver::solve(Foam::Field<double>&, Foam::Field<double> const&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #6  Foam::fvMatrix<double>::solveSegregated(Foam::dictionary const&) in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[0] #7  ? in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[0] #8  Foam::fvMesh::solve(Foam::fvMatrix<double>&, Foam::dictionary const&) const in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[0] #9  ? in <platforms>/linux64GccDPInt32Opt/bin/simpleFoam
+[0] #10  ? in /lib/x86_64-linux-gnu/libc.so.6
+[0] #11  __libc_start_main in /lib/x86_64-linux-gnu/libc.so.6
+[0] #12  ? in <platforms>/linux64GccDPInt32Opt/bin/simpleFoam
+[0] =============
+[ip-10-0-138-10:06251] *** Process received signal ***
+[ip-10-0-138-10:06251] Signal: Floating point exception (8)
+[ip-10-0-138-10:06251] Signal code:  (-6)
+[ip-10-0-138-10:06251] Failing at address: 0x3e90000186b
+[ip-10-0-138-10:06251] [ 0] /lib/x86_64-linux-gnu/libc.so.6(+0x45330)[0x7fa5db845330]
+[ip-10-0-138-10:06251] [ 1] /lib/x86_64-linux-gnu/libc.so.6(pthread_kill+0x11c)[0x7fa5db89ec0c]
+[ip-10-0-138-10:06251] [ 2] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x1e)[0x7fa5db84527e]
+[ip-10-0-138-10:06251] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x45330)[0x7fa5db845330]
+[ip-10-0-138-10:06251] [ 4] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver5scaleERNS_5FieldIdEES3_RKNS_9lduMatrixERKNS_10FieldFieldIS1_dEERKNS_8UPtrListIKNS_17lduInterfaceFieldEEERKS2_h+0xc3)[0x7fa5dc4c2b93]
+[ip-10-0-138-10:06251] [ 5] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver6VcycleERKNS_7PtrListINS_9lduMatrix8smootherEEERNS_5FieldIdEERKS8_S9_S9_S9_S9_S9_RNS1_IS8_EESD_h+0xfc6)[0x7fa5dc4c81a6]
+[ip-10-0-138-10:06251] [ 6] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver5solveERNS_5FieldIdEERKS2_h+0x43c)[0x7fa5dc4c864c]
+[ip-10-0-138-10:06251] [ 7] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(_ZN4Foam8fvMatrixIdE15solveSegregatedERKNS_10dictionaryE+0x43a)[0x7fa5debe01ba]
+[ip-10-0-138-10:06251] [ 8] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(+0x535892)[0x7fa5de735892]
+[ip-10-0-138-10:06251] [ 9] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(_ZNK4Foam6fvMesh5solveERNS_8fvMatrixIdEERKNS_10dictionaryE+0x2a)[0x7fa5de723baa]
+[ip-10-0-138-10:06251] [10] simpleFoam(+0x1aa5a)[0x55c463509a5a]
+[ip-10-0-138-10:06251] [11] /lib/x86_64-linux-gnu/libc.so.6(+0x2a1ca)[0x7fa5db82a1ca]
+[ip-10-0-138-10:06251] [12] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x8b)[0x7fa5db82a28b]
+[ip-10-0-138-10:06251] [13] simpleFoam(+0x1c6e5)[0x55c46350b6e5]
+[ip-10-0-138-10:06251] *** End of error message ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 0 with PID 0 on node ip-10-0-138-10 exited on signal 8 (Floating point exception).
+--------------------------------------------------------------------------
