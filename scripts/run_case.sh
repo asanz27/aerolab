@@ -89,6 +89,9 @@ status() {
   } > "$S/status.txt"
   cp "$CASE"/timings.json "$S/" 2>/dev/null
   for f in "$CASE"/log.*; do [ -f "$f" ] && tail -n 60 "$f" > "$S/$(basename "$f").tail"; done
+  # layer addition: per-iteration progress and the quality checks that stop extrusion (why layers collapse)
+  [ -f "$CASE/log.snappyHexMesh" ] && grep -nE "[Ll]ayer|[Ee]xtru|faces in error|illegal|non-orthogonality >|pyramid volume|tet quality|concavity >|skewness >|interpolation weights|volume ratio|face twist|determinant|medial|Shrink" \
+    "$CASE/log.snappyHexMesh" | tail -n 400 > "$S/log.snappyHexMesh.layers" 2>/dev/null
   grep -h "cells:" "$CASE/log.checkMesh" > "$S/cells.txt" 2>/dev/null
   for d in "$CASE"/postProcessing/forces_total/*/; do [ -f "$d/force.dat" ] && tail -n 5 "$d/force.dat" >> "$S/force_total.tail"; done
   bash "$ROOT/scripts/publish.sh" "$S" "st-${NAME}" "status ${NAME}: $1" >/dev/null 2>&1 || true

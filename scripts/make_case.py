@@ -61,9 +61,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 def wall_layers(c):
     """Hybrid wall treatment (cfg wall = "hybrid"): {part: (n, first, ratio)} with absolute first-layer heights.
     Resolved parts (wings): first cell centre at y+ ~ yplus_resolved for the 90th-percentile friction velocity of the
-    previous run, growing at ratio_resolved until the last layer is final_rel_resolved x the local surface cell.
+    previous run, growing at ratio_resolved until the last layer is final_rel_resolved x the part's surface cell; the
+    mesh keeps the last layer at final_rel_resolved x the LOCAL cell (firstAndRelativeFinal), so where the wing is
+    refined further (slots, leading edges) the same layers grow more gently instead of collapsing.
     Other walls: first cell centre at y+ ~ yplus_wf for the median friction velocity, n_wf layers (wall functions).
-    See geometry/wall_layers.json."""
+    Returns {part: (n, first, ratio, final_rel or None)}. See geometry/wall_layers.json."""
     spec = json.load(open(os.path.join(ROOT, "geometry", "wall_layers.json")))
     car = spec["cars"].get(c.get("car", ""), {"U_ref": 50.0, "resolved": [], "u": {}})
     nu = spec["nu"]
@@ -73,15 +75,17 @@ def wall_layers(c):
         u50, u90 = car["u"].get(p, [1.5, 2.5])
         u50, u90 = max(u50, 0.5) * scale, max(u90, 1.0) * scale
         cell = c["h0"] / 2 ** SURF_LEVELS[p][1]
+        fr = None
         if p in car["resolved"]:
             first = 2.0 * spec["yplus_resolved"] * nu / u90
             r = spec["ratio_resolved"]
-            n = 1 + math.ceil(math.log(spec["final_rel_resolved"] * cell / first) / math.log(r))
+            fr = spec["final_rel_resolved"]
+            n = 1 + math.ceil(math.log(fr * cell / first) / math.log(r))
         else:
             first = min(2.0 * spec["yplus_wf"] * nu / u50, spec["first_cap_rel"] * cell)
             r = spec["ratio_wf"]
             n = spec["n_wf"]
-        out[p] = (int(n), float(first), float(r))
+        out[p] = (int(n), float(first), float(r), fr)
     return out
 
 
@@ -164,9 +168,15 @@ def snappy(c):
     if hybrid:
         # absolute first-layer heights per part (y+ targets); slots between wing elements refined to >= 4 cells across
         wl = wall_layers(c)
-        c["wall_layers"] = {p: {"n": n, "first_m": f, "ratio": r} for p, (n, f, r) in wl.items()}
-        layers = "\n".join(f'        "{p}" {{ nSurfaceLayers {n}; thicknessModel firstAndExpansion; firstLayerThickness {f:.4g}; '
-                           f'expansionRatio {r}; minThickness {0.5 * f:.4g}; }}' for p, (n, f, r) in wl.items())
+        c["wall_layers"] = {p: {"n": n, "first_m": f, "ratio": r, **({"final_rel": fr} if fr else {})}
+                            for p, (n, f, r, fr) in wl.items()}
+        # resolved parts: first layer absolute, last layer relative to the local cell (the ratio adapts per point);
+        # wall-function parts: first layer absolute with a fixed expansion
+        layers = "\n".join(
+            f'        "{p}" {{ nSurfaceLayers {n}; thicknessModel firstAndRelativeFinal; firstLayerThickness {f:.4g}; '
+            f'finalLayerThickness {fr}; minThickness {0.5 * f:.4g}; }}' if fr else
+            f'        "{p}" {{ nSurfaceLayers {n}; thicknessModel firstAndExpansion; firstLayerThickness {f:.4g}; '
+            f'expansionRatio {r}; minThickness {0.5 * f:.4g}; }}' for p, (n, f, r, fr) in wl.items())
         # explicit slot regions (closed surfaces from the geometry build): level 7 in gaps < 15 mm, 8 in gaps < 6 mm
         lv_over = c.get("slot_levels", {})
         for name, d in REFINE.items():
@@ -555,7 +565,8 @@ boundaryField
     walls = "(ground|" + "|".join(walls_only) + ")"
     # hybrid walls (y+ ~ 1-5 on the wings, 30-100 elsewhere): omega blended between its viscous-sublayer and log-layer
     # values (Menter & Esch binomial blending), with Spalding's continuous law for nut - valid at any y+
-    omb = "blending binomial2; n 2; " if c.get("wall") == "hybrid" else ""
+    # (OpenFOAM ESI: blending stepwise | max | binomial (exponent n) | exponential | tanh; binomial with n 2 = Menter's)
+    omb = "blending binomial; n 2; " if c.get("wall") == "hybrid" else ""
     out["k"] = HDR.format(cls="volScalarField", obj="k") + f"""
 dimensions      [0 2 -2 0 0 0 0];
 internalField   uniform {k:.6g};

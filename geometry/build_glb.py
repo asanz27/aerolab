@@ -45,6 +45,8 @@ CARS = {
         # sidepod side vanes
         "detail_zones": [[[0.30, 0.0, -0.02], [1.10, 0.40, 0.30]], [[-0.60, 0.03, 0.15], [0.60, 0.50, 0.75]],
                          [[2.90, 0.03, 0.0], [3.75, 0.70, 0.50]], [[1.60, 0.45, 0.25], [2.00, 0.70, 0.50]]],
+        # the front-wing slots of this model are only 4-5 mm: on the 1.25 mm grid they kept 1-3 mm
+        "wing_h": {"fw": 0.0008},
         "source": {"title": "2016 Redbull RB12", "author": "Dave Love SketchFab", "url": "https://sketchfab.com/3d-models/d9b5ce8c5d234deeb9cb57f5029dad57",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
@@ -744,9 +746,10 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=No
     return sel
 
 
-def auto_zones(Tb, W):
+def auto_zones(Tb, W, wing_h=None):
     """Detail zones of every car: the front wing, the rear + beam wing and, before 2022, the bargeboard region.
-    Finite boxes around the model's triangles in the wing_box regions (wings on a 1.25 mm grid)."""
+    Finite boxes around the model's triangles in the wing_box regions (wings on a 1.25 mm grid, or the car's
+    "wing_h" {zone: voxel} where the model's slots are narrower)."""
     C = Tb.mean(1)
     out = []
     for k, (lo, hi) in wing_box(W).items():
@@ -758,7 +761,8 @@ def auto_zones(Tb, W):
         zlo, zhi = V.min(0) - 0.015, V.max(0) + 0.015
         zlo = np.maximum(zlo, np.array(lo) - 0.015); zhi = np.minimum(zhi, np.array(hi) + 0.015)
         zlo[1] = max(zlo[1], -0.005)
-        out.append((zlo.round(3).tolist(), zhi.round(3).tolist(), WING_H if k in ("fw", "rw") else ZONE_H))
+        out.append((zlo.round(3).tolist(), zhi.round(3).tolist(),
+                    float((wing_h or {}).get(k) or (WING_H if k in ("fw", "rw") else ZONE_H))))
     return out
 
 
@@ -781,7 +785,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
     Tw = np.concatenate([p for lst in wing_pieces.values() for p in lst]) if fine_wings and any(wing_pieces.values()) else None
     ZONE_TRIS.clear()
     ZONE_CUTS.clear()
-    zones = auto_zones(Tb, W) + [tuple(z) for z in cfg.get("detail_zones", ())]
+    zones = auto_zones(Tb, W, cfg.get("wing_h")) + [tuple(z) for z in cfg.get("detail_zones", ())]
     for z in zones:
         log(f"detail zone {z[0]} - {z[1]} at {1000 * (z[2] if len(z) > 2 else ZONE_H):.2f} mm")
     Tb_ids = np.concatenate([np.full(len(p), i, np.int32) for i, p in enumerate(body)])   # connected piece of each triangle
