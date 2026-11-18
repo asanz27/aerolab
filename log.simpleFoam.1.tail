@@ -1,0 +1,60 @@
+smoothSolver:  Solving for k, Initial residual = 1, Final residual = 0.019691763, No Iterations 2
+ExecutionTime = 29.03 s  ClockTime = 30 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1700.4885 93.322894 -891.55939)
+        Pressure : (1576.7621 94.578121 -893.57615)
+        Viscous  : (123.72644 -1.255227 2.0167683)
+    Sum of moments
+        Total    : (-476.10205 2064.1391 -456.23012)
+        Pressure : (-476.62773 2020.563 -397.40027)
+        Viscous  : (0.52567887 43.576022 -58.829854)
+    writing force and moment files.
+
+Time = 2
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0064708602, Final residual = 0.00018526536, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.10074944, Final residual = 0.0021160925, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.063763153, Final residual = 0.0014102732, No Iterations 4
+[0] [stack trace]
+=============
+[0] #1  Foam::sigFpe::sigHandler(int) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #2  ? in /lib/x86_64-linux-gnu/libc.so.6
+[0] #3  Foam::GAMGSolver::scale(Foam::Field<double>&, Foam::Field<double>&, Foam::lduMatrix const&, Foam::FieldField<Foam::Field, double> const&, Foam::UPtrList<Foam::lduInterfaceField const> const&, Foam::Field<double> const&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #4  Foam::GAMGSolver::Vcycle(Foam::PtrList<Foam::lduMatrix::smoother> const&, Foam::Field<double>&, Foam::Field<double> const&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::PtrList<Foam::Field<double>>&, Foam::PtrList<Foam::Field<double>>&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #5  Foam::GAMGSolver::solve(Foam::Field<double>&, Foam::Field<double> const&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[0] #6  Foam::fvMatrix<double>::solveSegregated(Foam::dictionary const&) in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[0] #7  ? in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[0] #8  Foam::fvMesh::solve(Foam::fvMatrix<double>&, Foam::dictionary const&) const in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[0] #9  ? in <platforms>/linux64GccDPInt32Opt/bin/simpleFoam
+[0] #10  ? in /lib/x86_64-linux-gnu/libc.so.6
+[0] #11  __libc_start_main in /lib/x86_64-linux-gnu/libc.so.6
+[0] #12  ? in <platforms>/linux64GccDPInt32Opt/bin/simpleFoam
+[0] =============
+[runnervm8axu0:07193] *** Process received signal ***
+[runnervm8axu0:07193] Signal: Floating point exception (8)
+[runnervm8axu0:07193] Signal code:  (-6)
+[runnervm8axu0:07193] Failing at address: 0x3e900001c19
+[runnervm8axu0:07193] [ 0] /lib/x86_64-linux-gnu/libc.so.6(+0x45330)[0x7ff3e0e45330]
+[runnervm8axu0:07193] [ 1] /lib/x86_64-linux-gnu/libc.so.6(pthread_kill+0x11c)[0x7ff3e0e9ec0c]
+[runnervm8axu0:07193] [ 2] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x1e)[0x7ff3e0e4527e]
+[runnervm8axu0:07193] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x45330)[0x7ff3e0e45330]
+[runnervm8axu0:07193] [ 4] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver5scaleERNS_5FieldIdEES3_RKNS_9lduMatrixERKNS_10FieldFieldIS1_dEERKNS_8UPtrListIKNS_17lduInterfaceFieldEEERKS2_h+0xb9)[0x7ff3e1ac2b89]
+[runnervm8axu0:07193] [ 5] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver6VcycleERKNS_7PtrListINS_9lduMatrix8smootherEEERNS_5FieldIdEERKS8_S9_S9_S9_S9_S9_RNS1_IS8_EESD_h+0xfc6)[0x7ff3e1ac81a6]
+[runnervm8axu0:07193] [ 6] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver5solveERNS_5FieldIdEERKS2_h+0x43c)[0x7ff3e1ac864c]
+[runnervm8axu0:07193] [ 7] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(_ZN4Foam8fvMatrixIdE15solveSegregatedERKNS_10dictionaryE+0x43a)[0x7ff3e41e01ba]
+[runnervm8axu0:07193] [ 8] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(+0x535892)[0x7ff3e3d35892]
+[runnervm8axu0:07193] [ 9] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(_ZNK4Foam6fvMesh5solveERNS_8fvMatrixIdEERKNS_10dictionaryE+0x2a)[0x7ff3e3d23baa]
+[runnervm8axu0:07193] [10] simpleFoam(+0x1aa5a)[0x55bd4b7f7a5a]
+[runnervm8axu0:07193] [11] /lib/x86_64-linux-gnu/libc.so.6(+0x2a1ca)[0x7ff3e0e2a1ca]
+[runnervm8axu0:07193] [12] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x8b)[0x7ff3e0e2a28b]
+[runnervm8axu0:07193] [13] simpleFoam(+0x1c6e5)[0x55bd4b7f96e5]
+[runnervm8axu0:07193] *** End of error message ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 0 with PID 0 on node runnervm8axu0 exited on signal 8 (Floating point exception).
+--------------------------------------------------------------------------
