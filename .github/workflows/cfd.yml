@@ -56,6 +56,7 @@ jobs:
 
   s1:
     needs: plan
+    if: ${{ needs.plan.outputs.cases != '[]' }}   # a commit that only cancels runs ends cleanly
     runs-on: ubuntu-24.04
     timeout-minutes: 355
     strategy:
