@@ -328,7 +328,7 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
     surf = grid.contour([0.5], scalars="s").triangulate().clean()
     if surf.n_cells:
         # wing boxes (fine grid) keep more triangles than the other detail zones
-        target = target or (250000 if hf <= WING_H + 1e-9 else 120000)
+        target = target or (250000 if hf <= WING_H + 1e-9 else 200000)
         ZONE_TRIS.append(outward(tris_of(finish(surf, target))))
 
 
@@ -452,8 +452,13 @@ def only_triangles(surf):
 def finish(surf, target):
     surf = only_triangles(surf)
     if surf.n_cells > target:
-        surf = surf.decimate(1.0 - target / surf.n_cells)
-    surf = surf.smooth_taubin(n_iter=20, pass_band=0.1)
+        # smooth the voxel steps away BEFORE decimating: decimating the raw marching-cubes steps by 90-96 % left spikes
+        # and sheets bridging corners (99th-percentile deviation 3-4 mm, up to 3 cm); smoothed first, ~1 mm
+        surf = only_triangles(surf.smooth_taubin(n_iter=30, pass_band=0.05))
+        surf = surf.decimate(1.0 - target / surf.n_cells, volume_preservation=True)
+        surf = surf.smooth_taubin(n_iter=10, pass_band=0.1)
+    else:
+        surf = surf.smooth_taubin(n_iter=20, pass_band=0.1)
     return only_triangles(surf.triangulate().clean())
 
 
@@ -656,8 +661,9 @@ def slot_regions(solid, lo, h, wide_mm=15.0, narrow_mm=6.0, min_cm3=0.2):
         surf = grid.contour([0.5], scalars="s").triangulate().clean()
         if surf.n_cells == 0:
             continue
-        if surf.n_cells > 150000:
-            surf = surf.decimate(1.0 - 150000 / surf.n_cells)
+        if surf.n_cells > 40000:           # refinement region only (distance mode): a light surface is enough
+            surf = only_triangles(surf.smooth_taubin(n_iter=20, pass_band=0.05))
+            surf = surf.decimate(1.0 - 40000 / surf.n_cells, volume_preservation=True)
         out[name] = (outward(tris_of(only_triangles(surf))), float(vol))
         log(f"  {name}: gaps < {w_mm:.0f} mm, {vol*1e6:.0f} cm3 (half car)")
     return out
