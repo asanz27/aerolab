@@ -1,7 +1,7 @@
 {
- "_doc": "First-layer sizing for the hybrid wall treatment (approved 2026-11-16, option A). 'u' = friction velocity [m/s] per part at U_ref, area-weighted median and 90th percentile, measured on the surface of the previous fine run of each car (U sqrt(|Cf|/2)); scaled with (U/U_ref)^0.9. Resolved parts: first cell centre at y+ = yplus_resolved for u90 (layers grow at ratio_resolved up to final_rel_resolved x the local surface cell). Other walls: y+ = yplus_wf for u50 at the first cell centre, n_wf layers at ratio_wf, first layer capped at first_cap_rel x the cell. The same y+-insensitive wall functions on every wall (nutUSpalding, omega blended).",
+ "_doc": "First-layer sizing for the hybrid wall treatment (approved 2026-11-16, option A). 'u' = friction velocity [m/s] per part at U_ref, area-weighted median and 90th percentile, measured on the surface of the previous fine run of each car (U sqrt(|Cf|/2)); scaled with (U/U_ref)^0.9. Resolved parts: first cell centre at y+ = yplus_resolved for u90, at most n_max_resolved layers, the last one final_rel_resolved x the local surface cell (2026-11-18: y+ 5 and 10 layers instead of y+ 2 and 16, which needed ~6 M transient cells in the layer addition and did not fit in the runner's 16 GB). Other walls: y+ = yplus_wf for u50 at the first cell centre, n_wf layers at ratio_wf, first layer capped at first_cap_rel x the cell. The same y+-insensitive wall functions on every wall (nutUSpalding, omega blended).",
  "nu": 1.5e-05,
- "yplus_resolved": 2.0,
+ "yplus_resolved": 5.0,
  "ratio_resolved": 1.35,
  "final_rel_resolved": 0.35,
  "yplus_wf": 50.0,
@@ -346,5 +346,6 @@
     ]
    }
   }
- }
+ },
+ "n_max_resolved": 10
 }

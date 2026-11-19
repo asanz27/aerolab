@@ -81,6 +81,7 @@ def wall_layers(c):
             r = spec["ratio_resolved"]
             fr = spec["final_rel_resolved"]
             n = 1 + math.ceil(math.log(fr * cell / first) / math.log(r))
+            n = min(n, int(spec.get("n_max_resolved", n)))     # layer budget (transient cells of the layer addition)
         else:
             first = min(2.0 * spec["yplus_wf"] * nu / u50, spec["first_cap_rel"] * cell)
             r = spec["ratio_wf"]

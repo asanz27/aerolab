@@ -29,6 +29,16 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
 
 ## Pared híbrida y ranuras abiertas (`"wall": "hybrid"`, `"post2": true`)
 
+- **Piel CAD + tapón interior** (`build_glb.py`, `PLUG_MODE`, desde el 2026-11-19): las paredes que ve el flujo son los
+  propios triángulos del modelo que dan al aire exterior (orientados hacia fuera con los votos de visibilidad de
+  `cavity.exterior_visibility`, o sondeando el aire a ±2,5 vóxeles); los interiores (motor, cockpit, chasis) quedan fuera.
+  El sólido de vóxeles (relleno interior, conducto del radiador, interiores de piezas huecas de las zonas de detalle) ya
+  no es la superficie: es un tapón que llena por dentro hasta ~1 vóxel de la piel sin cruzarla (cada vóxel cerca de la
+  piel se queda solo si cae del lado interior del triángulo más cercano), para que la malla no entre en el coche. Lo que
+  el modelo tiene en y tras el fondo de un conducto (panel de cierre, cara trasera del radiador) se deja al tapón, que
+  forma la cara del radiador. Al final se comprueba la estanqueidad (`plug_reseal`): se inunda desde fuera con paredes y
+  tapón como obstáculos y lo que llega a más de 2 vóxeles dentro del relleno vuelve al tapón. Las zonas de detalle
+  siguen dando el tapón fino y las regiones de ranura; lo que sigue describe cómo obtienen su sólido fino.
 - **Zonas de detalle** (`build_glb.py`, `carve_zone`): el envolvente de la carrocería (3,5 mm, radio de cierre
   2 vóxeles) cerraba toda ranura de menos de ~14-17 mm. En cajas alrededor de los alerones (1,25 mm, automáticas), de los
   bargeboards antes de 2022 y de las zonas que señaló la revisión de geometría de cada coche (fondo delantero, borde del
@@ -40,13 +50,18 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   (`"wing_h"`: sus ranuras miden solo 4-5 mm). La capa de 1 vóxel que hace estancas las paredes para el relleno se quita
   al final donde da al aire (sin ella cada pieza engordaba ~1 vóxel por cara y cada ranura perdía 2).
 - **Acabado de superficies** (`finish`): suavizado Taubin antes de diezmar (diezmar los escalones de vóxel en bruto dejaba
-  picos y láminas que puenteaban esquinas, hasta 3 cm), diezmado cuádrico y se descartan los triángulos colapsados.
+  picos y láminas que puenteaban esquinas, hasta 3 cm), diezmado cuádrico y se descartan los triángulos colapsados. Las
+  superficies de vóxeles se extraen en los centros de vóxel (antes salían desplazadas medio vóxel hacia −x, −y, −z).
+- **Radiador**: la velocidad en la cara es 0,25·U (`cooling.ratio`) sobre el área real de la cara en la malla; el caudal
+  impuesto sigue a esa área.
 - **Regiones de ranura** (`slots_wide.stl`, `slots_narrow.stl`): cierre morfológico del sólido fino menos el sólido;
   refinan a nivel 7 los huecos de menos de 15 mm y a nivel 8 los de menos de 6 mm (`"slot_levels"` para cambiarlo).
 - **Capas con altura absoluta** (`geometry/wall_layers.json`): alerones con capa límite resuelta (primera celda a
-  y⁺ ≈ 2 para el percentil 90 de la velocidad de fricción medida en las simulaciones anteriores, 15-16 capas ×1,35);
-  el resto con funciones de pared (y⁺ ≈ 50 para la mediana, 4 capas ×1,2). En todas las paredes `nutUSpaldingWallFunction`
-  y `omegaWallFunction` con `blending binomial2`, válidas para cualquier y⁺.
+  y⁺ ≈ 5 para el percentil 90 de la velocidad de fricción medida en las simulaciones anteriores, 10 capas con la última a
+  0,35 × la celda local, `firstAndRelativeFinal`); el resto con funciones de pared (y⁺ ≈ 50 para la mediana, 4 capas ×1,2).
+  Con y⁺ ≈ 2 y 16 capas la adición de capas necesitaba ~6 M celdas transitorias y no cabía en los 16 GB del runner.
+  En todas las paredes `nutUSpaldingWallFunction` y `omegaWallFunction` con `blending binomial; n 2`, válidas para
+  cualquier y⁺. Tras mallar se quitan las pocas celdas invertidas que deja la adición de capas (`subsetMesh`).
 - **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.
@@ -107,6 +122,12 @@ aire exterior entraba y el coche quedaba hueco. `geometry/cavity.py` lo corrige 
    bolsillos cerrados por delante del hueco de la tapa trasera (fracción vista 0, p90 0,07): el chorro no tenía
    por dónde salir, esas caras estaban a Cp ≥ 1 en la superficie y la media de la cara de salida a Cp 1,23 (el resto
    de la cara, a −0,26 de mediana). Las caras del hueco, abierto hacia atrás, tienen 0,1–0,25.
+   Con la piel CAD + tapón, la salida puede estar en el tapón solo donde este se ve desde detrás con fracción ≥ 0,10
+   (nunca con el umbral rebajado): donde la carrocería del modelo está abierta por detrás (lomo de la tapa motor del
+   MCL39, tapa de la caja de cambios del RB12) el tapón es el cierre trasero del coche; en el resto queda oculto tras
+   la piel. Solo con los triángulos del modelo, la salida del MCL39 salía de 31 cm² (objetivo 71) y la del RB12 caía
+   en caras de un bolsillo cerrado (fracción vista 0). Si el área vista no llega al objetivo se acepta hasta la mitad
+   (chorro hasta 1 U∞) antes de quitar el umbral: el MP4/23 queda en 107 cm² de 137.
 5. **Malla**: conducto, cara del radiador y salida a nivel 6 (5,3 mm con h0 = 0,34 m). El paso más estrecho del conducto
    del RB12 mide unos 2 cm; con celdas de nivel 5 (10,6 mm) la malla gruesa lo cortaba y la cara del radiador desaparecía.
 

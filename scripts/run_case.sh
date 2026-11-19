@@ -202,6 +202,32 @@ if [ "$STAGE" = "1" ]; then
   stamp snappy
   par log.checkMesh checkMesh -constant || true
   grep -E "cells:|Mesh OK|Failed" log.checkMesh | head
+  # the layer addition can leave a few inverted / zero-volume cells (2-6 on the F1 cars) that stop simpleFoam within
+  # two iterations: remove them (their exposed faces join the body wall) and check again
+  if grep -qE "negative volume cells|incorrectly oriented|Max aspect ratio: [0-9.]+e\+[0-9]{2}" log.checkMesh; then
+    SETS=processor0/constant/polyMesh/sets
+    ACT=""
+    [ -f "$SETS/zeroVolumeCells" ] && ACT="$ACT { name bad; type cellSet; action add; source cellToCell; set zeroVolumeCells; }"
+    [ -f "$SETS/highAspectRatioCells" ] && ACT="$ACT { name bad; type cellSet; action add; source cellToCell; set highAspectRatioCells; }"
+    [ -f "$SETS/wrongOrientedFaces" ] && ACT="$ACT { name bad; type cellSet; action add; source faceToCell; set wrongOrientedFaces; option any; }"
+    if [ -n "$ACT" ]; then
+      cat > system/topoSetDict.repair <<EOF
+FoamFile { version 2.0; format ascii; class dictionary; object topoSetDict; }
+actions
+(
+    { name bad; type cellSet; action new; source labelToCell; value (); }
+   $ACT
+    { name keep; type cellSet; action new; source cellToCell; set bad; }
+    { name keep; type cellSet; action invert; }
+);
+EOF
+      par log.topoSet.repair topoSet -dict system/topoSetDict.repair -constant || true
+      grep -E "cellSet bad now size|cellSet keep now size" log.topoSet.repair | tail -n 2
+      par log.subsetMesh.repair subsetMesh keep -overwrite -patch body || true
+      par log.checkMesh checkMesh -constant || true
+      grep -E "cells:|Mesh OK|Failed|negative|oriented" log.checkMesh | head
+    fi
+  fi
   stamp checkMesh
 
   if [ "$MESH_ONLY" = "true" ]; then

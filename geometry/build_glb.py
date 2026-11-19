@@ -166,6 +166,147 @@ def sample_points_ids(T, ids, h):
             yield P.reshape(-1, 3), np.repeat(sid[s0:s0 + step], len(a))
 
 
+# ------------------------------------------------------------------------------------------------ CAD skin + plug
+PLUG = {}   # current build: body triangles "T", outward normals "n", "flip", "certain", "outer" (set in wrap)
+
+
+def tri_normals(T):
+    n = np.cross(T[:, 1] - T[:, 0], T[:, 2] - T[:, 0])
+    return n / (np.linalg.norm(n, axis=1)[:, None] + 1e-30)
+
+
+def mark_near(T, ids, lo, h, mask, out):
+    """out[ids[i]] = True when a sample point of T[i] (h grid) falls in a True voxel of mask."""
+    shape = np.array(mask.shape)
+    for P, k in sample_points_ids(T, ids, h):
+        idx = np.floor((P - lo) / h).astype(np.int64)
+        ok = np.all((idx >= 0) & (idx < shape), axis=1)
+        hit = np.zeros(len(P), bool)
+        hit[ok] = mask[idx[ok, 0], idx[ok, 1], idx[ok, 2]]
+        if hit.any():
+            out[np.unique(k[hit])] = True
+
+
+def plug_keep(mask, lo, h, sel, band, g=1.0, air=None):
+    """The plug part of the voxel solid `mask` (voxel i spans lo + [i, i+1] h): voxels farther than `band` voxels from
+    the model's outer triangles (PLUG["outer"] & sel), and nearer ones whose centre is on the inner side of the nearest
+    outer triangle by at least g voxels (outward normals; a triangle of uncertain orientation keeps no voxel near it).
+    The plug fills every part up to ~g voxel from the skin and never crosses it: no offset, no bumps, no air layer
+    between skin and plug for the mesh to enter. With `air` (outside-air voxels of the same grid) only the stretches of
+    the skin within band + 1 voxels of that air count: a large panel that runs from the outside deep into the car
+    (a sidepod's inner sheet) cuts the plug only where it meets the outside air, never a channel along its length."""
+    from scipy import ndimage
+    from scipy.spatial import cKDTree
+    T = PLUG["T"]
+    ids = np.where(sel & PLUG["outer"])[0]
+    if not len(ids):
+        return mask
+    shape = np.array(mask.shape)
+    occ = np.zeros(mask.shape, bool)
+    airN = None
+    if air is not None:
+        ga = np.indices((2 * band + 3,) * 3) - (band + 1)
+        airN = ndimage.binary_dilation(air, (ga ** 2).sum(0) <= (band + 1) ** 2)
+        del ga
+    Ps, Ks = [], []
+    for P, k in sample_points_ids(T[ids], ids, h):
+        idx = np.floor((P - lo) / h).astype(np.int64)
+        ok = np.all((idx >= -band - 1) & (idx < shape + band + 1), axis=1)
+        P, k, idx = P[ok], k[ok], idx[ok]
+        inb = np.all((idx >= 0) & (idx < shape), axis=1)
+        if airN is not None:                           # only the stretches of skin next to the outside air
+            na = np.ones(len(P), bool)
+            na[inb] = airN[idx[inb, 0], idx[inb, 1], idx[inb, 2]]
+            P, k, idx, inb = P[na], k[na], idx[na], inb[na]
+        occ[idx[inb, 0], idx[inb, 1], idx[inb, 2]] = True
+        Ps.append(P); Ks.append(k)
+    P, K = np.concatenate(Ps), np.concatenate(Ks)
+    del Ps, Ks, airN
+    gb = np.indices((2 * band + 1,) * 3) - band
+    near = ndimage.binary_dilation(occ, (gb ** 2).sum(0) <= band * band)
+    del occ
+    cand = np.argwhere(mask & near)
+    out = mask & ~near
+    del near
+    if len(cand) and len(P):
+        tree = cKDTree(P)
+        keep = np.zeros(len(cand), bool)
+        for s0 in range(0, len(cand), 2_000_000):
+            X = lo + (cand[s0:s0 + 2_000_000] + 0.5) * h
+            _, j = tree.query(X, workers=-1)
+            k = K[j]
+            s = np.einsum("ij,ij->i", X - P[j], PLUG["n"][k])
+            keep[s0:s0 + len(X)] = PLUG["certain"][k] & (s < -g * h)
+        out[tuple(cand[keep].T)] = True
+    return out
+
+
+def plug_reseal(plug, solid, lo, h, sel, seeds=None, depth=2):
+    """Watertightness of walls + plug on the h grid: outside air is flooded from `seeds` (default: the box faces but the
+    symmetry side) through what is neither a wall voxel (outer triangles among `sel`) nor plug; whatever it reaches more
+    than `depth` voxels inside `solid` (the voxel fill, which the previous wrapped geometry had solid too) goes back to
+    the plug. Gaps of the model narrower than a voxel are not seen; wider ones into the interior are sealed this way.
+    Returns (plug, resealed voxel count)."""
+    from scipy import ndimage
+    T = PLUG["T"]
+    ids = np.where(sel & PLUG["outer"])[0]
+    shape = np.array(plug.shape)
+    obst = plug.copy()
+    for P, k in sample_points_ids(T[ids], ids, h):
+        idx = np.floor((P - lo) / h).astype(np.int64)
+        ok = np.all((idx >= 0) & (idx < shape), axis=1)
+        obst[idx[ok, 0], idx[ok, 1], idx[ok, 2]] = True
+    lab, _ = ndimage.label(~obst)
+    del obst
+    if seeds is None:
+        sid = np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, -1].ravel(), lab[:, :, 0].ravel(), lab[:, :, -1].ravel()])
+    else:
+        sid = lab[seeds]
+    sid = np.unique(sid)
+    reach = np.isin(lab, sid[sid > 0])
+    del lab
+    deep = reach & ndimage.binary_erosion(solid, iterations=depth)
+    del reach
+    n = int(deep.sum())
+    if n:
+        plug = plug | deep
+    return plug, n
+
+
+def orient_outward(T, ext, lo, h, log=print):
+    """Outward orientation of the model's triangles: the side seen from outside (exterior_visibility votes); faces
+    not seen (deep in a slot, under a panel) by probing the coarse outside air 2.5 voxels along each side.
+    Returns (flip, certain, outward normals)."""
+    from cavity import exterior_visibility
+    n = tri_normals(T)
+    flip = np.zeros(len(T), bool)
+    cert = np.zeros(len(T), bool)
+    vis = exterior_visibility(T)
+    if vis is not None:
+        fr, bk = vis
+        tot = fr + bk
+        flip = (tot > 0) & (bk > fr)
+        cert = (tot > 0) & (np.abs(fr - bk) >= 0.3 * tot)
+    c = T.mean(1)
+    shape = np.array(ext.shape)
+
+    def air(p):
+        idx = np.floor((p - lo) / h).astype(np.int64)
+        ok = np.all((idx >= 0) & (idx < shape), axis=1)
+        a = np.ones(len(p), bool)                       # outside the box: air
+        a[ok] = ext[idx[ok, 0], idx[ok, 1], idx[ok, 2]]
+        return a
+    ap, am = air(c + 2.5 * h * n), air(c - 2.5 * h * n)
+    und = ~cert
+    out_, in_ = ap & ~am, am & ~ap
+    flip[und & in_] = True
+    flip[und & out_] = False
+    cert |= und & (in_ | out_)
+    n[flip] *= -1
+    log(f"  skin orientation: {flip.sum()} of {len(T)} faces turned outwards, {(~cert).sum()} uncertain")
+    return flip, cert, n
+
+
 ZONE_H, ZONE_M, ZONE_BAND = 0.0015, 0.012, 7
 ZONE_RAY_STRIDE, ZONE_RAY_LEN, ZONE_RAYS_OPEN = 3, 0.30, 3   # ray test of the reopened pockets (see carve_zone)
 ZONE_THICK = 0.010                    # half-thickness above which a reopened pocket is the inside of a part
@@ -211,6 +352,13 @@ def ray_escapes(smp, wall_id, outside, kmax):
     best = np.maximum(best, (hs[:, 0] >= 0).astype(int))
     share = best / np.maximum(nhit, 1)
     return esc, share, nhit
+# CAD skin + inner plug (2026-11-18): the walls are the model's own triangles; the voxel solid (interior fill, cooling
+# duct, hollow insides of the parts) only becomes a plug kept away from them, so that the mesh cannot enter the car
+PLUG_MODE = True
+PLUG_BAND_COARSE = 3                  # body grid voxels (3.5 mm): >= ~10 mm inside the skin; clears every gap the closing bridged
+PLUG_BAND_FINE = 2                    # detail-zone voxels (1.25-1.5 mm)
+PLUG_TRIS_ZONE = 60000                # triangles of each zone's plug surface
+PLUG_TRIS_BODY = 200000
 ZONE_TRIS = []      # closed surfaces of the detail zones (filled by carve_zone)
 ZONE_CUTS = []      # boxes removed from the coarse solid (their faces are internal, inside the zone surfaces)
 
@@ -315,38 +463,56 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
     del wall_id
     air = outside | reopen
     del outside, reopen
+    if PLUG.get("T") is T:
+        # the model's triangles that face this outside air (slots included) are walls of the CFD geometry
+        mark_near(T[sel], np.where(sel)[0], blo, hf, ndimage.binary_dilation(air, structure=ball), PLUG["outer"])
+        PLUG["outer"] &= ~PLUG["panel"]                 # duct ends stay with the plug (see wrap)
     # peel the dilation layer where it faces air (it made every part ~1 voxel thicker per side and every slot 2 voxels
-    # narrower); a peeled voxel that a closing would fill back (a notch, a diagonal-only link of a thin sheet) stays
+    # narrower); the model's own surface voxels stay, and they already seal every part (re-filling the notches of the
+    # peeled layer left a ~1-voxel waviness on gently sloped faces)
     peel = thick & ~air & ndimage.binary_dilation(air, structure=ball)
     del thick
     S = ~air & ~peel
-    S |= peel & ndimage.binary_closing(S, structure=ball)
-    del air, peel
+    del peel
     log(f"  detail zone {zlo.round(2).tolist()} - {zhi.round(2).tolist()}: {np.prod(shape)/1e6:.0f} M voxels at {hf*1000:.1f} mm, "
         f"{vreal*1e6:.0f} cm3 of closed gaps reopened; {vfake*1e6:.0f} cm3 of enclosed hollow-part insides kept solid")
     del cs
     S[0], S[-1], S[:, 0], S[:, -1], S[:, :, 0], S[:, :, -1] = False, False, False, False, False, False
     for name, (st, vol) in slot_regions(S, blo, hf).items():
         SLOTS.setdefault(name, []).append(st)
+    plug = PLUG.get("T") is T
+    if plug:
+        # inner plug: the fine solid inside the model's skin (hollow insides of the parts: elements open at the trailing
+        # edge, double skins, the filled interior), up to ~1 voxel from the skin; the skin stays the wall
+        S0 = S
+        S = plug_keep(S0, blo, hf, sel, PLUG_BAND_FINE, air=air)
+        S, nre = plug_reseal(S, S0, blo, hf, sel, seeds=air)
+        del S0
+        if nre:
+            log(f"    zone plug resealed: {nre * hf**3 * 1e6:.0f} cm3")
+        S[0], S[-1], S[:, 0], S[:, -1], S[:, :, 0], S[:, :, -1] = False, False, False, False, False, False
+    del air
     f = ndimage.gaussian_filter(S.astype(np.float32), 0.6)
     del S
-    grid = pv.ImageData(dimensions=shape, spacing=(hf, hf, hf), origin=blo)
+    grid = pv.ImageData(dimensions=shape, spacing=(hf, hf, hf), origin=blo + 0.5 * hf)   # voxel centres
     grid.point_data["s"] = f.ravel(order="F")
     del f
     surf = grid.contour([0.5], scalars="s").triangulate().clean()
     if surf.n_cells:
-        # wing boxes (fine grid) keep more triangles than the other detail zones
-        target = target or (250000 if hf <= WING_H + 1e-9 else 200000)
+        # wing boxes (fine grid) keep more triangles than the other detail zones; a plug is hidden: fewer
+        target = target or (PLUG_TRIS_ZONE if plug else (250000 if hf <= WING_H + 1e-9 else 200000))
         ZONE_TRIS.append(outward(tris_of(finish(surf, target))))
 
 
-def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_ids=None):
+def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_ids=None, plug=False):
     """Watertight half-model (y >= y0) surface of triangle soup T on an h-voxel grid, closing radius r voxels.
     With W (wheel geometry dict) the hollow interior is filled and the cooling inlets kept as blind ducts
     (cavity.py). T_extra (the finely wrapped wings): obstacles for the outside-air flood fill and the interior fill,
     exactly as if they were part of the body, but the solid that exists only because of them (within r voxels of
     their triangles and not within r voxels of T) is removed: the body keeps its shape and its filled interior,
-    the wings and the gaps between their elements are left to the fine wrap. Returns (surface, cavity info or None)."""
+    the wings and the gaps between their elements are left to the fine wrap. Returns (surface, cavity info or None).
+    plug=True (CAD skin + plug): the returned surface is the inner plug (fill, duct, hollow insides), kept inside the
+    model's outer triangles; PLUG holds which triangles are outer (the walls) and their outward orientation."""
     from scipy import ndimage
     import pyvista as pv
     V = T.reshape(-1, 3) if T_extra is None else np.concatenate([T.reshape(-1, 3), T_extra.reshape(-1, 3)])
@@ -395,6 +561,50 @@ def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_id
         ext, info = fill_cavities(ext, h, lo, W, T=T if T_extra is None else np.concatenate([T, T_extra]),
                                   k=max(1, int(round(0.0105 / h))), log=log)
     solid = ~ext
+    if plug:
+        T_all = T if T_extra is None else np.concatenate([T, T_extra])
+        flip, cert, nrm = orient_outward(T_all, ext, lo, h, log=log)
+        outer = np.zeros(len(T_all), bool)
+        # outer triangles: those next to the outside air of the coarse solid (within 2 voxels: its offset); the
+        # detail zones add the ones facing the gaps that the coarse closing bridged (carve_zone)
+        g2 = np.indices((5, 5, 5)) - 2
+        mark_near(T_all, np.arange(len(T_all)), lo, h, ndimage.binary_dilation(ext, (g2 ** 2).sum(0) <= 4), outer)
+        panel = np.zeros(len(T_all), bool)
+        ducts = {k_: d_ for k_, d_ in (info or {}).get("ducts", {}).items() if d_["mask"].any()}
+        if ducts:
+            # whatever the model has at and behind a duct end, across the duct's footprint and 2 cells around it, that
+            # faces no outside air but the duct's (a panel closing the duct, the radiator's back face, its side walls):
+            # left to the plug, so that the radiator face is the plug's end of the duct and no air layer bypasses it.
+            # The bodywork around the duct faces the outside air and stays a wall.
+            cc = info["c"]
+            kf = int(round(cc / h))
+            duct_air = np.zeros_like(ext)
+            for d_ in ducts.values():
+                up = np.repeat(np.repeat(np.repeat(d_["mask"], kf, 0), kf, 1), kf, 2)
+                sx, sy, sz = (min(a_, b_) for a_, b_ in zip(up.shape, ext.shape))
+                duct_air[:sx, :sy, :sz] |= up[:sx, :sy, :sz]
+                del up
+            facing = np.zeros(len(T_all), bool)
+            mark_near(T_all, np.arange(len(T_all)), lo, h, ndimage.binary_dilation(ext & ~duct_air, (g2 ** 2).sum(0) <= 4), facing)
+            del duct_air
+            c3 = T_all.mean(1)
+            j = np.floor((np.abs(c3[:, 1]) - info["lo"][1]) / cc).astype(int)
+            kz = np.floor((c3[:, 2] - info["lo"][2]) / cc).astype(int)
+            for k_, d_ in ducts.items():
+                ix = np.where(d_["mask"].any(axis=(1, 2)))[0]
+                x_end = info["lo"][0] + (ix.max() + 1) * cc
+                fp = ndimage.binary_dilation(d_["footprint"], iterations=2)
+                ok = (j >= 0) & (j < fp.shape[0]) & (kz >= 0) & (kz < fp.shape[1])
+                infp = np.zeros(len(T_all), bool)
+                infp[ok] = fp[j[ok], kz[ok]]
+                pk = infp & (c3[:, 0] > x_end - 1.5 * cc) & (c3[:, 0] < x_end + 0.6) & ~facing
+                panel |= pk
+                log(f"  {k_} duct end at x = {x_end:.3f}: {pk.sum()} model triangles at or behind it left to the plug")
+            outer &= ~panel
+            del facing
+        PLUG.clear()
+        PLUG.update(T=T_all, n=nrm, flip=flip, certain=cert, outer=outer, panel=panel)
+        PLUG["ext"] = ext                              # outside air of the coarse grid (for the plug)
     del ext
     if only_extra is not None:
         solid &= ~only_extra
@@ -431,7 +641,25 @@ def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_id
                 solid[a[0]:b[0], a[1]:b[1], a[2]:b[2]] = False
                 if skin is not None:
                     skin[a[0]:b[0], a[1]:b[1], a[2]:b[2]] = False
-    if skin is None:
+    if plug:
+        n_out = int(PLUG["outer"].sum())
+        if os.environ.get("PLUG_DEBUG_NPZ"):            # local checks only
+            np.savez_compressed(os.environ["PLUG_DEBUG_NPZ"], solid=solid, lo=lo, h=h)
+        fill_ = solid
+        solid = plug_keep(fill_, lo, h, np.ones(len(PLUG["T"]), bool), PLUG_BAND_COARSE, air=PLUG.pop("ext"))
+        solid, nre = plug_reseal(solid, fill_, lo, h, np.ones(len(PLUG["T"]), bool))
+        del fill_
+        log(f"  plug resealed where outside air reached into the fill through the walls: {nre * h**3 * 1000:.2f} L")
+        if os.environ.get("PLUG_DEBUG_NPZ"):
+            np.savez_compressed(os.environ["PLUG_DEBUG_NPZ"].replace(".npz", "_plug.npz"), plug=solid)
+        solid[0], solid[-1], solid[:, -1], solid[:, :, 0], solid[:, :, -1], solid[:, 0] = False, False, False, False, False, False
+        log(f"  CAD skin: {n_out} of {len(PLUG['T'])} model triangles face the outside air; plug {solid.sum()/1e6:.2f} M voxels")
+        if keep_solid:
+            kept = (solid.copy(), lo.copy())
+        f = ndimage.gaussian_filter(solid.astype(np.float32), 0.6)
+        if skin is not None:
+            del skin
+    elif skin is None:
         f = ndimage.gaussian_filter(solid.astype(np.float32), 0.6)
     else:
         # skin keeps its sharpness; only the filled interior (caps, duct ends) is smoothed over ~5 mm. (Smoothing
@@ -440,7 +668,7 @@ def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_id
                        ndimage.gaussian_filter((solid & ~skin).astype(np.float32), 1.5))
         del skin
     del solid
-    grid = pv.ImageData(dimensions=shape, spacing=(h, h, h), origin=lo)
+    grid = pv.ImageData(dimensions=shape, spacing=(h, h, h), origin=lo + 0.5 * h)    # voxel centres
     grid.point_data["s"] = f.ravel(order="F")
     del f
     surf = grid.contour([0.5], scalars="s").triangulate().clean()
@@ -651,7 +879,7 @@ def slot_regions(solid, lo, h, wide_mm=15.0, narrow_mm=6.0, min_cm3=0.2):
     H = 2 * h
     pad = 6
     S = np.pad(S, pad)
-    org = lo - pad * H
+    org = lo + (0.5 - pad) * H                 # centre of the first (padded) 2h block
     out = {}
     for name, w_mm in (("slots_wide", wide_mm), ("slots_narrow", narrow_mm)):
         k = max(1, int(round(0.5 * w_mm / 1000 / H)))
@@ -710,7 +938,7 @@ def wrap_wings(wings, W, year):
 EXIT_VIEW_MIN = 0.10
 
 
-def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=None):
+def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=None, strict=None):
     """Radiator exit: the rear-most rear-facing bodywork around the gearbox, inboard of the rear wheels, up to
     `target` m^2 (half car). The faces closest to the rear-most face of the largest rear-facing patch are taken
     from all the rear-facing candidates (a single connected patch can be much smaller than the target after
@@ -719,7 +947,13 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=No
     >= `view_min`. A face in a closed pocket of the bodywork gives the exit jet nowhere to go: on the RB12 coarse
     mesh the 10 % of the exit area in pockets ahead of the gearbox-cover recess (view fraction 0, p90 0.07) put
     the exit face at Cp 1.23 on average; the faces in the recess, which is open towards the back, have 0.1-0.25.
-    If too few faces pass, the threshold is halved (then dropped)."""
+    If too few faces pass, the threshold is halved (then dropped).
+    `strict`: faces that are candidates only when seen from behind at >= `view_min`, whatever the fallback - the plug
+    of the CAD-skin body. Where the model's shell is open at the back (MCL39 engine-cover spine, RB12 gearbox cover)
+    the plug is the car's rear closure and the exit belongs there; elsewhere it lies hidden behind the skin. With the
+    model's own rear-facing triangles alone the MCL39 exit came out 31 cm2 for a 71 cm2 target and the RB12 one fell
+    back to faces in a closed pocket (view fraction 0). With `strict`, a seen area short of the target is accepted
+    down to half of it (exit jet up to 1x U instead of 0.5x) before the threshold is dropped."""
     from cavity import tri_area, rear_view_fraction
     c = tri.mean(1)
     n = np.cross(tri[:, 1] - tri[:, 0], tri[:, 2] - tri[:, 0])
@@ -740,6 +974,8 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=No
             a = tri_area(tri)
             view = np.zeros(len(tri))
             view[near] = fr
+            if strict is not None:
+                cand &= ~strict | (view >= view_min)
             for vm in (view_min, 0.5 * view_min):
                 ok = cand & (view >= vm)
                 log(f"  rear exit: {a[ok].sum() * 1e4:.0f} of {a[cand].sum() * 1e4:.0f} cm2 of rear-facing candidates seen from "
@@ -747,6 +983,14 @@ def rear_exit(tri, lab, W, target, sym=False, view_min=EXIT_VIEW_MIN, exclude=No
                 if a[ok].sum() >= target:
                     cand = ok
                     break
+            else:
+                if strict is not None and a[ok].sum() >= 0.5 * target:
+                    log(f"  rear exit: the {a[ok].sum() * 1e4:.0f} cm2 seen from behind taken (short of the target)")
+                    cand = ok
+        elif strict is not None:
+            cand &= ~strict
+    if not cand.any():
+        return cand
     from cavity import pick_area, largest_patch
     big = largest_patch(tri, cand)
     if not big.any():
@@ -807,8 +1051,9 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
     for z in zones:
         log(f"detail zone {z[0]} - {z[1]} at {1000 * (z[2] if len(z) > 2 else ZONE_H):.2f} mm")
     Tb_ids = np.concatenate([np.full(len(p), i, np.int32) for i, p in enumerate(body)])   # connected piece of each triangle
-    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None, T_extra=Tw, zones=zones, T_ids=Tb_ids)
-    bsurf = finish(bsurf, 450000)
+    plug = PLUG_MODE and fill_interior and Tw is None
+    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None, T_extra=Tw, zones=zones, T_ids=Tb_ids, plug=plug)
+    bsurf = finish(bsurf, PLUG_TRIS_BODY if plug else 450000)
     btri = outward(tris_of(bsurf))
     # detail zones: their closed surfaces join the body surface; the faces of the body where the zones were cut out lie
     # inside the zone solids (internal: never candidates for the cooling exit)
@@ -821,20 +1066,54 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         inside = np.all((cA > clo - 2 * h_body) & (cA < chi + 2 * h_body), axis=1)
         on_cut = np.any(np.abs(cA - clo) < 1.5 * h_body, axis=1) | np.any(np.abs(cA - chi) < 1.5 * h_body, axis=1)
         internal[:nA] |= inside & on_cut
+    nP = len(btri)                  # plug faces (wrapped-body faces without the plug)
+    skin_info = {}
+    if plug:
+        # the walls: the model's own triangles that face the outside air, turned outwards; the hidden ones (engine,
+        # cockpit and chassis insides, the duct-end panel) are left out, the plug fills in behind the skin
+        T_all = PLUG["T"]
+        keep = PLUG["outer"] & (T_all[..., 1].max(1) >= -0.002)
+        Wt = T_all[keep].copy()
+        fl = PLUG["flip"][keep]
+        Wt[fl] = Wt[fl][:, ::-1]
+        skin_info = {"model_triangles": int(len(T_all)), "wall_triangles": int(keep.sum()),
+                     "hidden_left_out": int((~PLUG["outer"]).sum()), "duct_panel_left_out": int(PLUG["panel"].sum()),
+                     "turned_outwards": int(fl.sum()), "orientation_uncertain": int((keep & ~PLUG["certain"]).sum()),
+                     "plug_band_body_m": PLUG_BAND_COARSE * h_body, "plug_band_zone_voxels": PLUG_BAND_FINE}
+        log(f"CAD skin: {keep.sum()} wall triangles of {len(T_all)} (hidden left out {skin_info['hidden_left_out']}), "
+            f"plug {nP} triangles")
+        btri = np.concatenate([btri, Wt])
+        internal = np.concatenate([internal, np.zeros(len(Wt), bool)])
+        if os.environ.get("PLUG_DEBUG"):                 # local checks only: plug and walls apart
+            os.makedirs(os.path.join(outdir, "debug"), exist_ok=True)
+            write_stl_bin(os.path.join(outdir, "debug", "plug.stl"), btri[:nP], "plug")
+            write_stl_bin(os.path.join(outdir, "debug", "walls.stl"), Wt, "walls")
+            write_stl_bin(os.path.join(outdir, "debug", "hidden.stl"), T_all[~PLUG["outer"]], "hidden")
     lab = classify(btri, W, cfg["year"])
     cooling = None
     if cav is not None:
         from cavity import label_cooling, tri_area
-        vol = np.einsum("ij,ij->i", btri[:, 0], np.cross(btri[:, 1], btri[:, 2])).sum() / 6.0
-        bt = btri if vol > 0 else btri[:, ::-1]          # outward-oriented copy for the normals
+        if plug:
+            bt = btri                                    # plug faces outward (outward()), walls turned outwards
+        else:
+            vol = np.einsum("ij,ij->i", btri[:, 0], np.cross(btri[:, 1], btri[:, 2])).sum() / 6.0
+            bt = btri if vol > 0 else btri[:, ::-1]      # outward-oriented copy for the normals
         cl = label_cooling(bt, cav)
         for name in ("inlets", "radiator_in", "radiator_out"):
             if name in cl:
                 # never the internal faces where the detail zones were cut out (they lie inside the zone solids and
                 # would double the radiator face area, hence the imposed flow rate)
-                lab[cl[name] & ~internal] = name
+                m_ = cl[name] & ~internal
+                if plug and name != "inlets":
+                    m_[nP:] = False                      # the radiator face is the plug's end of the duct
+                lab[m_] = name
         if (lab == "radiator_in").any() and not (lab == "radiator_out").any():
-            lab[rear_exit(bt, lab, W, 0.5 * tri_area(btri[lab == "radiator_in"]).sum(), exclude=internal)] = "radiator_out"
+            st = None
+            if plug:                                     # plug faces only where they close the shell at the back
+                st = np.zeros(len(btri), bool)
+                st[:nP] = True
+            lab[rear_exit(bt, lab, W, 0.5 * tri_area(btri[lab == "radiator_in"]).sum(), exclude=internal,
+                          strict=st)] = "radiator_out"
         if (lab == "radiator_in").any() and (lab == "radiator_out").any():
             ai, ao = tri_area(btri[lab == "radiator_in"]), tri_area(btri[lab == "radiator_out"])
             ci = (btri[lab == "radiator_in"].mean(1) * ai[:, None]).sum(0) / ai.sum()
@@ -901,6 +1180,8 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         "wrap": {"body_voxel_m": h_body, "body_close_voxels": r_body, "wheel_voxel_m": 0.004, "wheel_close_voxels": 3,
                  **({"wing_voxel_m": WING_H, "wing_close_voxels": WING_R, "wing_regions": sorted(wing_tri)} if wing_tri else {}),
         "detail_zones": [[list(z[0]), list(z[1]), (z[2] if len(z) > 2 else ZONE_H)] for z in zones],
+                 **({"walls": "model triangles facing the outside air (CAD skin); the voxel solid is an inner plug",
+                     "skin": skin_info} if plug else {}),
                  "interior_filled": cav is not None,
                  **({"enclosure_max_escapes": cav["K"], "enclosure_cell_m": round(cav["c"], 4), "core_cells": cav["core_cells"],
                      "inside_skin_test": cav.get("skin_test"),
