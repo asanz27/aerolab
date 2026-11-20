@@ -39,6 +39,14 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   forma la cara del radiador. Al final se comprueba la estanqueidad (`plug_reseal`): se inunda desde fuera con paredes y
   tapón como obstáculos y lo que llega a más de 2 vóxeles dentro del relleno vuelve al tapón. Las zonas de detalle
   siguen dando el tapón fino y las regiones de ranura; lo que sigue describe cómo obtienen su sólido fino.
+  Después el tapón se pega a la piel (`plug_to_walls`): cada vértice del tapón que queda hasta 2,5 vóxeles locales por
+  debajo de una pared de orientación segura, con normales que concuerdan (producto escalar > 0,3: ni a través de una
+  pieza fina ni contra una pared perpendicular), se lleva a lo largo de la normal de la pared hasta 0,3 mm por debajo
+  de ella. Sin esto quedaba entre piel y tapón un hueco de 2–8 mm, abierto al aire donde termina una pared (bordes de
+  carcasas abiertas, paneles solapados): la malla gruesa del MP4/23 llegó a 11,9 M celdas (9,3 M en la c6), el RB12 y el
+  MP4/5 se quedaron sin memoria y el MCL39 tenía un 36 % más de caras de pared que en la c8. Se mueve el 65–75 % de
+  los vértices (mediana 1,3 mm, máximo 8,5 mm); el 0,05–0,08 % del área del tapón queda dada la vuelta (pliegues
+  ocultos tras la piel).
 - **Zonas de detalle** (`build_glb.py`, `carve_zone`): el envolvente de la carrocería (3,5 mm, radio de cierre
   2 vóxeles) cerraba toda ranura de menos de ~14-17 mm. En cajas alrededor de los alerones (1,25 mm, automáticas), de los
   bargeboards antes de 2022 y de las zonas que señaló la revisión de geometría de cada coche (fondo delantero, borde del

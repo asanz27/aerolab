@@ -273,6 +273,87 @@ def plug_reseal(plug, solid, lo, h, sel, seeds=None, depth=2):
     return plug, n
 
 
+PLUG_SNAP = 2.5         # plug vertices up to this many local voxels under a wall are moved onto it
+PLUG_SNAP_EPS = 3e-4    # ... ending this far (m) under the wall
+
+
+def closest_on_tri(X, A, B, C):
+    """Closest points to X (n,3) on triangles ABC (n,3 each) (Ericson, Real-Time Collision Detection 5.1.5)."""
+    ab, ac, ap = B - A, C - A, X - A
+    d1, d2 = (ab * ap).sum(1), (ac * ap).sum(1)
+    bp = X - B
+    d3, d4 = (ab * bp).sum(1), (ac * bp).sum(1)
+    cp = X - C
+    d5, d6 = (ab * cp).sum(1), (ac * cp).sum(1)
+    va, vb, vc = d3 * d6 - d5 * d4, d5 * d2 - d1 * d6, d1 * d4 - d3 * d2
+    den = np.where(np.abs(va + vb + vc) > 1e-30, va + vb + vc, 1e-30)
+    v, w = vb / den, vc / den
+    Q = A + ab * v[:, None] + ac * w[:, None]                                   # inside the face
+    sw = lambda m, R: np.where(m[:, None], R, Q)
+    t = np.clip(d1 / np.where(np.abs(d1 - d3) > 1e-30, d1 - d3, 1e-30), 0, 1)
+    Q = sw((vc <= 0) & (d1 >= 0) & (d3 <= 0), A + ab * t[:, None])              # edge AB
+    t = np.clip(d2 / np.where(np.abs(d2 - d6) > 1e-30, d2 - d6, 1e-30), 0, 1)
+    Q = sw((vb <= 0) & (d2 >= 0) & (d6 <= 0), A + ac * t[:, None])              # edge AC
+    t = np.clip((d4 - d3) / np.where(np.abs((d4 - d3) + (d5 - d6)) > 1e-30, (d4 - d3) + (d5 - d6), 1e-30), 0, 1)
+    Q = sw((va <= 0) & (d4 - d3 >= 0) & (d5 - d6 >= 0), B + (C - B) * t[:, None])  # edge BC
+    Q = sw((d1 <= 0) & (d2 <= 0), A)
+    Q = sw((d3 >= 0) & (d4 <= d3), B)
+    Q = sw((d6 >= 0) & (d5 <= d6), C)
+    return Q
+
+
+def plug_to_walls(P, Wt, zones, h_body, k=16):
+    """Close the gap between the plug and the walls. The plug stops >= 1 voxel under the skin so that it never crosses
+    it, which leaves a 2-8 mm gap between the two surfaces, open to the outside air wherever a wall ends (open shell
+    edges, overlapping panels, outer/hidden boundaries of the model). snappyHexMesh meshes that gap wherever its cells
+    fit (slot regions at 1.3-2.7 mm, body surfaces at 5 mm): the MP4/23 coarse mesh reached 11.9 M cells instead of
+    9.3 M and every F1 runner ran out of memory. Each plug vertex up to PLUG_SNAP local voxels under a wall triangle of
+    certain orientation (signed distance along its outward normal < 0) whose normal agrees with the plug's (dot > 0.3:
+    not across a thin part, not onto a perpendicular wall) is moved along that normal to PLUG_SNAP_EPS under it.
+    P: plug triangles (outward); Wt: wall triangles (outward, certain orientation). Returns (P, moved vertex count)."""
+    from scipy.spatial import cKDTree
+    q = np.round(P.reshape(-1, 3) / 1e-7).astype(np.int64)
+    _, first, inv = np.unique(q, axis=0, return_index=True, return_inverse=True)
+    inv = inv.ravel()
+    V = P.reshape(-1, 3)[first].copy()
+    F = inv.reshape(-1, 3)
+    fn = np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0])
+    vn = np.zeros_like(V)
+    for j in range(3):
+        np.add.at(vn, F[:, j], fn)
+    vn /= np.linalg.norm(vn, axis=1)[:, None] + 1e-30
+    hl = np.full(len(V), h_body)
+    for z in zones:
+        hz = z[2] if len(z) > 2 else ZONE_H
+        m = np.all((V >= np.array(z[0])) & (V <= np.array(z[1])), axis=1)
+        hl[m] = np.minimum(hl[m], hz)
+    dmax = PLUG_SNAP * hl
+    wn = np.cross(Wt[:, 1] - Wt[:, 0], Wt[:, 2] - Wt[:, 0])
+    wn /= np.linalg.norm(wn, axis=1)[:, None] + 1e-30
+    sp = [(a, b) for a, b in sample_points_ids(Wt, np.arange(len(Wt)), 0.004)]
+    pts, tid = np.concatenate([a for a, _ in sp]), np.concatenate([b for _, b in sp])
+    del sp
+    dd, kk = cKDTree(pts).query(V, k=k, distance_upper_bound=float(dmax.max()) + 0.004)
+    best_d = np.full(len(V), np.inf)
+    best_s = np.zeros(len(V))
+    best_t = np.full(len(V), -1)
+    for j in range(k):
+        ok = np.isfinite(dd[:, j])
+        if not ok.any():
+            continue
+        iv = np.where(ok)[0]
+        t = tid[kk[iv, j]]
+        Qc = closest_on_tri(V[iv], Wt[t, 0], Wt[t, 1], Wt[t, 2])
+        d = np.linalg.norm(V[iv] - Qc, axis=1)
+        s = ((V[iv] - Qc) * wn[t]).sum(1)
+        good = (s < 0) & (d < dmax[iv]) & ((vn[iv] * wn[t]).sum(1) > 0.3) & (d < best_d[iv])
+        g = iv[good]
+        best_d[g], best_s[g], best_t[g] = d[good], s[good], t[good]
+    mv = best_t >= 0
+    V[mv] -= (best_s[mv] + PLUG_SNAP_EPS)[:, None] * wn[best_t[mv]]
+    return V[F], int(mv.sum())
+
+
 def orient_outward(T, ext, lo, h, log=print):
     """Outward orientation of the model's triangles: the side seen from outside (exterior_visibility votes); faces
     not seen (deep in a slot, under a panel) by probing the coarse outside air 2.5 voxels along each side.
@@ -1082,6 +1163,17 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
                      "plug_band_body_m": PLUG_BAND_COARSE * h_body, "plug_band_zone_voxels": PLUG_BAND_FINE}
         log(f"CAD skin: {keep.sum()} wall triangles of {len(T_all)} (hidden left out {skin_info['hidden_left_out']}), "
             f"plug {nP} triangles")
+        # the plug up against the walls (no gap for the mesh to fill)
+        n0 = np.cross(btri[:, 1] - btri[:, 0], btri[:, 2] - btri[:, 0])
+        btri, nmv = plug_to_walls(btri, Wt[PLUG["certain"][keep]], zones, h_body)
+        n1 = np.cross(btri[:, 1] - btri[:, 0], btri[:, 2] - btri[:, 0])
+        a0 = np.linalg.norm(n0, axis=1)
+        over = (n0 * n1).sum(1) < 0
+        skin_info.update({"plug_vertices_onto_walls": nmv, "plug_snap_voxels": PLUG_SNAP, "plug_snap_eps_m": PLUG_SNAP_EPS,
+                          "plug_area_turned_over": round(float(a0[over].sum() / a0.sum()), 5)})
+        log(f"plug moved up against the walls: {nmv} vertices; {over.sum()} faces turned over "
+            f"({100 * a0[over].sum() / a0.sum():.2f} % of the plug area)")
+        del n0, n1, a0, over
         btri = np.concatenate([btri, Wt])
         internal = np.concatenate([internal, np.zeros(len(Wt), bool)])
         if os.environ.get("PLUG_DEBUG"):                 # local checks only: plug and walls apart
