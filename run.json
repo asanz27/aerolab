@@ -1,9 +1,9 @@
 {
- "tag": "cad-skin-plug-coarse-v3",
- "_doc": "Same coarse check meshes as c11 (plug against the CAD walls, h0 0.36; MP4/5 0.34) with the repair keeping only the region of locationInMesh: MCL39 c10 meshed (9.26 M cells, 539 cells removed) and then potentialFoam stopped on a floating point exception (zero diagonal on the GAMG coarsest level, a closed pocket cut off by the removal). Runs next to c11 as a hedge; whichever of the two passes potentialFoam is kept.",
+ "tag": "cad-skin-plug-coarse-v4",
+ "_doc": "Coarse check meshes of the four F1 (plug against the CAD walls, h0 0.36; MP4/5 0.34) with the case in its own cgroup (memory.high = RAM - 2.5 GB) and zswap: the c11 MCL39, MP4/23 and RB12 runners stopped answering while the layer addition swapped. Also keeps only the region of locationInMesh after the repair (c12 fix). c12 cancelled (same meshes, would die the same way); the MP4/5 c11 keeps going.",
  "cases": [
   {
-   "name": "mcl39_c12",
+   "name": "mcl39_c13",
    "car": "mcl39",
    "private": true,
    "U": 50.0,
@@ -20,7 +20,7 @@
    "swap_gb": 16
   },
   {
-   "name": "mp423_c12",
+   "name": "mp423_c13",
    "car": "mp423",
    "private": true,
    "U": 50.0,
@@ -37,7 +37,7 @@
    "swap_gb": 16
   },
   {
-   "name": "mp45_c12",
+   "name": "mp45_c13",
    "car": "mp45",
    "private": true,
    "U": 50.0,
@@ -54,7 +54,7 @@
    "swap_gb": 16
   },
   {
-   "name": "rb12_c12",
+   "name": "rb12_c13",
    "car": "rb12",
    "private": true,
    "U": 50.0,
@@ -70,5 +70,8 @@
    "stages": 2,
    "swap_gb": 16
   }
+ ],
+ "cancel_runs": [
+  44654343275
  ]
 }

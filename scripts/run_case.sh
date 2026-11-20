@@ -85,6 +85,10 @@ status() {
     echo "case: $NAME   stage: $1   job: $STAGE/$NSTAGES   elapsed: $(( ($(date +%s) - JOB_START) / 60 )) min"
     echo "memory used now (MB): $(free -m | awk 'NR==2{print $3}')   max so far: $(sort -n "$CASE/mem.log" 2>/dev/null | tail -1)"
     free -m | awk 'NR==3 && $2>0{print "swap used (MB): "$3" of "$2}'
+    [ -f /sys/fs/cgroup/cfd/memory.current ] && awk -v c="$(cat /sys/fs/cgroup/cfd/memory.current)" \
+      -v sw="$(cat /sys/fs/cgroup/cfd/memory.swap.current 2>/dev/null)" -v h="$(cat /sys/fs/cgroup/cfd/memory.high)" \
+      -v t="$(awk '$1 == "high" {print $2}' /sys/fs/cgroup/cfd/memory.events)" \
+      'BEGIN {printf "case cgroup (MB): now %d   swap %d   high %s   throttled %s times\n", c / 1048576, sw / 1048576, (h ~ /^[0-9]+$/ ? int(h / 1048576) : h), t}'
     df -h / /mnt 2>/dev/null | tail -2
   } > "$S/status.txt"
   cp "$CASE"/timings.json "$S/" 2>/dev/null
@@ -150,9 +154,35 @@ if [ "${SWAP_GB%.*}" -gt 0 ] 2>/dev/null; then
   free -m
 fi
 
+# Keep the runner agent answering under memory pressure: the case runs in its own cgroup whose memory.high leaves
+# ~2.5 GB of RAM to the system and the agent, so the kernel swaps out the case first (c11: the MCL39, MP4/23 and RB12
+# runners stopped answering while the layer addition swapped). zswap compresses what goes to swap. Best effort.
+cg_case() {
+  local CG=/sys/fs/cgroup/cfd tot hi
+  [ -f /sys/fs/cgroup/cgroup.controllers ] || { echo "case cgroup: no cgroup v2"; return 1; }
+  ORIG_CG="/sys/fs/cgroup$(awk -F: '$1 == "0" {print $3}' /proc/self/cgroup)"
+  grep -qw memory /sys/fs/cgroup/cgroup.subtree_control || echo "+memory" | sudo tee /sys/fs/cgroup/cgroup.subtree_control > /dev/null || return 1
+  sudo mkdir -p "$CG" || return 1
+  tot=$(free -m | awk 'NR==2{print $2}')
+  hi=$(( tot - 2560 ))
+  echo "${hi}M" | sudo tee "$CG/memory.high" > /dev/null || return 1
+  echo $$ | sudo tee "$CG/cgroup.procs" > /dev/null || return 1
+  echo "case cgroup: memory.high ${hi} MB of ${tot} MB"
+}
+ORIG_CG=""
+cg_case || echo "case cgroup not set (the case shares the memory with the runner agent)"
+# the status publisher and the memory sampler stay out of it, so the progress keeps coming while the case swaps
+cg_out() { [ -n "$ORIG_CG" ] && [ -d "$ORIG_CG" ] && echo "$1" | sudo tee "$ORIG_CG/cgroup.procs" > /dev/null 2>&1; return 0; }
+if [ -e /sys/module/zswap/parameters/enabled ]; then
+  echo Y | sudo tee /sys/module/zswap/parameters/enabled > /dev/null 2>&1 &&
+    echo 30 | sudo tee /sys/module/zswap/parameters/max_pool_percent > /dev/null 2>&1 &&
+    echo "zswap on ($(cat /sys/module/zswap/parameters/compressor 2>/dev/null), pool up to 30 % of RAM)"
+fi
+
 # memory sampler
 ( while true; do free -m | awk 'NR==2{print $3}' >> "$CASE/mem.log"; sleep 15; done ) > /dev/null 2>&1 &
 MEMPID=$!
+cg_out $MEMPID
 
 # OpenFOAM environment
 set +eu
@@ -198,6 +228,7 @@ if [ "$STAGE" = "1" ]; then
   stamp mesh_prep
   ( while true; do sleep 600; status "running"; done ) > /dev/null 2>&1 &
   STPID=$!
+  cg_out $STPID
   par log.snappyHexMesh snappyHexMesh -overwrite || fail snappyHexMesh
   stamp snappy
   par log.checkMesh checkMesh -constant || true
@@ -279,6 +310,7 @@ else
   stamp resume
   ( while true; do sleep 600; status "running"; done ) > /dev/null 2>&1 &
   STPID=$!
+  cg_out $STPID
 fi
 
 # ------------------------------------------------------------------ second-order solve (wall-clock guarded)
