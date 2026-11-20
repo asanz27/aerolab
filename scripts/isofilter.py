@@ -76,7 +76,45 @@ def wall_mask_grid(V, F, h, pad):
     return grid, lo
 
 
-def filter_iso(iso_path, surf_V, surf_F, dist=0.008, h=0.004):
+def cluster(P, F, fields, h):
+    """Vertex clustering on a grid of size h: vertices in one cell merge into their mean (fields averaged too);
+    collapsed and duplicated triangles are dropped. Triangles larger than h are left as they are."""
+    lo = P.min(0)
+    c = np.floor((P - lo) / h).astype(np.int64)
+    n = c.max(0) + 1
+    key = (c[:, 0] * n[1] + c[:, 1]) * n[2] + c[:, 2]
+    _, first, inv = np.unique(key, return_index=True, return_inverse=True)
+    m = len(first)
+    cnt = np.bincount(inv, minlength=m).astype(float)
+    Q = np.stack([np.bincount(inv, P[:, k], m) / cnt for k in range(3)], 1)
+    G = inv[F]
+    G = G[(G[:, 0] != G[:, 1]) & (G[:, 1] != G[:, 2]) & (G[:, 0] != G[:, 2])]
+    _, keep = np.unique(np.sort(G, 1), axis=0, return_index=True)
+    G = G[np.sort(keep)]
+    out = {k: np.round(np.bincount(inv, a.astype(float), m) / cnt).astype(a.dtype) for k, a in fields.items()}
+    return Q, G, out
+
+
+def decimate(P, F, fields, target):
+    """Cluster with the cell size that leaves about `target` triangles (bisection on log h)."""
+    if len(F) <= target:
+        return P, F, fields
+    a, b = np.log(1e-4), np.log(0.2)
+    best = None
+    for _ in range(14):
+        h = np.exp(0.5 * (a + b))
+        Q, G, out = cluster(P, F, fields, h)
+        if len(G) > target:
+            a = np.log(h)
+        else:
+            b = np.log(h)
+            best = (Q, G, out)
+        if best is not None and 0.85 * target <= len(best[1]) <= target:
+            break
+    return best if best is not None else cluster(P, F, fields, np.exp(b))
+
+
+def filter_iso(iso_path, surf_V, surf_F, dist=0.008, h=0.004, target=200000):
     bufs, extra = read_fsb(iso_path)
     P = dequant_pos(bufs["pos"][0], bufs["pos"][1])
     F = bufs["index"][0].reshape(-1, 3)
@@ -100,6 +138,18 @@ def filter_iso(iso_path, surf_V, surf_F, dist=0.008, h=0.004):
             out[name] = (arr[used], meta)
         else:
             out[name] = (arr, meta)
+    if len(newF) > target:  # the runner's decimation failed (postpro before 2026-11-20): cluster the vertices here
+        pm = out["pos"][1]
+        V = dequant_pos(out["pos"][0], pm)
+        fl = {k: a for k, (a, _) in out.items() if k not in ("pos", "index") and a.size == len(V)}
+        Q, G, fo = decimate(V, newF.astype(np.int64), fl, target)
+        lo, hi = Q.min(0), Q.max(0)
+        q = np.round(np.clip((Q - lo) / (hi - lo + 1e-30), 0, 1) * 65535).astype(np.uint16)
+        out["pos"] = (q.reshape(-1), {**pm, "min": lo.round(6).tolist(), "max": hi.round(6).tolist()})
+        out["index"] = (G.astype(np.uint32).reshape(-1), out["index"][1])
+        for k, a in fo.items():
+            out[k] = (a, out[k][1])
+        keepF = G
     write_fsb(iso_path, out, extra)
     return len(F), len(keepF)
 

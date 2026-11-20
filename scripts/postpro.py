@@ -675,6 +675,9 @@ def iso_export(vol, cfg, webdir, name, scalar, value, color_fields, target=18000
         log("iso empty", name)
         return None
     iso = iso.triangulate().clean()
+    if iso.n_lines or iso.n_verts:  # clean() turns triangles collapsed by the point merging into lines / vertices,
+        import pyvista as pv        # and decimate() refuses a mesh that is not all triangles: keep the triangles
+        iso = pv.PolyData(np.asarray(iso.points), faces=np.asarray(iso.faces))
     if iso.n_cells > target:
         try:
             iso = iso.decimate(1 - target / iso.n_cells)
