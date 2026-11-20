@@ -224,6 +224,26 @@ EOF
       par log.topoSet.repair topoSet -dict system/topoSetDict.repair -constant || true
       grep -E "cellSet bad now size|cellSet keep now size" log.topoSet.repair | tail -n 2
       par log.subsetMesh.repair subsetMesh keep -overwrite -patch body || true
+      # removing cells can cut small pockets off the flow domain: a closed pocket has no fixed-value boundary, its
+      # GAMG coarsest-level cell gets a zero diagonal and potentialFoam stops on a floating point exception (MCL39 c10,
+      # 539 cells removed). Keep only the region that holds locationInMesh.
+      LOC=$(foamDictionary system/snappyHexMeshDict -entry castellatedMeshControls/locationInMesh -value 2>/dev/null)
+      if [ -n "$LOC" ]; then
+        cat > system/topoSetDict.region <<EOF
+FoamFile { version 2.0; format ascii; class dictionary; object topoSetDict; }
+actions
+(
+    { name main; type cellSet; action new; source regionToCell; insidePoints ($LOC); }
+);
+EOF
+        par log.topoSet.region topoSet -dict system/topoSetDict.region -constant || true
+        NMAIN=$(grep -oE "cellSet main now size [0-9]+" log.topoSet.region | tail -n 1 | awk '{print $NF}')
+        NALL=$(grep -oE "cellSet keep now size [0-9]+" log.topoSet.repair | tail -n 1 | awk '{print $NF}')
+        echo "cells in the region of locationInMesh: ${NMAIN:-?} of ${NALL:-?}"
+        if [ -n "$NMAIN" ] && [ -n "$NALL" ] && [ "$NMAIN" -gt 0 ] && [ "$NMAIN" -lt "$NALL" ]; then
+          par log.subsetMesh.region subsetMesh main -overwrite -patch body || true
+        fi
+      fi
       par log.checkMesh checkMesh -constant || true
       grep -E "cells:|Mesh OK|Failed|negative|oriented" log.checkMesh | head
     fi
