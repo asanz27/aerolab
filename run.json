@@ -1,9 +1,9 @@
 {
- "tag": "cad-skin-plug-coarse-v4",
- "_doc": "Coarse check meshes of the four F1 (plug against the CAD walls, h0 0.36; MP4/5 0.34) with the case in its own cgroup (memory.high = RAM - 2.5 GB) and zswap: the c11 MCL39, MP4/23 and RB12 runners stopped answering while the layer addition swapped. Also keeps only the region of locationInMesh after the repair (c12 fix). c12 cancelled (same meshes, would die the same way); the MP4/5 c11 keeps going.",
+ "tag": "cad-skin-plug-prod-v1",
+ "_doc": "Production runs of the four F1 on the c13 meshes (h0 0.36; MP4/5 0.34; case cgroup + zswap), 4 chained jobs: the MP4/5 c11 mesh has 8.65 M cells, its solver already uses ~12.5 GB and runs ~36 s per iteration, so a finer mesh does not fit in the free runners and 2 jobs would stop near iteration 900. Launched next to c13 (2 jobs), which checks layers and potentialFoam first; if c13 shows a problem this run is cancelled.",
  "cases": [
   {
-   "name": "mcl39_c13",
+   "name": "mcl39_p14",
    "car": "mcl39",
    "private": true,
    "U": 50.0,
@@ -16,11 +16,11 @@
    "post2": true,
    "slice_res": 0.007,
    "dx_slices": 0.075,
-   "stages": 2,
+   "stages": 4,
    "swap_gb": 16
   },
   {
-   "name": "mp423_c13",
+   "name": "mp423_p14",
    "car": "mp423",
    "private": true,
    "U": 50.0,
@@ -33,11 +33,11 @@
    "post2": true,
    "slice_res": 0.007,
    "dx_slices": 0.075,
-   "stages": 2,
+   "stages": 4,
    "swap_gb": 16
   },
   {
-   "name": "mp45_c13",
+   "name": "mp45_p14",
    "car": "mp45",
    "private": true,
    "U": 50.0,
@@ -50,11 +50,11 @@
    "post2": true,
    "slice_res": 0.007,
    "dx_slices": 0.075,
-   "stages": 2,
+   "stages": 4,
    "swap_gb": 16
   },
   {
-   "name": "rb12_c13",
+   "name": "rb12_p14",
    "car": "rb12",
    "private": true,
    "U": 50.0,
@@ -67,11 +67,8 @@
    "post2": true,
    "slice_res": 0.007,
    "dx_slices": 0.075,
-   "stages": 2,
+   "stages": 4,
    "swap_gb": 16
   }
- ],
- "cancel_runs": [
-  44654343275
  ]
 }
