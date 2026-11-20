@@ -1,0 +1,72 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : topoSet -dict system/topoSetDict.repair -constant -parallel
+Date   : Nov 20 2026
+Time   : 03:54:40
+Host   : ip-10-0-130-243
+PID    : 7716
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_mp45_c13
+nProcs : 4
+Hosts  :
+(
+    (ip-10-0-130-243 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create polyMesh for time = constant
+
+Reading topoSetDict.repair
+
+Time = constant
+    mesh not changed.
+Created cellSet bad
+    Applying source labelToCell
+    Adding cells mentioned in dictionary ...
+    cellSet bad now size 0
+Read set cellSet bad size:0
+    Applying source cellToCell
+    Adding all elements of cell sets: (zeroVolumeCells)
+    cellSet bad now size 65
+Read set cellSet bad size:65
+    Applying source cellToCell
+    Adding all elements of cell sets: (highAspectRatioCells)
+    cellSet bad now size 65
+Read set cellSet bad size:65
+    Applying source faceToCell
+    Adding cells according to face sets: (wrongOrientedFaces)
+    cellSet bad now size 250
+Created cellSet keep
+    Applying source cellToCell
+    Adding all elements of cell sets: (bad)
+    cellSet keep now size 250
+Read set cellSet keep size:250
+    Inverting cellSet
+    cellSet keep now size 8651340
+
+End
+
+Finalising parallel run
