@@ -1,0 +1,107 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : potentialFoam -writephi -parallel
+Date   : Nov 20 2026
+Time   : 00:34:01
+Host   : runnervm8axu0
+PID    : 8654
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_mcl39_c10
+nProcs : 4
+Hosts  :
+(
+    (runnervm8axu0 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+potentialFlow: Operating solver in PISO mode
+
+Reading velocity field U
+
+Constructing pressure field p
+
+Constructing velocity potential field Phi
+
+No MRF models present
+
+
+Calculating potential flow
+[1] [stack trace]
+=============
+[1] #1  Foam::sigFpe::sigHandler(int) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #2  ? in /lib/x86_64-linux-gnu/libc.so.6
+[1] #3  Foam::DICPreconditioner::calcReciprocalD(Foam::Field<double>&, Foam::lduMatrix const&) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #4  Foam::DICPreconditioner::DICPreconditioner(Foam::lduMatrix::solver const&, Foam::dictionary const&) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #5  Foam::lduMatrix::preconditioner::addsymMatrixConstructorToTable<Foam::DICPreconditioner>::New(Foam::lduMatrix::solver const&, Foam::dictionary const&) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #6  Foam::lduMatrix::preconditioner::New(Foam::lduMatrix::solver const&, Foam::dictionary const&) in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #7  Foam::PCG::scalarSolve(Foam::Field<double>&, Foam::Field<double> const&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #8  Foam::GAMGSolver::solveCoarsestLevel(Foam::Field<double>&, Foam::Field<double> const&) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #9  Foam::GAMGSolver::Vcycle(Foam::PtrList<Foam::lduMatrix::smoother> const&, Foam::Field<double>&, Foam::Field<double> const&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::Field<double>&, Foam::PtrList<Foam::Field<double>>&, Foam::PtrList<Foam::Field<double>>&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #10  Foam::GAMGSolver::solve(Foam::Field<double>&, Foam::Field<double> const&, unsigned char) const in <platforms>/linux64GccDPInt32Opt/lib/libOpenFOAM.so
+[1] #11  Foam::fvMatrix<double>::solveSegregated(Foam::dictionary const&) in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[1] #12  ? in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[1] #13  Foam::fvMesh::solve(Foam::fvMatrix<double>&, Foam::dictionary const&) const in <platforms>/linux64GccDPInt32Opt/lib/libfiniteVolume.so
+[1] #14  ? in <platforms>/linux64GccDPInt32Opt/bin/potentialFoam
+[1] #15  ? in <platforms>/linux64GccDPInt32Opt/bin/potentialFoam
+[1] #16  ? in /lib/x86_64-linux-gnu/libc.so.6
+[1] #17  __libc_start_main in /lib/x86_64-linux-gnu/libc.so.6
+[1] #18  ? in <platforms>/linux64GccDPInt32Opt/bin/potentialFoam
+[1] =============
+[runnervm8axu0:08655] *** Process received signal ***
+[runnervm8axu0:08655] Signal: Floating point exception (8)
+[runnervm8axu0:08655] Signal code:  (-6)
+[runnervm8axu0:08655] Failing at address: 0x3e9000021cf
+[runnervm8axu0:08655] [ 0] /lib/x86_64-linux-gnu/libc.so.6(+0x45330)[0x7f7c2be45330]
+[runnervm8axu0:08655] [ 1] /lib/x86_64-linux-gnu/libc.so.6(pthread_kill+0x11c)[0x7f7c2be9ec0c]
+[runnervm8axu0:08655] [ 2] /lib/x86_64-linux-gnu/libc.so.6(gsignal+0x1e)[0x7f7c2be4527e]
+[runnervm8axu0:08655] [ 3] /lib/x86_64-linux-gnu/libc.so.6(+0x45330)[0x7f7c2be45330]
+[runnervm8axu0:08655] [ 4] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZN4Foam17DICPreconditioner15calcReciprocalDERNS_5FieldIdEERKNS_9lduMatrixE+0x118)[0x7f7c2cab2058]
+[runnervm8axu0:08655] [ 5] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZN4Foam17DICPreconditionerC1ERKNS_9lduMatrix6solverERKNS_10dictionaryE+0x72)[0x7f7c2cab2fd2]
+[runnervm8axu0:08655] [ 6] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZN4Foam9lduMatrix14preconditioner30addsymMatrixConstructorToTableINS_17DICPreconditionerEE3NewERKNS0_6solverERKNS_10dictionaryE+0x33)[0x7f7c2cab3033]
+[runnervm8axu0:08655] [ 7] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZN4Foam9lduMatrix14preconditioner3NewERKNS0_6solverERKNS_10dictionaryE+0x18e)[0x7f7c2caaadbe]
+[runnervm8axu0:08655] [ 8] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam3PCG11scalarSolveERNS_5FieldIdEERKS2_h+0xa16)[0x7f7c2caad1f6]
+[runnervm8axu0:08655] [ 9] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver18solveCoarsestLevelERNS_5FieldIdEERKS2_+0x23a)[0x7f7c2cac6d7a]
+[runnervm8axu0:08655] [10] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver6VcycleERKNS_7PtrListINS_9lduMatrix8smootherEEERNS_5FieldIdEERKS8_S9_S9_S9_S9_S9_RNS1_IS8_EESD_h+0x3ee)[0x7f7c2cac75ce]
+[runnervm8axu0:08655] [11] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libOpenFOAM.so(_ZNK4Foam10GAMGSolver5solveERNS_5FieldIdEERKS2_h+0x43c)[0x7f7c2cac864c]
+[runnervm8axu0:08655] [12] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(_ZN4Foam8fvMatrixIdE15solveSegregatedERKNS_10dictionaryE+0x43a)[0x7f7c2e3e01ba]
+[runnervm8axu0:08655] [13] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(+0x535892)[0x7f7c2df35892]
+[runnervm8axu0:08655] [14] /usr/lib/openfoam/openfoam2606/platforms/linux64GccDPInt32Opt/lib/libfiniteVolume.so(_ZNK4Foam6fvMesh5solveERNS_8fvMatrixIdEERKNS_10dictionaryE+0x2a)[0x7f7c2df23baa]
+[runnervm8axu0:08655] [15] potentialFoam(+0x2161c)[0x564477d1b61c]
+[runnervm8axu0:08655] [16] potentialFoam(+0x1dd18)[0x564477d17d18]
+[runnervm8axu0:08655] [17] /lib/x86_64-linux-gnu/libc.so.6(+0x2a1ca)[0x7f7c2be2a1ca]
+[runnervm8axu0:08655] [18] /lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0x8b)[0x7f7c2be2a28b]
+[runnervm8axu0:08655] [19] potentialFoam(+0x205f5)[0x564477d1a5f5]
+[runnervm8axu0:08655] *** End of error message ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 1 with PID 0 on node runnervm8axu0 exited on signal 8 (Floating point exception).
+--------------------------------------------------------------------------
