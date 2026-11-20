@@ -69,7 +69,10 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   0,35 × la celda local, `firstAndRelativeFinal`); el resto con funciones de pared (y⁺ ≈ 50 para la mediana, 4 capas ×1,2).
   Con y⁺ ≈ 2 y 16 capas la adición de capas necesitaba ~6 M celdas transitorias y no cabía en los 16 GB del runner.
   En todas las paredes `nutUSpaldingWallFunction` y `omegaWallFunction` con `blending binomial; n 2`, válidas para
-  cualquier y⁺. Tras mallar se quitan las pocas celdas invertidas que deja la adición de capas (`subsetMesh`).
+  cualquier y⁺. Tras mallar se quitan las pocas celdas invertidas que deja la adición de capas (`subsetMesh`) y después
+  todo lo que no esté conectado con `locationInMesh` (`regionToCell`): en la MCL39 c10 se quitaron 539 celdas, alguna
+  bolsa quedó aislada sin contorno de valor fijo y potentialFoam paró con una excepción de coma flotante (diagonal nula
+  en el nivel más grueso de GAMG).
 - **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.
