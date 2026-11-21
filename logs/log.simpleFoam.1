@@ -1,0 +1,2398 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : simpleFoam -parallel
+Date   : Nov 20 2026
+Time   : 04:26:53
+Host   : ip-10-0-130-111
+PID    : 6890
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_mcl39_p14
+nProcs : 4
+Hosts  :
+(
+    (ip-10-0-130-111 4)
+)
+Pstream initialized with:
+    node communication : off [type=host] (4 ranks, 1 nodes)
+    topology controls  : none
+    consensus exchange : 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+
+SIMPLE: no convergence criteria found. Calculations will run for 100 steps.
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type RAS
+Selecting RAS turbulence model kOmegaSST
+Selecting patchDistMethod meshWave
+RAS
+{
+    RASModel        kOmegaSST;
+    turbulence      on;
+    printCoeffs     on;
+    alphaK1         0.85;
+    alphaK2         1;
+    alphaOmega1     0.5;
+    alphaOmega2     0.856;
+    gamma1          0.55555556;
+    gamma2          0.44;
+    beta1           0.075;
+    beta2           0.0828;
+    betaStar        0.09;
+    a1              0.31;
+    b1              1;
+    c1              10;
+    F3              false;
+    decayControl    false;
+    kInf            0;
+    omegaInf        0;
+}
+
+No MRF models present
+
+No finite volume options present
+
+Starting time loop
+
+forces forces_wheels_front:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_wheels_rear:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_beamwing:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_body:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_diffuser:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_floor:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_frontwing:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_inlets:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_rearwing:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_sidepods:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_suspension:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_cooling:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+forces forces_total:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1.205
+    Not including porosity effects
+
+surfaceFieldValue cool_flux_radiator_in:
+    operation     = weightedSum
+    weight field  = (phi)
+
+
+surfaceFieldValue cool_Q_radiator_in:
+    operation     = sum
+
+
+surfaceFieldValue cool_p_radiator_in:
+    operation     = areaAverage
+
+
+surfaceFieldValue cool_flux_radiator_out:
+    operation     = weightedSum
+    weight field  = (phi)
+
+
+surfaceFieldValue cool_Q_radiator_out:
+    operation     = sum
+
+
+surfaceFieldValue cool_p_radiator_out:
+    operation     = areaAverage
+
+
+wallShearStress wallShearStress:
+    processing all (12) wall patches
+
+Time = 1
+
+smoothSolver:  Solving for Ux, Initial residual = 0.048792169, Final residual = 0.0021638888, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.26999107, Final residual = 0.026326105, No Iterations 2
+smoothSolver:  Solving for Uz, Initial residual = 0.27587049, Final residual = 0.026962938, No Iterations 2
+GAMG:  Solving for p, Initial residual = 1, Final residual = 0.04767585, No Iterations 3
+time step continuity errors : sum local = 0.020418435, global = -0.0017065742, cumulative = -0.0017065742
+smoothSolver:  Solving for omega, Initial residual = 0.0099194328, Final residual = 0.00021659265, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 1, Final residual = 0.02545184, No Iterations 2
+ExecutionTime = 25.73 s  ClockTime = 27 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1863.5988 58.023535 -1371.5792)
+        Pressure : (1700.3278 55.285768 -1373.0592)
+        Viscous  : (163.27104 2.7377676 1.479947)
+    Sum of moments
+        Total    : (-686.97642 4084.0949 -482.76325)
+        Pressure : (-685.84519 4012.9631 -402.15181)
+        Viscous  : (-1.1312361 71.131828 -80.61144)
+    writing force and moment files.
+
+Time = 2
+
+smoothSolver:  Solving for Ux, Initial residual = 0.029025741, Final residual = 0.0009363081, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.075883042, Final residual = 0.0019748365, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.079453571, Final residual = 0.0021198448, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.2889332, Final residual = 0.010856297, No Iterations 4
+time step continuity errors : sum local = 0.0075828652, global = -0.00011429879, cumulative = -0.001820873
+smoothSolver:  Solving for omega, Initial residual = 0.0052293182, Final residual = 0.00016429509, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.18757304, Final residual = 0.0063169399, No Iterations 2
+ExecutionTime = 55.35 s  ClockTime = 57 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (3401.7861 459.95786 -3443.2203)
+        Pressure : (3237.4853 456.52087 -3444.9766)
+        Viscous  : (164.30082 3.4369966 1.7563376)
+    Sum of moments
+        Total    : (-1681.226 9706.1607 -261.54809)
+        Pressure : (-1679.7657 9635.0003 -181.27875)
+        Viscous  : (-1.4603065 71.160416 -80.269337)
+    writing force and moment files.
+
+Time = 3
+
+smoothSolver:  Solving for Ux, Initial residual = 0.026947576, Final residual = 0.0011641165, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.036668848, Final residual = 0.0018037519, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.03342645, Final residual = 0.001625081, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.20234266, Final residual = 0.009649238, No Iterations 3
+time step continuity errors : sum local = 0.010123422, global = 0.00082207671, cumulative = -0.00099879629
+smoothSolver:  Solving for omega, Initial residual = 0.00317582, Final residual = 0.00013077456, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.069752416, Final residual = 0.0029607149, No Iterations 2
+ExecutionTime = 83.59 s  ClockTime = 87 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (3009.809 853.93099 -3834.8426)
+        Pressure : (2850.7584 849.86935 -3838.0754)
+        Viscous  : (159.05058 4.0616375 3.2328886)
+    Sum of moments
+        Total    : (-1944.9073 10336.263 666.3492)
+        Pressure : (-1943.6665 10272.557 742.76432)
+        Viscous  : (-1.2408053 63.705554 -76.415114)
+    writing force and moment files.
+
+Time = 4
+
+smoothSolver:  Solving for Ux, Initial residual = 0.014521904, Final residual = 0.00082223855, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.024420374, Final residual = 0.0015005576, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.018481776, Final residual = 0.0011145952, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.18942833, Final residual = 0.0054587497, No Iterations 4
+time step continuity errors : sum local = 0.0064137986, global = 0.00038561248, cumulative = -0.00061318381
+smoothSolver:  Solving for omega, Initial residual = 0.0021009626, Final residual = 0.00010635961, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.030991293, Final residual = 0.0016118169, No Iterations 2
+ExecutionTime = 112.5 s  ClockTime = 116 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1437.9062 1098.3832 -3115.2954)
+        Pressure : (1283.8093 1093.7891 -3118.7625)
+        Viscous  : (154.09696 4.5940727 3.4670647)
+    Sum of moments
+        Total    : (-1705.7935 7676.5188 1877.4893)
+        Pressure : (-1704.4947 7615.2587 1951.0931)
+        Viscous  : (-1.2988076 61.260148 -73.60377)
+    writing force and moment files.
+
+Time = 5
+
+smoothSolver:  Solving for Ux, Initial residual = 0.011789514, Final residual = 0.00047155149, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.013819014, Final residual = 0.00072069646, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.010671644, Final residual = 0.00058682684, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.17246707, Final residual = 0.0048754235, No Iterations 4
+time step continuity errors : sum local = 0.0052090521, global = 3.8085496e-05, cumulative = -0.00057509832
+smoothSolver:  Solving for omega, Initial residual = 0.0014756874, Final residual = 8.7716767e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.016403942, Final residual = 0.0010197839, No Iterations 2
+ExecutionTime = 141.52 s  ClockTime = 147 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (343.21929 966.20582 -2147.1455)
+        Pressure : (193.26381 961.40734 -2150.2008)
+        Viscous  : (149.95548 4.7984772 3.0552832)
+    Sum of moments
+        Total    : (-1281.435 4740.9668 2148.5679)
+        Pressure : (-1279.9375 4679.9568 2220.9759)
+        Viscous  : (-1.4974868 61.010069 -72.408002)
+    writing force and moment files.
+
+Time = 6
+
+smoothSolver:  Solving for Ux, Initial residual = 0.012481059, Final residual = 0.00054936329, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.015403141, Final residual = 0.0008637819, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.011123003, Final residual = 0.00060478866, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.18734867, Final residual = 0.0045185564, No Iterations 4
+time step continuity errors : sum local = 0.0040146729, global = -6.2936961e-05, cumulative = -0.00063803528
+smoothSolver:  Solving for omega, Initial residual = 0.0011007251, Final residual = 7.41013e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.010124958, Final residual = 0.00073124257, No Iterations 2
+ExecutionTime = 170.78 s  ClockTime = 177 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (547.94497 612.70059 -1750.7949)
+        Pressure : (401.94754 608.00391 -1753.6361)
+        Viscous  : (145.99743 4.6966783 2.841164)
+    Sum of moments
+        Total    : (-1039.8974 3958.6273 1329.911)
+        Pressure : (-1038.4482 3898.022 1401.5145)
+        Viscous  : (-1.4491935 60.605355 -71.603484)
+    writing force and moment files.
+
+Time = 7
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0083324419, Final residual = 0.00046386983, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.014048319, Final residual = 0.00083522862, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.010313713, Final residual = 0.00060497959, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.19997251, Final residual = 0.0050833941, No Iterations 4
+time step continuity errors : sum local = 0.0039536102, global = -0.00024535799, cumulative = -0.00088339327
+smoothSolver:  Solving for omega, Initial residual = 0.00086276908, Final residual = 6.4419839e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.0068687651, Final residual = 0.00055668593, No Iterations 2
+ExecutionTime = 200.16 s  ClockTime = 207 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1523.8016 412.18567 -2157.2408)
+        Pressure : (1381.3812 407.59704 -2160.0612)
+        Viscous  : (142.42036 4.5886327 2.8203381)
+    Sum of moments
+        Total    : (-1145.7245 5567.496 423.92616)
+        Pressure : (-1144.4279 5508.1065 494.23966)
+        Viscous  : (-1.2965649 59.389445 -70.313501)
+    writing force and moment files.
+
+Time = 8
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0081326448, Final residual = 0.00035592999, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.011147225, Final residual = 0.00060387107, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0088245329, Final residual = 0.00049187787, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.16815898, Final residual = 0.0080285662, No Iterations 3
+time step continuity errors : sum local = 0.00636137, global = 9.5702907e-05, cumulative = -0.00078769036
+smoothSolver:  Solving for omega, Initial residual = 0.00070385434, Final residual = 5.7189976e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.0049660249, Final residual = 0.00044266821, No Iterations 2
+ExecutionTime = 228.98 s  ClockTime = 237 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (2160.5117 431.96538 -2653.1843)
+        Pressure : (2020.8432 427.38658 -2656.1488)
+        Viscous  : (139.66851 4.5788002 2.9644764)
+    Sum of moments
+        Total    : (-1326.3622 7140.4535 108.13451)
+        Pressure : (-1325.2094 7082.5096 177.17673)
+        Viscous  : (-1.1527382 57.943852 -69.042215)
+    writing force and moment files.
+
+Time = 9
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0077735629, Final residual = 0.00036533605, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.010968538, Final residual = 0.00062763392, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0084899325, Final residual = 0.0004847482, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.14275339, Final residual = 0.0032534093, No Iterations 4
+time step continuity errors : sum local = 0.0027662641, global = 0.00020592908, cumulative = -0.00058176129
+smoothSolver:  Solving for omega, Initial residual = 0.00059328495, Final residual = 5.1672567e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.0037876627, Final residual = 0.00036447976, No Iterations 2
+ExecutionTime = 258.01 s  ClockTime = 267 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (2158.2527 603.6667 -3273.6999)
+        Pressure : (2021.5696 599.00655 -3276.8224)
+        Viscous  : (136.68306 4.6601423 3.1224421)
+    Sum of moments
+        Total    : (-1535.214 8651.713 367.34003)
+        Pressure : (-1534.1633 8595.4365 434.52768)
+        Viscous  : (-1.05064 56.276513 -67.187648)
+    writing force and moment files.
+
+Time = 10
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0056863922, Final residual = 0.00032442105, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.010188355, Final residual = 0.00061213259, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0077634844, Final residual = 0.00046420477, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.11830832, Final residual = 0.0054137506, No Iterations 3
+time step continuity errors : sum local = 0.0050266786, global = 0.00042952191, cumulative = -0.00015223938
+smoothSolver:  Solving for omega, Initial residual = 0.00051409106, Final residual = 4.7460747e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.0030252985, Final residual = 3.7781929e-05, No Iterations 4
+ExecutionTime = 286.85 s  ClockTime = 297 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1675.5283 682.41084 -3259.6958)
+        Pressure : (1541.5527 677.62962 -3262.9691)
+        Viscous  : (133.97551 4.7812102 3.2733)
+    Sum of moments
+        Total    : (-1510.8615 8316.0422 729.44331)
+        Pressure : (-1509.8771 8261.19 794.81562)
+        Viscous  : (-0.98442597 54.852207 -65.372306)
+    writing force and moment files.
+
+Time = 11
+
+smoothSolver:  Solving for Ux, Initial residual = 0.005277464, Final residual = 0.00026845459, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0090819757, Final residual = 0.00053466774, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.006940138, Final residual = 0.00040881265, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.10776754, Final residual = 0.0049366655, No Iterations 3
+time step continuity errors : sum local = 0.0044350375, global = -1.4213969e-05, cumulative = -0.00016645335
+smoothSolver:  Solving for omega, Initial residual = 0.00045532726, Final residual = 4.4148344e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.0024659231, Final residual = 3.334425e-05, No Iterations 4
+ExecutionTime = 315.39 s  ClockTime = 327 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1268.0716 688.70006 -3092.1664)
+        Pressure : (1136.4324 683.80952 -3095.5246)
+        Viscous  : (131.63913 4.8905363 3.3582802)
+    Sum of moments
+        Total    : (-1443.8972 7650.3354 947.7282)
+        Pressure : (-1442.932 7596.5928 1011.5675)
+        Viscous  : (-0.96525912 53.742656 -63.839314)
+    writing force and moment files.
+
+Time = 12
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0048744183, Final residual = 0.00024944102, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0085517903, Final residual = 0.00050925404, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0064260468, Final residual = 0.00037682719, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.10465803, Final residual = 0.0025456812, No Iterations 4
+time step continuity errors : sum local = 0.0021814629, global = -8.6907199e-05, cumulative = -0.00025336054
+smoothSolver:  Solving for omega, Initial residual = 0.0004079681, Final residual = 4.6689348e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0020622319, Final residual = 2.9772275e-05, No Iterations 4
+ExecutionTime = 345.52 s  ClockTime = 357 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1182.5446 623.51388 -2741.2189)
+        Pressure : (1052.8406 618.56554 -2744.5998)
+        Viscous  : (129.704 4.9483479 3.3808644)
+    Sum of moments
+        Total    : (-1336.6595 6679.6669 903.38308)
+        Pressure : (-1335.7015 6626.679 966.04833)
+        Viscous  : (-0.95799349 52.987897 -62.665252)
+    writing force and moment files.
+
+Time = 13
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0041127487, Final residual = 0.00023117413, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0080726582, Final residual = 0.00047438125, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0060685787, Final residual = 0.0003580184, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.10138461, Final residual = 0.0046372716, No Iterations 3
+time step continuity errors : sum local = 0.0037621423, global = -0.00022415873, cumulative = -0.00047751927
+smoothSolver:  Solving for omega, Initial residual = 0.00036384383, Final residual = 4.4351152e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0017636307, Final residual = 2.6809545e-05, No Iterations 4
+ExecutionTime = 374.1 s  ClockTime = 387 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1422.7648 570.08926 -2698.3389)
+        Pressure : (1294.6882 565.12699 -2701.6688)
+        Viscous  : (128.07661 4.9622655 3.3299009)
+    Sum of moments
+        Total    : (-1327.2382 6706.5106 699.32262)
+        Pressure : (-1326.2597 6653.9591 761.07435)
+        Viscous  : (-0.97848797 52.551565 -61.751729)
+    writing force and moment files.
+
+Time = 14
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0040432935, Final residual = 0.00021180702, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0074721765, Final residual = 0.00043162495, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0058399339, Final residual = 0.00033908357, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.092220439, Final residual = 0.004270399, No Iterations 3
+time step continuity errors : sum local = 0.0034171681, global = -8.4141769e-06, cumulative = -0.00048593345
+smoothSolver:  Solving for omega, Initial residual = 0.00032688933, Final residual = 4.1850325e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0015407889, Final residual = 2.4388615e-05, No Iterations 4
+ExecutionTime = 404.11 s  ClockTime = 418 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1674.4594 548.2286 -2777.5379)
+        Pressure : (1547.8228 543.25761 -2780.8091)
+        Viscous  : (126.63662 4.9709946 3.2712582)
+    Sum of moments
+        Total    : (-1344.745 7051.5092 524.04567)
+        Pressure : (-1343.7352 6999.3523 584.96047)
+        Viscous  : (-1.0097522 52.156914 -60.914805)
+    writing force and moment files.
+
+Time = 15
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0038905528, Final residual = 0.00020774925, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.006950097, Final residual = 0.00040724978, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0056949741, Final residual = 0.00032758511, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.083286774, Final residual = 0.0041482116, No Iterations 3
+time step continuity errors : sum local = 0.0033309404, global = 0.00017616273, cumulative = -0.00030977072
+smoothSolver:  Solving for omega, Initial residual = 0.00029568578, Final residual = 3.9330182e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0013722498, Final residual = 2.2379433e-05, No Iterations 4
+ExecutionTime = 433.68 s  ClockTime = 448 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1752.9765 551.07354 -2945.4537)
+        Pressure : (1627.7004 546.08941 -2948.7059)
+        Viscous  : (125.27615 4.9841326 3.2521887)
+    Sum of moments
+        Total    : (-1373.7494 7539.7818 465.1907)
+        Pressure : (-1372.727 7488.1334 525.25459)
+        Viscous  : (-1.0223949 51.64832 -60.063886)
+    writing force and moment files.
+
+Time = 16
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0035791729, Final residual = 0.00020377031, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0068098056, Final residual = 0.00041036401, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0056201334, Final residual = 0.00033046876, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.074960223, Final residual = 0.0036375647, No Iterations 3
+time step continuity errors : sum local = 0.0029540806, global = 0.00015347662, cumulative = -0.0001562941
+smoothSolver:  Solving for omega, Initial residual = 0.0002690754, Final residual = 3.6932745e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0012400963, Final residual = 2.0680959e-05, No Iterations 4
+ExecutionTime = 463.3 s  ClockTime = 479 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1656.9224 571.3881 -3118.9104)
+        Pressure : (1532.9134 566.36448 -3122.1465)
+        Viscous  : (124.00898 5.0236179 3.2361063)
+    Sum of moments
+        Total    : (-1408.0507 7945.803 533.40959)
+        Pressure : (-1406.999 7894.645 592.59782)
+        Viscous  : (-1.0517295 51.157955 -59.18823)
+    writing force and moment files.
+
+Time = 17
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0032931559, Final residual = 0.00019134887, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0068161171, Final residual = 0.00041332545, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0055014302, Final residual = 0.0003287947, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.067300031, Final residual = 0.0029255123, No Iterations 3
+time step continuity errors : sum local = 0.0024193333, global = 8.1509753e-05, cumulative = -7.4784344e-05
+smoothSolver:  Solving for omega, Initial residual = 0.00024611437, Final residual = 3.4675529e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0011332865, Final residual = 1.923427e-05, No Iterations 4
+ExecutionTime = 493.05 s  ClockTime = 509 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1532.0808 573.8467 -3205.7468)
+        Pressure : (1409.2462 568.77961 -3208.9774)
+        Viscous  : (122.83463 5.0670875 3.2306384)
+    Sum of moments
+        Total    : (-1423.8903 8103.0942 597.56397)
+        Pressure : (-1422.8111 8052.4321 655.92608)
+        Viscous  : (-1.0791474 50.662119 -58.362109)
+    writing force and moment files.
+
+Time = 18
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0031339389, Final residual = 0.0001789406, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0066256786, Final residual = 0.0004018483, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0053129226, Final residual = 0.00031807558, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.06184513, Final residual = 0.0027419838, No Iterations 3
+time step continuity errors : sum local = 0.0022819506, global = -0.0001203598, cumulative = -0.00019514415
+smoothSolver:  Solving for omega, Initial residual = 0.00022612156, Final residual = 3.2561752e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.001043009, Final residual = 1.7993012e-05, No Iterations 4
+ExecutionTime = 522.73 s  ClockTime = 540 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1482.4495 563.08808 -3229.9324)
+        Pressure : (1360.6613 557.97441 -3233.1253)
+        Viscous  : (121.78826 5.1136717 3.1929051)
+    Sum of moments
+        Total    : (-1429.5505 8131.8269 608.69909)
+        Pressure : (-1428.4181 8081.447 666.32151)
+        Viscous  : (-1.1323862 50.379866 -57.622415)
+    writing force and moment files.
+
+Time = 19
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0029603394, Final residual = 0.00017017587, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0062743115, Final residual = 0.00037745374, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0050105625, Final residual = 0.00030062221, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.056862798, Final residual = 0.0027113824, No Iterations 3
+time step continuity errors : sum local = 0.0022661129, global = -0.00014994837, cumulative = -0.00034509252
+smoothSolver:  Solving for omega, Initial residual = 0.0002085602, Final residual = 3.0590997e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00096457168, Final residual = 1.6905662e-05, No Iterations 4
+ExecutionTime = 552.55 s  ClockTime = 571 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1521.3302 545.00995 -3175.1576)
+        Pressure : (1400.4927 539.85807 -3178.3117)
+        Viscous  : (120.83753 5.1518726 3.1540705)
+    Sum of moments
+        Total    : (-1411.9274 7996.0708 563.28291)
+        Pressure : (-1410.7468 7945.9046 620.24056)
+        Viscous  : (-1.1805923 50.166214 -56.957653)
+    writing force and moment files.
+
+Time = 20
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0028635767, Final residual = 0.00016422727, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0059516636, Final residual = 0.00035343576, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0047764886, Final residual = 0.00028487355, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.052732605, Final residual = 0.0025150866, No Iterations 3
+time step continuity errors : sum local = 0.0020877161, global = -7.8779215e-05, cumulative = -0.00042387173
+smoothSolver:  Solving for omega, Initial residual = 0.00019318207, Final residual = 2.8782356e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00089846633, Final residual = 1.5937328e-05, No Iterations 4
+ExecutionTime = 582.35 s  ClockTime = 602 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1586.3398 540.47385 -3085.9943)
+        Pressure : (1466.3932 535.29546 -3089.0953)
+        Viscous  : (119.94659 5.1783929 3.1009469)
+    Sum of moments
+        Total    : (-1381.324 7784.0537 517.96008)
+        Pressure : (-1380.0868 7733.992 574.32846)
+        Viscous  : (-1.2371857 50.061669 -56.368384)
+    writing force and moment files.
+
+Time = 21
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0028926759, Final residual = 0.00016095992, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.005698445, Final residual = 0.00033613824, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0047017254, Final residual = 0.00027666753, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.049289137, Final residual = 0.0022151372, No Iterations 3
+time step continuity errors : sum local = 0.0018152446, global = 2.9376518e-05, cumulative = -0.00039449521
+smoothSolver:  Solving for omega, Initial residual = 0.00017929262, Final residual = 2.7136589e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00084191947, Final residual = 1.5066331e-05, No Iterations 4
+ExecutionTime = 611.92 s  ClockTime = 633 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1615.6572 553.16837 -3025.129)
+        Pressure : (1496.5768 547.96459 -3028.2104)
+        Viscous  : (119.08043 5.2037841 3.0813903)
+    Sum of moments
+        Total    : (-1357.4791 7633.5712 511.09905)
+        Pressure : (-1356.2092 7583.7111 566.87879)
+        Viscous  : (-1.2699325 49.860052 -55.779736)
+    writing force and moment files.
+
+Time = 22
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0028350011, Final residual = 0.00015932723, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0055342325, Final residual = 0.00032761179, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.004607228, Final residual = 0.00027077754, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.046104146, Final residual = 0.0021301349, No Iterations 3
+time step continuity errors : sum local = 0.0017334645, global = 9.1595438e-05, cumulative = -0.00030289978
+smoothSolver:  Solving for omega, Initial residual = 0.00016679377, Final residual = 2.5635599e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00079340753, Final residual = 1.4289351e-05, No Iterations 4
+ExecutionTime = 641.87 s  ClockTime = 663 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1597.6629 568.91348 -3016.9321)
+        Pressure : (1479.3971 563.68465 -3019.9841)
+        Viscous  : (118.26581 5.2288277 3.0520486)
+    Sum of moments
+        Total    : (-1348.9547 7607.5239 527.85802)
+        Pressure : (-1347.6419 7557.8309 583.07387)
+        Viscous  : (-1.3128038 49.693018 -55.215846)
+    writing force and moment files.
+
+Time = 23
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0026635935, Final residual = 0.00015654036, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0055004662, Final residual = 0.00032851327, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0044763099, Final residual = 0.00026538565, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.042933232, Final residual = 0.001981081, No Iterations 3
+time step continuity errors : sum local = 0.0016181674, global = 8.9257342e-05, cumulative = -0.00021364243
+smoothSolver:  Solving for omega, Initial residual = 0.00015562133, Final residual = 2.427776e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00075172962, Final residual = 1.3607145e-05, No Iterations 4
+ExecutionTime = 671.3 s  ClockTime = 694 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1561.8264 571.52166 -3063.2044)
+        Pressure : (1444.3365 566.26454 -3066.255)
+        Viscous  : (117.4899 5.2571216 3.050599)
+    Sum of moments
+        Total    : (-1357.0008 7721.5621 537.34859)
+        Pressure : (-1355.6658 7672.1089 591.99549)
+        Viscous  : (-1.3350707 49.453207 -54.6469)
+    writing force and moment files.
+
+Time = 24
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0025598268, Final residual = 0.00015164971, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0054816455, Final residual = 0.0003284983, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0043779429, Final residual = 0.0002614091, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.039895561, Final residual = 0.0017405188, No Iterations 3
+time step continuity errors : sum local = 0.001440505, global = 4.0503566e-05, cumulative = -0.00017313887
+smoothSolver:  Solving for omega, Initial residual = 0.00014567842, Final residual = 2.3052333e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0007152445, Final residual = 1.3010705e-05, No Iterations 4
+ExecutionTime = 700.33 s  ClockTime = 724 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1538.9155 556.07352 -3118.0118)
+        Pressure : (1422.1479 550.79222 -3121.0453)
+        Viscous  : (116.76767 5.281301 3.0335382)
+    Sum of moments
+        Total    : (-1366.2528 7862.7191 516.30387)
+        Pressure : (-1364.8861 7813.423 570.42917)
+        Viscous  : (-1.3666927 49.296138 -54.1253)
+    writing force and moment files.
+
+Time = 25
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0025049593, Final residual = 0.00014675254, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0053841196, Final residual = 0.00032077895, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0042938797, Final residual = 0.00025648141, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.037022079, Final residual = 0.0016425456, No Iterations 3
+time step continuity errors : sum local = 0.0013770759, global = -4.1394233e-05, cumulative = -0.0002145331
+smoothSolver:  Solving for omega, Initial residual = 0.00013673417, Final residual = 2.1918299e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00068281723, Final residual = 1.2481959e-05, No Iterations 4
+ExecutionTime = 729.14 s  ClockTime = 754 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1540.4323 533.6716 -3148.7371)
+        Pressure : (1424.3502 528.36363 -3151.7527)
+        Viscous  : (116.08207 5.307967 3.0156688)
+    Sum of moments
+        Total    : (-1368.4225 7949.6203 479.54321)
+        Pressure : (-1367.0283 7900.4573 533.1639)
+        Viscous  : (-1.3942157 49.163047 -53.620691)
+    writing force and moment files.
+
+Time = 26
+
+smoothSolver:  Solving for Ux, Initial residual = 0.002440185, Final residual = 0.00014244409, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0052094378, Final residual = 0.00030615781, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0041927427, Final residual = 0.00025037804, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.034498293, Final residual = 0.0015682582, No Iterations 3
+time step continuity errors : sum local = 0.0013313345, global = -3.1325058e-05, cumulative = -0.00024585816
+smoothSolver:  Solving for omega, Initial residual = 0.00012861583, Final residual = 2.0864702e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00065463769, Final residual = 1.2018568e-05, No Iterations 4
+ExecutionTime = 758.19 s  ClockTime = 784 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1555.0915 519.3554 -3122.1421)
+        Pressure : (1439.6599 514.02076 -3125.1295)
+        Viscous  : (115.43158 5.3346373 2.9874119)
+    Sum of moments
+        Total    : (-1353.647 7886.7147 451.42757)
+        Pressure : (-1352.2176 7837.622 504.57615)
+        Viscous  : (-1.4293452 49.092725 -53.14858)
+    writing force and moment files.
+
+Time = 27
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0024028327, Final residual = 0.00013941735, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0050446865, Final residual = 0.00029225857, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0041068493, Final residual = 0.00024495186, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.032556326, Final residual = 0.0014159488, No Iterations 3
+time step continuity errors : sum local = 0.0012048159, global = -3.4250221e-05, cumulative = -0.00028010838
+smoothSolver:  Solving for omega, Initial residual = 0.00012121075, Final residual = 1.9888265e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00063018428, Final residual = 1.1607901e-05, No Iterations 4
+ExecutionTime = 787.05 s  ClockTime = 814 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1563.2284 519.68578 -3067.4604)
+        Pressure : (1448.4239 514.32102 -3070.4292)
+        Viscous  : (114.8045 5.3647551 2.9687288)
+    Sum of moments
+        Total    : (-1332.043 7752.1064 445.57282)
+        Pressure : (-1330.5845 7703.1092 498.24571)
+        Viscous  : (-1.4585077 48.997166 -52.672897)
+    writing force and moment files.
+
+Time = 28
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0023792478, Final residual = 0.00013736906, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0049450304, Final residual = 0.00028433477, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0040520964, Final residual = 0.0002403607, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.031070756, Final residual = 0.0012768862, No Iterations 3
+time step continuity errors : sum local = 0.0010814906, global = -9.4527178e-06, cumulative = -0.0002895611
+smoothSolver:  Solving for omega, Initial residual = 0.00011436503, Final residual = 1.897324e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00060934846, Final residual = 1.1246464e-05, No Iterations 4
+ExecutionTime = 816.37 s  ClockTime = 843 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1561.8881 526.10813 -3016.3652)
+        Pressure : (1447.6957 520.70974 -3019.3264)
+        Viscous  : (114.1924 5.3983827 2.9611779)
+    Sum of moments
+        Total    : (-1312.661 7623.9545 450.98602)
+        Pressure : (-1311.1812 7575.0437 503.18396)
+        Viscous  : (-1.4797976 48.910835 -52.197933)
+    writing force and moment files.
+
+Time = 29
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0023283195, Final residual = 0.00013507939, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0048823974, Final residual = 0.0002800031, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0040005072, Final residual = 0.00023591422, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.029720478, Final residual = 0.0012893208, No Iterations 3
+time step continuity errors : sum local = 0.0010870673, global = 2.2587949e-05, cumulative = -0.00026697315
+smoothSolver:  Solving for omega, Initial residual = 0.0001080479, Final residual = 1.8112266e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00059140617, Final residual = 1.0933875e-05, No Iterations 4
+ExecutionTime = 845.19 s  ClockTime = 873 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1556.4898 531.97523 -2962.8802)
+        Pressure : (1442.8834 526.54291 -2965.8502)
+        Viscous  : (113.6064 5.4323211 2.970073)
+    Sum of moments
+        Total    : (-1293.366 7483.1514 449.03127)
+        Pressure : (-1291.8756 7434.3853 500.7583)
+        Viscous  : (-1.4904027 48.766107 -51.727024)
+    writing force and moment files.
+
+Time = 30
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0022762115, Final residual = 0.00013279943, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0048627011, Final residual = 0.00027857887, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0039353036, Final residual = 0.0002308832, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.028358165, Final residual = 0.0013611288, No Iterations 3
+time step continuity errors : sum local = 0.0011417976, global = -1.0938232e-05, cumulative = -0.00027791138
+smoothSolver:  Solving for omega, Initial residual = 0.00010220181, Final residual = 1.7304321e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00057563262, Final residual = 1.0661696e-05, No Iterations 4
+ExecutionTime = 873.52 s  ClockTime = 903 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1554.1854 531.79056 -2948.098)
+        Pressure : (1441.1337 526.32708 -2951.0835)
+        Viscous  : (113.05165 5.4634749 2.9854698)
+    Sum of moments
+        Total    : (-1286.9199 7453.5859 432.58927)
+        Pressure : (-1285.4231 7404.945 483.87191)
+        Viscous  : (-1.4967946 48.640888 -51.282641)
+    writing force and moment files.
+
+Time = 31
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0022267117, Final residual = 0.00012997096, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0048380053, Final residual = 0.00027616455, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0038783392, Final residual = 0.0002262984, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.027057248, Final residual = 0.001241912, No Iterations 3
+time step continuity errors : sum local = 0.0010445796, global = -9.3057655e-06, cumulative = -0.00028721715
+smoothSolver:  Solving for omega, Initial residual = 9.6807485e-05, Final residual = 1.6548005e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00056274112, Final residual = 1.0434074e-05, No Iterations 4
+ExecutionTime = 902.4 s  ClockTime = 933 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1555.6517 522.73791 -2972.4248)
+        Pressure : (1443.1198 517.24565 -2975.4251)
+        Viscous  : (112.53187 5.4922605 3.0002901)
+    Sum of moments
+        Total    : (-1289.973 7536.9584 409.78647)
+        Pressure : (-1288.4675 7488.4416 460.64498)
+        Viscous  : (-1.5054964 48.516819 -50.858508)
+    writing force and moment files.
+
+Time = 32
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0021813593, Final residual = 0.00012664091, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0047624709, Final residual = 0.00026939148, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0038229526, Final residual = 0.00022158023, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.025751599, Final residual = 0.0010287785, No Iterations 3
+time step continuity errors : sum local = 0.00087202156, global = -4.2758943e-06, cumulative = -0.00029149304
+smoothSolver:  Solving for omega, Initial residual = 9.1838481e-05, Final residual = 1.5839533e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00055166658, Final residual = 1.0244404e-05, No Iterations 4
+ExecutionTime = 930.58 s  ClockTime = 962 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1556.9734 516.87366 -2984.8495)
+        Pressure : (1444.9434 511.35353 -2987.8731)
+        Viscous  : (112.03005 5.5201356 3.02358)
+    Sum of moments
+        Total    : (-1289.1071 7582.0499 399.02735)
+        Pressure : (-1287.5998 7533.6574 449.48133)
+        Viscous  : (-1.5073657 48.392496 -50.453986)
+    writing force and moment files.
+
+Time = 33
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0021379234, Final residual = 0.00012350343, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004686229, Final residual = 0.00026272266, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037716216, Final residual = 0.0002172533, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.024605455, Final residual = 0.0010323613, No Iterations 3
+time step continuity errors : sum local = 0.00087983625, global = -2.5498393e-05, cumulative = -0.00031699143
+smoothSolver:  Solving for omega, Initial residual = 8.7218856e-05, Final residual = 1.5172295e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00054186326, Final residual = 1.008047e-05, No Iterations 4
+ExecutionTime = 959.55 s  ClockTime = 992 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1557.9213 513.60074 -2983.8678)
+        Pressure : (1446.3756 508.05332 -2986.9168)
+        Viscous  : (111.54564 5.5474206 3.0489517)
+    Sum of moments
+        Total    : (-1284.019 7591.0253 393.2112)
+        Pressure : (-1282.5114 7542.7726 443.27075)
+        Viscous  : (-1.5075825 48.252681 -50.05955)
+    writing force and moment files.
+
+Time = 34
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0021101933, Final residual = 0.00012069413, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0046362197, Final residual = 0.00025820402, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037349699, Final residual = 0.00021380097, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.023739706, Final residual = 0.001092739, No Iterations 3
+time step continuity errors : sum local = 0.00093548643, global = -1.0020838e-05, cumulative = -0.00032701227
+smoothSolver:  Solving for omega, Initial residual = 8.2976939e-05, Final residual = 1.4546669e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00053474624, Final residual = 9.9540861e-06, No Iterations 4
+ExecutionTime = 988.51 s  ClockTime = 1022 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1560.1285 510.14681 -2973.4489)
+        Pressure : (1449.0555 504.57314 -2976.5287)
+        Viscous  : (111.07299 5.5736676 3.0798023)
+    Sum of moments
+        Total    : (-1275.6465 7573.6555 386.7941)
+        Pressure : (-1274.143 7525.5311 436.47384)
+        Viscous  : (-1.5035034 48.124382 -49.679738)
+    writing force and moment files.
+
+Time = 35
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0020996221, Final residual = 0.00011849897, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0046199072, Final residual = 0.0002560221, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037277723, Final residual = 0.00021206641, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.022738694, Final residual = 0.00074756853, No Iterations 4
+time step continuity errors : sum local = 0.0006429451, global = -1.3517418e-05, cumulative = -0.00034052969
+smoothSolver:  Solving for omega, Initial residual = 7.9006371e-05, Final residual = 1.3959872e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0005281602, Final residual = 9.8570602e-06, No Iterations 4
+ExecutionTime = 1017.61 s  ClockTime = 1052 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1563.5159 499.21391 -2941.4263)
+        Pressure : (1452.9032 493.61356 -2944.5281)
+        Viscous  : (110.61272 5.6003503 3.1018351)
+    Sum of moments
+        Total    : (-1259.444 7500.91 364.46519)
+        Pressure : (-1257.9393 7452.9002 413.77542)
+        Viscous  : (-1.504648 48.009776 -49.310229)
+    writing force and moment files.
+
+Time = 36
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0020845517, Final residual = 0.00011663697, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0046179999, Final residual = 0.00025467228, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037321394, Final residual = 0.00021047885, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.02183069, Final residual = 0.00087016797, No Iterations 3
+time step continuity errors : sum local = 0.00075046176, global = 1.4835757e-05, cumulative = -0.00032569393
+smoothSolver:  Solving for omega, Initial residual = 7.5326311e-05, Final residual = 1.3407816e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00052341167, Final residual = 9.8008257e-06, No Iterations 4
+ExecutionTime = 1047.11 s  ClockTime = 1082 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1564.7863 497.17717 -2923.6498)
+        Pressure : (1454.6306 491.55171 -2926.7757)
+        Viscous  : (110.15572 5.6254631 3.1258612)
+    Sum of moments
+        Total    : (-1252.1614 7462.2984 354.45535)
+        Pressure : (-1250.6606 7414.4016 403.41307)
+        Viscous  : (-1.5007186 47.896761 -48.957718)
+    writing force and moment files.
+
+Time = 37
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0020652205, Final residual = 0.00011500579, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0045802689, Final residual = 0.00025163662, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037043009, Final residual = 0.00020738047, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.021439555, Final residual = 0.00087680186, No Iterations 3
+time step continuity errors : sum local = 0.00075611756, global = 3.481177e-05, cumulative = -0.00029088216
+smoothSolver:  Solving for omega, Initial residual = 7.19149e-05, Final residual = 1.2883488e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00052075994, Final residual = 9.7685266e-06, No Iterations 4
+ExecutionTime = 1076.13 s  ClockTime = 1112 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1564.5616 495.93039 -2908.5258)
+        Pressure : (1454.8469 490.28029 -2911.6781)
+        Viscous  : (109.71466 5.6501033 3.1523252)
+    Sum of moments
+        Total    : (-1246.3017 7431.8418 345.40493)
+        Pressure : (-1244.8072 7384.076 394.02199)
+        Viscous  : (-1.4945196 47.765825 -48.617067)
+    writing force and moment files.
+
+Time = 38
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0020338695, Final residual = 0.00011320434, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0045343602, Final residual = 0.00024797169, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036688087, Final residual = 0.00020386883, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.021068821, Final residual = 0.001017742, No Iterations 3
+time step continuity errors : sum local = 0.00087745008, global = 9.1983264e-06, cumulative = -0.00028168384
+smoothSolver:  Solving for omega, Initial residual = 6.8720815e-05, Final residual = 1.238941e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00051939871, Final residual = 9.7507386e-06, No Iterations 4
+ExecutionTime = 1104.85 s  ClockTime = 1142 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1564.819 495.79987 -2885.3857)
+        Pressure : (1455.5367 490.12587 -2888.57)
+        Viscous  : (109.28229 5.6740067 3.1843116)
+    Sum of moments
+        Total    : (-1238.9848 7390.0205 334.5434)
+        Pressure : (-1237.5007 7342.3892 382.83464)
+        Viscous  : (-1.4840738 47.631286 -48.291239)
+    writing force and moment files.
+
+Time = 39
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019958622, Final residual = 0.00011140579, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0045022913, Final residual = 0.00024502984, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036483592, Final residual = 0.0002012148, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.020694951, Final residual = 0.00075449939, No Iterations 4
+time step continuity errors : sum local = 0.00065115801, global = -3.9049133e-05, cumulative = -0.00032073297
+smoothSolver:  Solving for omega, Initial residual = 6.5716938e-05, Final residual = 1.1921979e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00051884376, Final residual = 9.7367505e-06, No Iterations 4
+ExecutionTime = 1134.21 s  ClockTime = 1172 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1561.54 502.70654 -2871.0213)
+        Pressure : (1452.6673 497.01197 -2874.2423)
+        Viscous  : (108.8727 5.694572 3.2210087)
+    Sum of moments
+        Total    : (-1235.8325 7368.4759 340.91968)
+        Pressure : (-1234.3626 7320.9968 388.90064)
+        Viscous  : (-1.4698667 47.479077 -47.980964)
+    writing force and moment files.
+
+Time = 40
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019626672, Final residual = 0.00010937325, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0044784918, Final residual = 0.00024246262, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036454973, Final residual = 0.00019952038, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.020080194, Final residual = 0.00082656267, No Iterations 3
+time step continuity errors : sum local = 0.00071752873, global = -1.4897595e-05, cumulative = -0.00033563057
+smoothSolver:  Solving for omega, Initial residual = 6.2897758e-05, Final residual = 1.1479088e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00051977983, Final residual = 9.7259724e-06, No Iterations 4
+ExecutionTime = 1163.31 s  ClockTime = 1202 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1559.1444 500.70946 -2865.3324)
+        Pressure : (1450.6703 494.99689 -2868.5961)
+        Viscous  : (108.47412 5.7125635 3.2637539)
+    Sum of moments
+        Total    : (-1231.2085 7357.191 336.76753)
+        Pressure : (-1229.7586 7309.8673 384.45341)
+        Viscous  : (-1.4499264 47.323701 -47.68588)
+    writing force and moment files.
+
+Time = 41
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019510431, Final residual = 0.00010781361, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0044541275, Final residual = 0.00024011537, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036306364, Final residual = 0.00019740719, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.019755446, Final residual = 0.00086201427, No Iterations 3
+time step continuity errors : sum local = 0.00075083288, global = -3.2202202e-05, cumulative = -0.00036783277
+smoothSolver:  Solving for omega, Initial residual = 6.0255686e-05, Final residual = 1.1062677e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00052083446, Final residual = 9.7423054e-06, No Iterations 4
+ExecutionTime = 1191.58 s  ClockTime = 1231 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1557.5286 497.55239 -2863.4425)
+        Pressure : (1449.4399 491.82442 -2866.7535)
+        Viscous  : (108.08868 5.7279737 3.3110276)
+    Sum of moments
+        Total    : (-1227.5321 7352.1929 331.77547)
+        Pressure : (-1226.1084 7305.0419 379.17516)
+        Viscous  : (-1.4236604 47.150938 -47.399691)
+    writing force and moment files.
+
+Time = 42
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019480415, Final residual = 0.00010648792, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0044337793, Final residual = 0.00023811332, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036287194, Final residual = 0.00019623775, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.019440011, Final residual = 0.00094429976, No Iterations 3
+time step continuity errors : sum local = 0.00082554676, global = -1.2875849e-05, cumulative = -0.00038070862
+smoothSolver:  Solving for omega, Initial residual = 5.7808888e-05, Final residual = 1.0669206e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00052308679, Final residual = 9.768278e-06, No Iterations 4
+ExecutionTime = 1220.21 s  ClockTime = 1261 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1559.3732 491.98701 -2865.2611)
+        Pressure : (1451.6644 486.24631 -2868.6191)
+        Viscous  : (107.70885 5.7407 3.3580779)
+    Sum of moments
+        Total    : (-1224.7248 7353.1666 322.12769)
+        Pressure : (-1223.3294 7306.1842 369.25424)
+        Viscous  : (-1.3953752 46.982376 -47.126558)
+    writing force and moment files.
+
+Time = 43
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019579993, Final residual = 0.00010540479, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0044309081, Final residual = 0.00023716649, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036575087, Final residual = 0.00019690192, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.018935128, Final residual = 0.00066191843, No Iterations 4
+time step continuity errors : sum local = 0.0005814099, global = 2.8361598e-05, cumulative = -0.00035234702
+smoothSolver:  Solving for omega, Initial residual = 5.5510346e-05, Final residual = 1.030204e-06, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00052700766, Final residual = 9.8293069e-06, No Iterations 4
+ExecutionTime = 1249.59 s  ClockTime = 1291 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1561.5041 485.31429 -2858.6171)
+        Pressure : (1454.1642 479.56241 -2862.0228)
+        Viscous  : (107.33992 5.7518756 3.4057305)
+    Sum of moments
+        Total    : (-1219.5772 7340.6443 308.01176)
+        Pressure : (-1218.2141 7293.8385 354.87349)
+        Viscous  : (-1.3630392 46.805774 -46.861733)
+    writing force and moment files.
+
+Time = 44
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019353098, Final residual = 0.00010376947, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0044179306, Final residual = 0.00023557688, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036890238, Final residual = 0.00019760338, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.018399475, Final residual = 0.00081095485, No Iterations 3
+time step continuity errors : sum local = 0.00071613976, global = 7.382198e-06, cumulative = -0.00034496482
+smoothSolver:  Solving for omega, Initial residual = 5.3350458e-05, Final residual = 9.9538801e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00053137758, Final residual = 9.9124005e-06, No Iterations 4
+ExecutionTime = 1278.4 s  ClockTime = 1321 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1560.3609 483.19728 -2842.0948)
+        Pressure : (1453.3828 477.43602 -2845.5456)
+        Viscous  : (106.97807 5.7612626 3.4508084)
+    Sum of moments
+        Total    : (-1213.2835 7304.9539 298.73589)
+        Pressure : (-1211.9542 7258.3169 345.34684)
+        Viscous  : (-1.3293135 46.637019 -46.610958)
+    writing force and moment files.
+
+Time = 45
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0019190158, Final residual = 0.00010269575, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0043871402, Final residual = 0.0002332601, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036805066, Final residual = 0.00019618855, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01820806, Final residual = 0.00076081001, No Iterations 3
+time step continuity errors : sum local = 0.00067277767, global = 3.5569945e-05, cumulative = -0.00030939488
+smoothSolver:  Solving for omega, Initial residual = 5.1326447e-05, Final residual = 9.6213784e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00053657628, Final residual = 1.0025011e-05, No Iterations 4
+ExecutionTime = 1307.41 s  ClockTime = 1351 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1556.814 483.91807 -2825.3062)
+        Pressure : (1450.1841 478.14853 -2828.8032)
+        Viscous  : (106.62989 5.7695461 3.4969674)
+    Sum of moments
+        Total    : (-1207.692 7267.9218 294.47993)
+        Pressure : (-1206.398 7221.4611 340.84669)
+        Viscous  : (-1.2939553 46.460748 -46.366765)
+    writing force and moment files.
+
+Time = 46
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018940988, Final residual = 0.00010143434, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.00434823, Final residual = 0.00023050027, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036594964, Final residual = 0.00019406526, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01810812, Final residual = 0.00086025791, No Iterations 3
+time step continuity errors : sum local = 0.0007612201, global = 2.3025066e-05, cumulative = -0.00028636981
+smoothSolver:  Solving for omega, Initial residual = 4.9410639e-05, Final residual = 9.3067792e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00054238212, Final residual = 1.0151639e-05, No Iterations 4
+ExecutionTime = 1336.1 s  ClockTime = 1380 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1552.4436 488.20867 -2796.1353)
+        Pressure : (1446.149 482.43175 -2799.6748)
+        Viscous  : (106.29462 5.7769224 3.5394971)
+    Sum of moments
+        Total    : (-1199.9779 7203.8932 293.22032)
+        Pressure : (-1198.7177 7157.5993 339.3502)
+        Viscous  : (-1.2602932 46.293896 -46.129878)
+    writing force and moment files.
+
+Time = 47
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018649107, Final residual = 0.0001001745, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004323222, Final residual = 0.00022864546, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036496249, Final residual = 0.00019280461, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017855217, Final residual = 0.00086247048, No Iterations 3
+time step continuity errors : sum local = 0.00076450638, global = 2.0149828e-05, cumulative = -0.00026621998
+smoothSolver:  Solving for omega, Initial residual = 4.7611207e-05, Final residual = 9.0051554e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00054759118, Final residual = 1.0262743e-05, No Iterations 4
+ExecutionTime = 1364.34 s  ClockTime = 1410 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1548.9536 493.27371 -2772.2076)
+        Pressure : (1442.9775 487.49011 -2775.7933)
+        Viscous  : (105.97612 5.7836043 3.5856564)
+    Sum of moments
+        Total    : (-1193.9502 7150.0602 294.3965)
+        Pressure : (-1192.7262 7103.9495 340.29562)
+        Viscous  : (-1.2240473 46.110666 -45.899122)
+    writing force and moment files.
+
+Time = 48
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018479321, Final residual = 9.9031832e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004311141, Final residual = 0.00022762255, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036572356, Final residual = 0.0001927319, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017509334, Final residual = 0.00084939025, No Iterations 3
+time step continuity errors : sum local = 0.00075482147, global = -3.8606821e-06, cumulative = -0.00027008066
+smoothSolver:  Solving for omega, Initial residual = 4.5923812e-05, Final residual = 8.7168982e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00055281539, Final residual = 1.0340434e-05, No Iterations 4
+ExecutionTime = 1392.99 s  ClockTime = 1440 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1547.5277 496.05789 -2764.3882)
+        Pressure : (1441.8558 490.26825 -2768.0217)
+        Viscous  : (105.67192 5.7896474 3.6334745)
+    Sum of moments
+        Total    : (-1191.3966 7130.4848 294.93521)
+        Pressure : (-1190.2083 7084.5591 340.61523)
+        Viscous  : (-1.1883123 45.925676 -45.680019)
+    writing force and moment files.
+
+Time = 49
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018401385, Final residual = 9.801781e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004300083, Final residual = 0.0002265624, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036750373, Final residual = 0.00019317096, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017192665, Final residual = 0.00077189702, No Iterations 3
+time step continuity errors : sum local = 0.00068833029, global = -1.6813073e-05, cumulative = -0.00028689374
+smoothSolver:  Solving for omega, Initial residual = 4.4356698e-05, Final residual = 8.4424402e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00055788499, Final residual = 1.0407326e-05, No Iterations 4
+ExecutionTime = 1421.81 s  ClockTime = 1470 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1546.4758 494.83599 -2763.0817)
+        Pressure : (1441.0959 489.04059 -2766.7643)
+        Viscous  : (105.37985 5.795403 3.6825541)
+    Sum of moments
+        Total    : (-1188.9904 7125.9646 289.51678)
+        Pressure : (-1187.8386 7080.2392 334.98607)
+        Viscous  : (-1.1518041 45.725453 -45.46929)
+    writing force and moment files.
+
+Time = 50
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018304414, Final residual = 9.7058007e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0042751265, Final residual = 0.00022461939, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036817088, Final residual = 0.0001928022, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016982557, Final residual = 0.00078927993, No Iterations 3
+time step continuity errors : sum local = 0.00070507614, global = -1.3956412e-05, cumulative = -0.00030085015
+smoothSolver:  Solving for omega, Initial residual = 4.2901013e-05, Final residual = 8.1803403e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00056197792, Final residual = 1.0475609e-05, No Iterations 4
+ExecutionTime = 1450.15 s  ClockTime = 1499 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1545.5771 492.18347 -2760.8845)
+        Pressure : (1440.4833 486.38261 -2764.6126)
+        Viscous  : (105.09375 5.8008597 3.7280742)
+    Sum of moments
+        Total    : (-1185.6376 7119.3916 280.4852)
+        Pressure : (-1184.519 7073.8516 325.75443)
+        Viscous  : (-1.1185312 45.540011 -45.269231)
+    writing force and moment files.
+
+Time = 51
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018217118, Final residual = 9.6181881e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0042554472, Final residual = 0.0002230221, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036853988, Final residual = 0.00019237146, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016917179, Final residual = 0.00084373606, No Iterations 3
+time step continuity errors : sum local = 0.00075459983, global = -8.6349907e-06, cumulative = -0.00030948514
+smoothSolver:  Solving for omega, Initial residual = 4.1534267e-05, Final residual = 7.9316081e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00056595261, Final residual = 1.0553885e-05, No Iterations 4
+ExecutionTime = 1479.05 s  ClockTime = 1529 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1544.7743 488.0965 -2753.8979)
+        Pressure : (1439.9485 482.28795 -2757.6693)
+        Viscous  : (104.82574 5.8085509 3.771439)
+    Sum of moments
+        Total    : (-1180.1684 7102.4119 266.96922)
+        Pressure : (-1179.0796 7057.0532 312.04361)
+        Viscous  : (-1.088799 45.358717 -45.074398)
+    writing force and moment files.
+
+Time = 52
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018169861, Final residual = 9.5392486e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0042533164, Final residual = 0.00022248539, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036953576, Final residual = 0.00019247824, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016697303, Final residual = 0.00053816466, No Iterations 4
+time step continuity errors : sum local = 0.00048164555, global = -4.4579358e-07, cumulative = -0.00030993093
+smoothSolver:  Solving for omega, Initial residual = 4.0251516e-05, Final residual = 7.6959963e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00056919329, Final residual = 1.0605164e-05, No Iterations 4
+ExecutionTime = 1508.27 s  ClockTime = 1559 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1546.5457 481.6655 -2730.9891)
+        Pressure : (1441.9816 475.84656 -2734.8043)
+        Viscous  : (104.56406 5.8189381 3.8151595)
+    Sum of moments
+        Total    : (-1169.2053 7058.7967 246.63083)
+        Pressure : (-1168.146 7013.6174 291.52087)
+        Viscous  : (-1.059301 45.179302 -44.890038)
+    writing force and moment files.
+
+Time = 53
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0018142518, Final residual = 9.4441392e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0042770068, Final residual = 0.00022336575, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037321123, Final residual = 0.00019405325, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016459897, Final residual = 0.0007070076, No Iterations 3
+time step continuity errors : sum local = 0.00063272208, global = 1.4842607e-05, cumulative = -0.00029508833
+smoothSolver:  Solving for omega, Initial residual = 3.906592e-05, Final residual = 7.4757291e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00057218792, Final residual = 1.0639105e-05, No Iterations 4
+ExecutionTime = 1537.37 s  ClockTime = 1589 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1542.6382 478.52035 -2716.5542)
+        Pressure : (1438.3212 472.6889 -2720.4176)
+        Viscous  : (104.31693 5.8314536 3.86343)
+    Sum of moments
+        Total    : (-1162.1972 7027.3225 235.33224)
+        Pressure : (-1161.1697 6982.3403 280.04664)
+        Viscous  : (-1.0275489 44.982231 -44.714398)
+    writing force and moment files.
+
+Time = 54
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017953753, Final residual = 9.3371122e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0042529999, Final residual = 0.00022100729, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0037148918, Final residual = 0.00019220278, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016402599, Final residual = 0.00072580074, No Iterations 3
+time step continuity errors : sum local = 0.00064976919, global = 1.7904971e-05, cumulative = -0.00027718336
+smoothSolver:  Solving for omega, Initial residual = 3.7930805e-05, Final residual = 7.2674633e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00057506703, Final residual = 1.0685162e-05, No Iterations 4
+ExecutionTime = 1566.45 s  ClockTime = 1619 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1537.9901 476.10165 -2701.3418)
+        Pressure : (1433.9165 470.25831 -2705.2526)
+        Viscous  : (104.07363 5.8433382 3.9107849)
+    Sum of moments
+        Total    : (-1155.4228 6995.0479 225.79572)
+        Pressure : (-1154.4279 6950.2589 270.34348)
+        Viscous  : (-0.99490415 44.789026 -44.547765)
+    writing force and moment files.
+
+Time = 55
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017745146, Final residual = 9.2263986e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004216712, Final residual = 0.00021797761, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036859655, Final residual = 0.00018958905, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016421238, Final residual = 0.00080594789, No Iterations 3
+time step continuity errors : sum local = 0.00072195871, global = 1.8649686e-05, cumulative = -0.00025853367
+smoothSolver:  Solving for omega, Initial residual = 3.6878699e-05, Final residual = 7.0664112e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0005788038, Final residual = 1.0757503e-05, No Iterations 4
+ExecutionTime = 1595.37 s  ClockTime = 1649 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1532.804 472.37143 -2682.6943)
+        Pressure : (1428.9644 466.516 -2686.6523)
+        Viscous  : (103.83959 5.8554245 3.9579196)
+    Sum of moments
+        Total    : (-1147.2125 6955.47 213.47206)
+        Pressure : (-1146.2511 6910.8757 257.85855)
+        Viscous  : (-0.96142744 44.594311 -44.38649)
+    writing force and moment files.
+
+Time = 56
+
+smoothSolver:  Solving for Ux, Initial residual = 0.00175927, Final residual = 9.1298095e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041855715, Final residual = 0.00021533261, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036631766, Final residual = 0.000187362, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016519786, Final residual = 0.00047390588, No Iterations 4
+time step continuity errors : sum local = 0.00042469882, global = 7.0159291e-06, cumulative = -0.00025151774
+smoothSolver:  Solving for omega, Initial residual = 3.5887752e-05, Final residual = 6.8741452e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00058234469, Final residual = 1.0855397e-05, No Iterations 4
+ExecutionTime = 1624.97 s  ClockTime = 1680 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1526.5326 466.24043 -2651.0679)
+        Pressure : (1422.9172 460.37369 -2655.0702)
+        Viscous  : (103.6154 5.866735 4.0023775)
+    Sum of moments
+        Total    : (-1134.3647 6886.6514 196.20683)
+        Pressure : (-1133.4357 6842.2373 240.4451)
+        Viscous  : (-0.92893794 44.414158 -44.238269)
+    writing force and moment files.
+
+Time = 57
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017521725, Final residual = 9.0575895e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041767923, Final residual = 0.00021405282, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036657464, Final residual = 0.00018652012, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016403347, Final residual = 0.00081222695, No Iterations 3
+time step continuity errors : sum local = 0.00072808272, global = 3.511721e-06, cumulative = -0.00024800602
+smoothSolver:  Solving for omega, Initial residual = 3.4967116e-05, Final residual = 6.6911619e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00058665396, Final residual = 1.0953316e-05, No Iterations 4
+ExecutionTime = 1653.95 s  ClockTime = 1709 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1523.3628 460.18844 -2638.0487)
+        Pressure : (1419.9637 454.31148 -2642.0944)
+        Viscous  : (103.39904 5.8769539 4.0456814)
+    Sum of moments
+        Total    : (-1126.9856 6859.5929 179.4632)
+        Pressure : (-1126.0895 6815.3567 223.56107)
+        Viscous  : (-0.89608787 44.236114 -44.097871)
+    writing force and moment files.
+
+Time = 58
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017461919, Final residual = 8.9948868e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.00416765, Final residual = 0.00021271576, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036609304, Final residual = 0.00018538824, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016418419, Final residual = 0.00081315637, No Iterations 3
+time step continuity errors : sum local = 0.00072925388, global = -5.2023174e-06, cumulative = -0.00025320834
+smoothSolver:  Solving for omega, Initial residual = 3.410336e-05, Final residual = 6.5178759e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00059183307, Final residual = 1.1051203e-05, No Iterations 4
+ExecutionTime = 1683.09 s  ClockTime = 1739 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1522.2142 452.82924 -2629.5313)
+        Pressure : (1419.0227 446.94045 -2633.6169)
+        Viscous  : (103.19152 5.8887954 4.0856658)
+    Sum of moments
+        Total    : (-1120.5343 6844.3865 159.73107)
+        Pressure : (-1119.6682 6800.3169 203.69159)
+        Viscous  : (-0.86608767 44.069541 -43.960515)
+    writing force and moment files.
+
+Time = 59
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017416517, Final residual = 8.9320972e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041639992, Final residual = 0.00021170595, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036575395, Final residual = 0.00018430299, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016341383, Final residual = 0.00050122148, No Iterations 4
+time step continuity errors : sum local = 0.00044965863, global = -2.7126547e-06, cumulative = -0.00025592099
+smoothSolver:  Solving for omega, Initial residual = 3.3268109e-05, Final residual = 6.351581e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0005966359, Final residual = 1.113955e-05, No Iterations 4
+ExecutionTime = 1712.66 s  ClockTime = 1770 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1524.5234 440.38707 -2622.51)
+        Pressure : (1421.5282 434.48593 -2626.6408)
+        Viscous  : (102.99524 5.9011351 4.1308009)
+    Sum of moments
+        Total    : (-1112.2362 6840.8467 128.28867)
+        Pressure : (-1111.402 6796.9537 172.11766)
+        Viscous  : (-0.8341958 43.892952 -43.828983)
+    writing force and moment files.
+
+Time = 60
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017478963, Final residual = 8.8719408e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041809804, Final residual = 0.00021187195, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036827224, Final residual = 0.00018483064, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016282353, Final residual = 0.00074848322, No Iterations 3
+time step continuity errors : sum local = 0.00067082535, global = -1.8087368e-06, cumulative = -0.00025772973
+smoothSolver:  Solving for omega, Initial residual = 3.2467779e-05, Final residual = 6.193819e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00060205745, Final residual = 1.1197329e-05, No Iterations 4
+ExecutionTime = 1741.35 s  ClockTime = 1800 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1522.6845 435.46701 -2618.3778)
+        Pressure : (1419.8787 429.55316 -2622.5475)
+        Viscous  : (102.80576 5.9138471 4.1697332)
+    Sum of moments
+        Total    : (-1108.2021 6835.0319 113.19259)
+        Pressure : (-1107.3931 6791.2875 156.89717)
+        Viscous  : (-0.80902101 43.744456 -43.704581)
+    writing force and moment files.
+
+Time = 61
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017376547, Final residual = 8.8109325e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041524513, Final residual = 0.00020951135, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036594315, Final residual = 0.00018269746, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016494944, Final residual = 0.0008006498, No Iterations 3
+time step continuity errors : sum local = 0.00071758396, global = 4.8241071e-06, cumulative = -0.00025290562
+smoothSolver:  Solving for omega, Initial residual = 3.1727765e-05, Final residual = 6.0434128e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00060827367, Final residual = 1.122077e-05, No Iterations 4
+ExecutionTime = 1769.91 s  ClockTime = 1829 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1519.2092 430.05774 -2610.9329)
+        Pressure : (1416.5876 424.12831 -2615.1387)
+        Viscous  : (102.62158 5.9294299 4.2057786)
+    Sum of moments
+        Total    : (-1103.0405 6821.6472 96.591811)
+        Pressure : (-1102.2526 6778.0401 140.162)
+        Viscous  : (-0.78786644 43.607061 -43.570186)
+    writing force and moment files.
+
+Time = 62
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017287516, Final residual = 8.7561733e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041257986, Final residual = 0.00020720596, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036320483, Final residual = 0.00018032043, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016688022, Final residual = 0.00045260106, No Iterations 4
+time step continuity errors : sum local = 0.00040534732, global = -2.4844839e-06, cumulative = -0.0002553901
+smoothSolver:  Solving for omega, Initial residual = 3.1021886e-05, Final residual = 5.9020748e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00061291354, Final residual = 1.1242588e-05, No Iterations 4
+ExecutionTime = 1799.52 s  ClockTime = 1860 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1513.3374 421.17645 -2590.6691)
+        Pressure : (1410.9026 415.22901 -2594.9116)
+        Viscous  : (102.43484 5.9474425 4.2425162)
+    Sum of moments
+        Total    : (-1092.8852 6783.196 72.194505)
+        Pressure : (-1092.1187 6739.7393 115.62094)
+        Viscous  : (-0.7665168 43.456697 -43.426433)
+    writing force and moment files.
+
+Time = 63
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017234801, Final residual = 8.7070965e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0041134869, Final residual = 0.00020569098, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0036147772, Final residual = 0.00017852038, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016466543, Final residual = 0.00081647883, No Iterations 3
+time step continuity errors : sum local = 0.00072894062, global = -9.9349153e-07, cumulative = -0.0002563836
+smoothSolver:  Solving for omega, Initial residual = 3.0331108e-05, Final residual = 5.7696482e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0006178497, Final residual = 1.1276413e-05, No Iterations 4
+ExecutionTime = 1828.51 s  ClockTime = 1890 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1508.8214 414.62841 -2577.0922)
+        Pressure : (1406.5711 408.66037 -2581.3726)
+        Viscous  : (102.25022 5.9680377 4.2803863)
+    Sum of moments
+        Total    : (-1086.1247 6757.9582 54.099137)
+        Pressure : (-1085.3802 6714.6645 97.369695)
+        Viscous  : (-0.74453368 43.29368 -43.270558)
+    writing force and moment files.
+
+Time = 64
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017182653, Final residual = 8.6594266e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004088965, Final residual = 0.0002039074, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0035816714, Final residual = 0.00017618344, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016478854, Final residual = 0.00082093476, No Iterations 3
+time step continuity errors : sum local = 0.00073202922, global = -6.1972559e-06, cumulative = -0.00026258085
+smoothSolver:  Solving for omega, Initial residual = 2.967129e-05, Final residual = 5.6432293e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00062415396, Final residual = 1.135025e-05, No Iterations 4
+ExecutionTime = 1857.18 s  ClockTime = 1920 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1505.2616 406.97164 -2563.2918)
+        Pressure : (1403.1982 400.9831 -2567.603)
+        Viscous  : (102.06349 5.9885394 4.3111719)
+    Sum of moments
+        Total    : (-1079.4262 6735.1589 33.616489)
+        Pressure : (-1078.6986 6692.0083 76.730934)
+        Viscous  : (-0.72764138 43.150578 -43.114445)
+    writing force and moment files.
+
+Time = 65
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017130092, Final residual = 8.6053457e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0040652489, Final residual = 0.00020208294, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0035471885, Final residual = 0.00017381698, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01655861, Final residual = 0.00047174665, No Iterations 4
+time step continuity errors : sum local = 0.00042039254, global = -6.2895034e-07, cumulative = -0.0002632098
+smoothSolver:  Solving for omega, Initial residual = 2.904367e-05, Final residual = 5.5223076e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00062971459, Final residual = 1.145745e-05, No Iterations 4
+ExecutionTime = 1886.49 s  ClockTime = 1950 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1503.2935 393.52541 -2545.2136)
+        Pressure : (1401.4126 387.51611 -2549.5557)
+        Viscous  : (101.88088 6.0092986 4.3420935)
+    Sum of moments
+        Total    : (-1070.146 6714.8747 -0.084035488)
+        Pressure : (-1069.4356 6671.8714 42.872594)
+        Viscous  : (-0.71039718 43.003282 -42.95663)
+    writing force and moment files.
+
+Time = 66
+
+smoothSolver:  Solving for Ux, Initial residual = 0.001715276, Final residual = 8.5439906e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0040484052, Final residual = 0.00020077203, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0035332239, Final residual = 0.00017243199, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016465389, Final residual = 0.00076048719, No Iterations 3
+time step continuity errors : sum local = 0.00067737038, global = 6.9989596e-07, cumulative = -0.00026250991
+smoothSolver:  Solving for omega, Initial residual = 2.8438964e-05, Final residual = 5.4066348e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00063486808, Final residual = 1.1554252e-05, No Iterations 4
+ExecutionTime = 1915.28 s  ClockTime = 1979 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1501.0143 388.27293 -2542.8189)
+        Pressure : (1399.3158 382.24383 -2547.1848)
+        Viscous  : (101.6985 6.0290954 4.3658967)
+    Sum of moments
+        Total    : (-1067.7211 6716.7094 -17.376196)
+        Pressure : (-1067.0231 6673.83 25.426065)
+        Viscous  : (-0.69792716 42.879477 -42.802261)
+    writing force and moment files.
+
+Time = 67
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0017070926, Final residual = 8.4995801e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.004012571, Final residual = 0.00019831077, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0034916285, Final residual = 0.00016972043, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016578072, Final residual = 0.0007960514, No Iterations 3
+time step continuity errors : sum local = 0.00070936679, global = 5.6125866e-06, cumulative = -0.00025689732
+smoothSolver:  Solving for omega, Initial residual = 2.7845065e-05, Final residual = 5.2994025e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00063975739, Final residual = 1.1664756e-05, No Iterations 4
+ExecutionTime = 1944.06 s  ClockTime = 2009 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1498.4329 381.55404 -2542.7249)
+        Pressure : (1396.9197 375.50448 -2547.1174)
+        Viscous  : (101.51317 6.0495565 4.3924958)
+    Sum of moments
+        Total    : (-1065.6467 6726.5465 -39.825029)
+        Pressure : (-1064.9623 6683.81 2.8162777)
+        Viscous  : (-0.68440546 42.736577 -42.641307)
+    writing force and moment files.
+
+Time = 68
+
+smoothSolver:  Solving for Ux, Initial residual = 0.001700099, Final residual = 8.4614674e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0039784675, Final residual = 0.00019607557, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0034523748, Final residual = 0.00016718842, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016761854, Final residual = 0.00046080113, No Iterations 4
+time step continuity errors : sum local = 0.00041079606, global = -3.8068122e-06, cumulative = -0.00026070413
+smoothSolver:  Solving for omega, Initial residual = 2.7292071e-05, Final residual = 5.1999572e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00064538651, Final residual = 1.182669e-05, No Iterations 4
+ExecutionTime = 1973.34 s  ClockTime = 2039 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1496.778 370.57233 -2546.8485)
+        Pressure : (1395.4546 364.50235 -2551.2657)
+        Viscous  : (101.32336 6.0699797 4.4171818)
+    Sum of moments
+        Total    : (-1063.9347 6760.505 -75.490455)
+        Pressure : (-1063.262 6717.9028 -33.01071)
+        Viscous  : (-0.672638 42.60221 -42.479745)
+    writing force and moment files.
+
+Time = 69
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016957683, Final residual = 8.4331557e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0039562414, Final residual = 0.00019449005, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.003436573, Final residual = 0.00016583037, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016622996, Final residual = 0.00077285701, No Iterations 3
+time step continuity errors : sum local = 0.00068896405, global = -6.8196805e-06, cumulative = -0.00026752381
+smoothSolver:  Solving for omega, Initial residual = 2.6770934e-05, Final residual = 5.1069297e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00065203804, Final residual = 1.2022941e-05, No Iterations 4
+ExecutionTime = 2001.95 s  ClockTime = 2069 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1493.8519 364.17787 -2545.8658)
+        Pressure : (1392.7174 358.08761 -2550.3056)
+        Viscous  : (101.1345 6.0902607 4.4397981)
+    Sum of moments
+        Total    : (-1062.0881 6771.7474 -97.431545)
+        Pressure : (-1061.4247 6729.2711 -55.112123)
+        Viscous  : (-0.66339518 42.47625 -42.319422)
+    writing force and moment files.
+
+Time = 70
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016910886, Final residual = 8.4023636e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0039221803, Final residual = 0.00019228217, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0034009742, Final residual = 0.00016353973, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01670667, Final residual = 0.00077496932, No Iterations 3
+time step continuity errors : sum local = 0.00069098363, global = -1.3929108e-05, cumulative = -0.00028145292
+smoothSolver:  Solving for omega, Initial residual = 2.6262276e-05, Final residual = 5.0191495e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00065938263, Final residual = 1.2245684e-05, No Iterations 4
+ExecutionTime = 2031.49 s  ClockTime = 2100 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1490.8328 357.96185 -2542.2158)
+        Pressure : (1389.892 351.85021 -2546.6791)
+        Viscous  : (100.94082 6.1116386 4.4632455)
+    Sum of moments
+        Total    : (-1059.8031 6778.9766 -118.69942)
+        Pressure : (-1059.149 6736.6265 -76.546406)
+        Viscous  : (-0.65402712 42.35014 -42.153011)
+    writing force and moment files.
+
+Time = 71
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016883993, Final residual = 8.3688444e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0038918757, Final residual = 0.00019006943, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0033668342, Final residual = 0.00016127032, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016738652, Final residual = 0.00079957948, No Iterations 3
+time step continuity errors : sum local = 0.00071270633, global = -1.834556e-05, cumulative = -0.00029979848
+smoothSolver:  Solving for omega, Initial residual = 2.5781862e-05, Final residual = 4.9356626e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00066594226, Final residual = 1.2509126e-05, No Iterations 4
+ExecutionTime = 2060.92 s  ClockTime = 2130 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1487.6838 352.05261 -2537.0982)
+        Pressure : (1386.9347 345.92066 -2541.5881)
+        Viscous  : (100.74911 6.1319492 4.4898735)
+    Sum of moments
+        Total    : (-1057.3076 6782.3922 -138.68681)
+        Pressure : (-1056.6662 6740.1827 -96.698226)
+        Viscous  : (-0.64137893 42.209526 -41.988588)
+    writing force and moment files.
+
+Time = 72
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016863284, Final residual = 8.3319381e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.003861811, Final residual = 0.00018773902, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0033360168, Final residual = 0.00015910839, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016761313, Final residual = 0.00043675497, No Iterations 4
+time step continuity errors : sum local = 0.00038918234, global = -9.938994e-06, cumulative = -0.00030973748
+smoothSolver:  Solving for omega, Initial residual = 2.5324106e-05, Final residual = 4.8538539e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00067369061, Final residual = 1.2770451e-05, No Iterations 4
+ExecutionTime = 2090.72 s  ClockTime = 2161 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1484.3764 342.93351 -2525.7489)
+        Pressure : (1383.8191 336.78266 -2530.257)
+        Viscous  : (100.55722 6.1508522 4.5081133)
+    Sum of moments
+        Total    : (-1052.1785 6778.6058 -166.26677)
+        Pressure : (-1051.5426 6736.505 -124.43528)
+        Viscous  : (-0.63587273 42.10074 -41.83149)
+    writing force and moment files.
+
+Time = 73
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016904978, Final residual = 8.2981464e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.003841747, Final residual = 0.00018576715, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0033249985, Final residual = 0.00015785774, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016674341, Final residual = 0.00076949537, No Iterations 3
+time step continuity errors : sum local = 0.00068429995, global = -1.0829623e-05, cumulative = -0.0003205671
+smoothSolver:  Solving for omega, Initial residual = 2.487041e-05, Final residual = 4.7746693e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00068027669, Final residual = 1.3039174e-05, No Iterations 4
+ExecutionTime = 2120.04 s  ClockTime = 2191 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1480.6749 337.78998 -2521.6074)
+        Pressure : (1380.3087 331.6197 -2526.1415)
+        Viscous  : (100.36621 6.1702738 4.5340295)
+    Sum of moments
+        Total    : (-1050.1834 6781.556 -182.35108)
+        Pressure : (-1049.5587 6739.5946 -140.68224)
+        Viscous  : (-0.62463065 41.961355 -41.668844)
+    writing force and moment files.
+
+Time = 74
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016845074, Final residual = 8.258037e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0038094228, Final residual = 0.0001832794, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0032919988, Final residual = 0.00015576322, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01679216, Final residual = 0.00077626106, No Iterations 3
+time step continuity errors : sum local = 0.00069039114, global = -8.6438718e-06, cumulative = -0.00032921097
+smoothSolver:  Solving for omega, Initial residual = 2.4443706e-05, Final residual = 4.6982296e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00068795248, Final residual = 1.3299717e-05, No Iterations 4
+ExecutionTime = 2149.6 s  ClockTime = 2222 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1476.7666 331.93109 -2516.4706)
+        Pressure : (1376.5954 325.74202 -2521.027)
+        Viscous  : (100.17114 6.1890696 4.5563783)
+    Sum of moments
+        Total    : (-1047.9703 6784.35 -198.7552)
+        Pressure : (-1047.3544 6742.5197 -157.24708)
+        Viscous  : (-0.61582253 41.830317 -41.508119)
+    writing force and moment files.
+
+Time = 75
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016771722, Final residual = 8.2206912e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0037845092, Final residual = 0.00018110158, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.003262255, Final residual = 0.00015397504, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016920085, Final residual = 0.00080929382, No Iterations 3
+time step continuity errors : sum local = 0.00071975494, global = -1.1654529e-05, cumulative = -0.0003408655
+smoothSolver:  Solving for omega, Initial residual = 2.4062169e-05, Final residual = 4.6245032e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00069735256, Final residual = 1.3552114e-05, No Iterations 4
+ExecutionTime = 2178.83 s  ClockTime = 2252 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1473.2544 325.97139 -2509.9793)
+        Pressure : (1373.276 319.7659 -2514.5554)
+        Viscous  : (99.978367 6.2054867 4.5760727)
+    Sum of moments
+        Total    : (-1045.5894 6785.4832 -213.21037)
+        Pressure : (-1044.9806 6743.7759 -171.85247)
+        Viscous  : (-0.60881594 41.707311 -41.357897)
+    writing force and moment files.
+
+Time = 76
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016694701, Final residual = 8.1738185e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.003763104, Final residual = 0.00017909275, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0032389423, Final residual = 0.00015255868, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017116691, Final residual = 0.00078733607, No Iterations 3
+time step continuity errors : sum local = 0.00070017376, global = -1.0798494e-05, cumulative = -0.00035166399
+smoothSolver:  Solving for omega, Initial residual = 2.369982e-05, Final residual = 4.5545356e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00070807753, Final residual = 1.3797031e-05, No Iterations 4
+ExecutionTime = 2208.08 s  ClockTime = 2282 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1469.9768 322.87531 -2505.3061)
+        Pressure : (1370.19 316.65381 -2509.8997)
+        Viscous  : (99.7868 6.221496 4.5936395)
+    Sum of moments
+        Total    : (-1044.3052 6785.7132 -220.28525)
+        Pressure : (-1043.7021 6744.1192 -179.0723)
+        Viscous  : (-0.60312358 41.593935 -41.212948)
+    writing force and moment files.
+
+Time = 77
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016602833, Final residual = 8.1099674e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0037320601, Final residual = 0.00017669648, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0032095135, Final residual = 0.00015080174, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01724239, Final residual = 0.00080362142, No Iterations 3
+time step continuity errors : sum local = 0.00071474042, global = -1.695704e-05, cumulative = -0.00036862103
+smoothSolver:  Solving for omega, Initial residual = 2.3340585e-05, Final residual = 4.4867646e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00071993118, Final residual = 1.4021391e-05, No Iterations 4
+ExecutionTime = 2237.35 s  ClockTime = 2312 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1466.5372 321.54349 -2500.6462)
+        Pressure : (1366.9394 315.3068 -2505.2602)
+        Viscous  : (99.597839 6.2366968 4.6139476)
+    Sum of moments
+        Total    : (-1043.4002 6783.1543 -222.98689)
+        Pressure : (-1042.8055 6741.6868 -181.91512)
+        Viscous  : (-0.59474627 41.467466 -41.071766)
+    writing force and moment files.
+
+Time = 78
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016499194, Final residual = 8.0356913e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0036967214, Final residual = 0.00017424902, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0031747119, Final residual = 0.00014878186, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017401632, Final residual = 0.00081952262, No Iterations 3
+time step continuity errors : sum local = 0.00072897029, global = -2.6171792e-05, cumulative = -0.00039479282
+smoothSolver:  Solving for omega, Initial residual = 2.2996193e-05, Final residual = 4.4201432e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0007318357, Final residual = 1.422331e-05, No Iterations 4
+ExecutionTime = 2266.35 s  ClockTime = 2342 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1462.5362 320.76589 -2493.8282)
+        Pressure : (1363.1273 314.51556 -2498.4568)
+        Viscous  : (99.408918 6.2503368 4.6286097)
+    Sum of moments
+        Total    : (-1042.1175 6774.9583 -223.51317)
+        Pressure : (-1041.5271 6733.5944 -182.57266)
+        Viscous  : (-0.59039892 41.363992 -40.940517)
+    writing force and moment files.
+
+Time = 79
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016421692, Final residual = 7.9596972e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.003664085, Final residual = 0.0001721186, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0031409322, Final residual = 0.00014691265, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017460162, Final residual = 0.00081145082, No Iterations 3
+time step continuity errors : sum local = 0.00072136538, global = -3.1502588e-05, cumulative = -0.00042629541
+smoothSolver:  Solving for omega, Initial residual = 2.2665018e-05, Final residual = 4.353255e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00074526858, Final residual = 1.4408475e-05, No Iterations 4
+ExecutionTime = 2295.67 s  ClockTime = 2373 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1457.7046 319.78691 -2481.9808)
+        Pressure : (1358.4821 313.52367 -2486.6245)
+        Viscous  : (99.222502 6.2632477 4.6436271)
+    Sum of moments
+        Total    : (-1039.4447 6754.2777 -222.77026)
+        Pressure : (-1038.8605 6713.0214 -181.95833)
+        Viscous  : (-0.58421477 41.256291 -40.811937)
+    writing force and moment files.
+
+Time = 80
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016380034, Final residual = 7.8835035e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0036375407, Final residual = 0.00017051821, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0031118088, Final residual = 0.00014536944, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017508801, Final residual = 0.00079242792, No Iterations 3
+time step continuity errors : sum local = 0.00070305387, global = -2.8356971e-05, cumulative = -0.00045465238
+smoothSolver:  Solving for omega, Initial residual = 2.2348898e-05, Final residual = 4.2862544e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00075757406, Final residual = 1.4593639e-05, No Iterations 4
+ExecutionTime = 2325.01 s  ClockTime = 2403 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1452.4327 318.98387 -2465.4185)
+        Pressure : (1353.397 312.7086 -2470.0706)
+        Viscous  : (99.035749 6.2752692 4.6521293)
+    Sum of moments
+        Total    : (-1035.2808 6719.3493 -220.69665)
+        Pressure : (-1034.6991 6678.1752 -180.00677)
+        Viscous  : (-0.58175491 41.174098 -40.689879)
+    writing force and moment files.
+
+Time = 81
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016320285, Final residual = 7.7997347e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.003608458, Final residual = 0.00016906156, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0030815023, Final residual = 0.00014381705, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017523315, Final residual = 0.00075012872, No Iterations 3
+time step continuity errors : sum local = 0.00066336959, global = -2.0037351e-05, cumulative = -0.00047468973
+smoothSolver:  Solving for omega, Initial residual = 2.2054394e-05, Final residual = 4.2180484e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00077223456, Final residual = 1.484111e-05, No Iterations 4
+ExecutionTime = 2354.48 s  ClockTime = 2433 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1447.3031 319.25897 -2447.5477)
+        Pressure : (1348.4485 312.97094 -2452.2074)
+        Viscous  : (98.854591 6.2880302 4.6596787)
+    Sum of moments
+        Total    : (-1030.5972 6677.4629 -216.75363)
+        Pressure : (-1030.0174 6636.3633 -176.18509)
+        Viscous  : (-0.5798187 41.099613 -40.568547)
+    writing force and moment files.
+
+Time = 82
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016196845, Final residual = 7.7032182e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0035684539, Final residual = 0.00016731237, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0030435852, Final residual = 0.00014195987, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017549541, Final residual = 0.00071051513, No Iterations 3
+time step continuity errors : sum local = 0.00062633737, global = -1.1398455e-05, cumulative = -0.00048608819
+smoothSolver:  Solving for omega, Initial residual = 2.1764723e-05, Final residual = 4.152682e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00078841594, Final residual = 1.5138297e-05, No Iterations 4
+ExecutionTime = 2382.91 s  ClockTime = 2463 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1442.9442 321.13371 -2433.6865)
+        Pressure : (1344.2707 314.83209 -2438.3494)
+        Viscous  : (98.673529 6.3016199 4.6629148)
+    Sum of moments
+        Total    : (-1027.2189 6643.3927 -210.39031)
+        Pressure : (-1026.6381 6602.3487 -169.94383)
+        Viscous  : (-0.58077928 41.044034 -40.446473)
+    writing force and moment files.
+
+Time = 83
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0016011771, Final residual = 7.6016883e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0035165627, Final residual = 0.00016513459, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0029972273, Final residual = 0.00013973929, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017475392, Final residual = 0.00070155205, No Iterations 3
+time step continuity errors : sum local = 0.00061724971, global = -5.5519835e-06, cumulative = -0.00049164017
+smoothSolver:  Solving for omega, Initial residual = 2.1466341e-05, Final residual = 4.086829e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00080451461, Final residual = 1.5459399e-05, No Iterations 4
+ExecutionTime = 2412.09 s  ClockTime = 2494 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1439.2152 323.87226 -2424.2538)
+        Pressure : (1340.7163 317.55665 -2428.9198)
+        Viscous  : (98.498872 6.315604 4.6660203)
+    Sum of moments
+        Total    : (-1025.292 6620.211 -202.4757)
+        Pressure : (-1024.7089 6579.212 -162.14908)
+        Viscous  : (-0.58310451 40.998965 -40.326627)
+    writing force and moment files.
+
+Time = 84
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0015801146, Final residual = 7.5066237e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0034582948, Final residual = 0.00016275801, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0029475251, Final residual = 0.0001374129, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017439027, Final residual = 0.00072066572, No Iterations 3
+time step continuity errors : sum local = 0.00063364178, global = -7.1774326e-06, cumulative = -0.00049881761
+smoothSolver:  Solving for omega, Initial residual = 2.1163703e-05, Final residual = 4.0196602e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00081889961, Final residual = 1.5762001e-05, No Iterations 4
+ExecutionTime = 2441.3 s  ClockTime = 2524 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1435.4135 327.09598 -2415.9978)
+        Pressure : (1337.0894 320.76612 -2420.6663)
+        Viscous  : (98.324075 6.3298572 4.668473)
+    Sum of moments
+        Total    : (-1023.9034 6599.6819 -192.87622)
+        Pressure : (-1023.3176 6558.7218 -152.66859)
+        Viscous  : (-0.58588701 40.960069 -40.207634)
+    writing force and moment files.
+
+Time = 85
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0015595692, Final residual = 7.4195693e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0033987364, Final residual = 0.00016037033, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0028997, Final residual = 0.00013528345, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017376917, Final residual = 0.00073450208, No Iterations 3
+time step continuity errors : sum local = 0.0006455819, global = -1.4081406e-05, cumulative = -0.00051289901
+smoothSolver:  Solving for omega, Initial residual = 2.0862559e-05, Final residual = 3.9557055e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00083271026, Final residual = 1.603968e-05, No Iterations 4
+ExecutionTime = 2470.4 s  ClockTime = 2554 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1430.8775 330.83556 -2405.1137)
+        Pressure : (1332.7228 324.49101 -2409.7825)
+        Viscous  : (98.154702 6.3445425 4.6688452)
+    Sum of moments
+        Total    : (-1021.9792 6570.8209 -180.57243)
+        Pressure : (-1021.3884 6529.8853 -140.481)
+        Viscous  : (-0.59077871 40.935612 -40.091431)
+    writing force and moment files.
+
+Time = 86
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0015420169, Final residual = 7.3416411e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0033386121, Final residual = 0.00015804456, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0028567045, Final residual = 0.00013360446, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017221223, Final residual = 0.00072827962, No Iterations 3
+time step continuity errors : sum local = 0.00063941901, global = -1.8576876e-05, cumulative = -0.00053147589
+smoothSolver:  Solving for omega, Initial residual = 2.0602223e-05, Final residual = 3.8970899e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00084589022, Final residual = 1.6321441e-05, No Iterations 4
+ExecutionTime = 2499.43 s  ClockTime = 2584 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1425.5757 335.26324 -2388.7535)
+        Pressure : (1327.5909 328.90238 -2393.4201)
+        Viscous  : (97.984761 6.3608611 4.6665953)
+    Sum of moments
+        Total    : (-1018.7731 6524.9623 -164.3002)
+        Pressure : (-1018.1753 6484.0412 -124.32746)
+        Viscous  : (-0.5978592 40.921056 -39.972746)
+    writing force and moment files.
+
+Time = 87
+
+smoothSolver:  Solving for Ux, Initial residual = 0.001525786, Final residual = 7.2684397e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0032772477, Final residual = 0.00015584593, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0028161648, Final residual = 0.00013232574, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.017044382, Final residual = 0.00070140056, No Iterations 3
+time step continuity errors : sum local = 0.00061425502, global = -1.6437028e-05, cumulative = -0.00054791291
+smoothSolver:  Solving for omega, Initial residual = 2.0352435e-05, Final residual = 3.8442496e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00085901348, Final residual = 1.6631111e-05, No Iterations 4
+ExecutionTime = 2528.19 s  ClockTime = 2613 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1420.7037 339.81291 -2368.8523)
+        Pressure : (1322.8835 333.43351 -2373.5157)
+        Viscous  : (97.820142 6.3794077 4.6634492)
+    Sum of moments
+        Total    : (-1014.5813 6468.847 -146.41556)
+        Pressure : (-1013.9752 6427.9343 -106.56495)
+        Viscous  : (-0.60607133 40.912709 -39.850607)
+    writing force and moment files.
+
+Time = 88
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0015077564, Final residual = 7.1933718e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0032121815, Final residual = 0.00015365956, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0027701509, Final residual = 0.00013090547, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016855177, Final residual = 0.0006424506, No Iterations 3
+time step continuity errors : sum local = 0.00056076513, global = -1.1689051e-05, cumulative = -0.00055960197
+smoothSolver:  Solving for omega, Initial residual = 2.0113336e-05, Final residual = 3.7946302e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00087353625, Final residual = 1.6967999e-05, No Iterations 4
+ExecutionTime = 2556.68 s  ClockTime = 2643 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1417.7891 343.72153 -2353.2253)
+        Pressure : (1320.1323 337.32231 -2357.8837)
+        Viscous  : (97.656747 6.3992168 4.6583267)
+    Sum of moments
+        Total    : (-1011.2755 6426.6297 -132.35997)
+        Pressure : (-1010.6614 6385.7214 -92.630939)
+        Viscous  : (-0.61411972 40.908344 -39.729032)
+    writing force and moment files.
+
+Time = 89
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0014855023, Final residual = 7.1101492e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0031420505, Final residual = 0.0001512883, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0027143776, Final residual = 0.00012898046, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016674856, Final residual = 0.00062328366, No Iterations 3
+time step continuity errors : sum local = 0.00054279817, global = -7.6116679e-06, cumulative = -0.00056721363
+smoothSolver:  Solving for omega, Initial residual = 1.9879105e-05, Final residual = 3.7478335e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00088840346, Final residual = 1.7275873e-05, No Iterations 4
+ExecutionTime = 2585.72 s  ClockTime = 2673 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1416.4259 347.14499 -2345.0712)
+        Pressure : (1318.9272 340.72565 -2349.7196)
+        Viscous  : (97.498755 6.4193387 4.6483839)
+    Sum of moments
+        Total    : (-1009.9401 6406.8473 -122.61589)
+        Pressure : (-1009.315 6365.9239 -83.004818)
+        Viscous  : (-0.62507338 40.923352 -39.611068)
+    writing force and moment files.
+
+Time = 90
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0014595151, Final residual = 7.0227389e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.00306826, Final residual = 0.00014878397, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0026532262, Final residual = 0.00012671969, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016540478, Final residual = 0.00064082183, No Iterations 3
+time step continuity errors : sum local = 0.00055771266, global = -2.4541178e-06, cumulative = -0.00056966775
+smoothSolver:  Solving for omega, Initial residual = 1.9650164e-05, Final residual = 3.702729e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00090533767, Final residual = 1.7581097e-05, No Iterations 4
+ExecutionTime = 2615.3 s  ClockTime = 2704 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1414.6558 351.05946 -2337.3559)
+        Pressure : (1317.3115 344.61829 -2341.9967)
+        Viscous  : (97.34438 6.4411711 4.6408001)
+    Sum of moments
+        Total    : (-1008.8918 6388.5107 -111.10128)
+        Pressure : (-1008.2569 6347.5794 -71.610454)
+        Viscous  : (-0.63488579 40.931354 -39.490823)
+    writing force and moment files.
+
+Time = 91
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0014337012, Final residual = 6.9369519e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0029955218, Final residual = 0.00014646089, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0025993725, Final residual = 0.0001248295, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01642441, Final residual = 0.00064597711, No Iterations 3
+time step continuity errors : sum local = 0.00056182152, global = -1.0263282e-06, cumulative = -0.00057069408
+smoothSolver:  Solving for omega, Initial residual = 1.9417449e-05, Final residual = 3.6615919e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00092255976, Final residual = 1.7866356e-05, No Iterations 4
+ExecutionTime = 2644.65 s  ClockTime = 2734 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1411.6024 356.13064 -2326.6606)
+        Pressure : (1314.4094 349.66592 -2331.2993)
+        Viscous  : (97.193042 6.4647245 4.6387112)
+    Sum of moments
+        Total    : (-1007.466 6361.0044 -94.743682)
+        Pressure : (-1006.8256 6320.0848 -55.378084)
+        Viscous  : (-0.64040285 40.919551 -39.365598)
+    writing force and moment files.
+
+Time = 92
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0014083361, Final residual = 6.8513669e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0029261841, Final residual = 0.00014436861, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0025544867, Final residual = 0.00012342567, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.016213446, Final residual = 0.00063218488, No Iterations 3
+time step continuity errors : sum local = 0.00054901123, global = -2.3174707e-06, cumulative = -0.00057301155
+smoothSolver:  Solving for omega, Initial residual = 1.9190777e-05, Final residual = 3.6244183e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00093929105, Final residual = 1.8159649e-05, No Iterations 4
+ExecutionTime = 2674.28 s  ClockTime = 2764 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1407.4846 362.58178 -2311.6256)
+        Pressure : (1310.4387 356.09425 -2316.2578)
+        Viscous  : (97.045906 6.4875326 4.6322806)
+    Sum of moments
+        Total    : (-1005.4431 6319.0069 -73.729279)
+        Pressure : (-1004.7931 6278.0747 -34.47936)
+        Viscous  : (-0.64996888 40.932156 -39.249919)
+    writing force and moment files.
+
+Time = 93
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0013817548, Final residual = 6.759793e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0028598067, Final residual = 0.00014241966, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0025114762, Final residual = 0.00012224466, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.01594929, Final residual = 0.00059299886, No Iterations 3
+time step continuity errors : sum local = 0.00051379184, global = -5.3245299e-06, cumulative = -0.00057833608
+smoothSolver:  Solving for omega, Initial residual = 1.8963546e-05, Final residual = 3.5893629e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00095661498, Final residual = 1.8504069e-05, No Iterations 4
+ExecutionTime = 2703.7 s  ClockTime = 2794 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1404.1879 368.80464 -2297.3796)
+        Pressure : (1307.287 362.2918 -2302.013)
+        Viscous  : (96.900914 6.5128451 4.6333584)
+    Sum of moments
+        Total    : (-1003.7004 6277.2616 -55.22969)
+        Pressure : (-1003.0452 6236.342 -16.102386)
+        Viscous  : (-0.6552002 40.919611 -39.127304)
+    writing force and moment files.
+
+Time = 94
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0013535566, Final residual = 6.660163e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0027942925, Final residual = 0.00014037971, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0024616647, Final residual = 0.00012080576, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.015749282, Final residual = 0.00054951647, No Iterations 3
+time step continuity errors : sum local = 0.00047507526, global = -7.468931e-06, cumulative = -0.00058580501
+smoothSolver:  Solving for omega, Initial residual = 1.8749066e-05, Final residual = 3.5544227e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00097397973, Final residual = 1.8893765e-05, No Iterations 4
+ExecutionTime = 2733.68 s  ClockTime = 2825 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1402.3068 373.97669 -2287.258)
+        Pressure : (1305.5479 367.4371 -2291.8919)
+        Viscous  : (96.758905 6.5395842 4.6339164)
+    Sum of moments
+        Total    : (-1002.6272 6246.2904 -42.326895)
+        Pressure : (-1001.9663 6205.38 -3.3234381)
+        Viscous  : (-0.66090073 40.910457 -39.003457)
+    writing force and moment files.
+
+Time = 95
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0013255233, Final residual = 6.5576373e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0027300694, Final residual = 0.00013821629, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0024083351, Final residual = 0.00011923085, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.015573624, Final residual = 0.00052753814, No Iterations 3
+time step continuity errors : sum local = 0.00045537574, global = -1.0613243e-05, cumulative = -0.00059641825
+smoothSolver:  Solving for omega, Initial residual = 1.853667e-05, Final residual = 3.520389e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.00099110568, Final residual = 1.9317284e-05, No Iterations 4
+ExecutionTime = 2763.02 s  ClockTime = 2856 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1401.4674 377.64604 -2282.4561)
+        Pressure : (1304.8456 371.08016 -2287.0908)
+        Viscous  : (96.621765 6.5658878 4.6347095)
+    Sum of moments
+        Total    : (-1002.3196 6231.1256 -34.933347)
+        Pressure : (-1001.6526 6190.2202 3.9501316)
+        Viscous  : (-0.6670361 40.905437 -38.883479)
+    writing force and moment files.
+
+Time = 96
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0012986637, Final residual = 6.4581351e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0026686387, Final residual = 0.00013606893, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0023589176, Final residual = 0.00011778867, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.015389657, Final residual = 0.00052685366, No Iterations 3
+time step continuity errors : sum local = 0.00045437218, global = -1.1257802e-05, cumulative = -0.00060767606
+smoothSolver:  Solving for omega, Initial residual = 1.832632e-05, Final residual = 3.4865039e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0010083472, Final residual = 1.9762152e-05, No Iterations 4
+ExecutionTime = 2792.72 s  ClockTime = 2886 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1400.2986 381.11477 -2278.9514)
+        Pressure : (1303.8113 374.52281 -2283.585)
+        Viscous  : (96.487357 6.5919588 4.6335886)
+    Sum of moments
+        Total    : (-1002.0722 6219.2017 -27.695835)
+        Pressure : (-1001.3989 6178.2998 11.070329)
+        Viscous  : (-0.67334727 40.901905 -38.766164)
+    writing force and moment files.
+
+Time = 97
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0012733441, Final residual = 6.3667038e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.00261122, Final residual = 0.0001340947, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0023176731, Final residual = 0.00011668201, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.015228642, Final residual = 0.00053785658, No Iterations 3
+time step continuity errors : sum local = 0.00046338423, global = -1.1787787e-05, cumulative = -0.00061946384
+smoothSolver:  Solving for omega, Initial residual = 1.810742e-05, Final residual = 3.4514934e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0010249585, Final residual = 2.0202616e-05, No Iterations 4
+ExecutionTime = 2822.09 s  ClockTime = 2917 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1398.551 384.21869 -2275.2802)
+        Pressure : (1302.1978 377.60018 -2279.915)
+        Viscous  : (96.3532 6.6185081 4.6348271)
+    Sum of moments
+        Total    : (-1001.5237 6206.538 -20.219751)
+        Pressure : (-1000.8465 6165.6514 18.426672)
+        Viscous  : (-0.67719995 40.886664 -38.646423)
+    writing force and moment files.
+
+Time = 98
+
+smoothSolver:  Solving for Ux, Initial residual = 0.001247948, Final residual = 6.2758044e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0025559492, Final residual = 0.00013230308, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0022807264, Final residual = 0.00011568324, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.015045324, Final residual = 0.00053913621, No Iterations 3
+time step continuity errors : sum local = 0.00046385701, global = -9.1259198e-06, cumulative = -0.00062858976
+smoothSolver:  Solving for omega, Initial residual = 1.7901337e-05, Final residual = 3.4152132e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0010414074, Final residual = 2.0616191e-05, No Iterations 4
+ExecutionTime = 2851.44 s  ClockTime = 2947 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1396.0452 387.20523 -2269.283)
+        Pressure : (1299.822 380.56008 -2273.9131)
+        Viscous  : (96.223232 6.6451499 4.6300364)
+    Sum of moments
+        Total    : (-1000.0937 6186.2582 -11.626918)
+        Pressure : (-999.40852 6145.3681 26.907609)
+        Viscous  : (-0.68521271 40.890099 -38.534527)
+    writing force and moment files.
+
+Time = 99
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0012216351, Final residual = 6.182689e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0025029956, Final residual = 0.00013064827, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.002244508, Final residual = 0.00011471442, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.014883535, Final residual = 0.00054639492, No Iterations 3
+time step continuity errors : sum local = 0.00046919843, global = -3.4069178e-06, cumulative = -0.00063199668
+smoothSolver:  Solving for omega, Initial residual = 1.7685109e-05, Final residual = 3.3769601e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.0010567323, Final residual = 2.0986497e-05, No Iterations 4
+ExecutionTime = 2880.9 s  ClockTime = 2977 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1392.4224 390.55237 -2257.2894)
+        Pressure : (1296.3271 383.87958 -2261.9164)
+        Viscous  : (96.095291 6.6727832 4.6270214)
+    Sum of moments
+        Total    : (-996.86287 6147.7917 0.43127899)
+        Pressure : (-996.17213 6106.9127 38.849661)
+        Viscous  : (-0.69074 40.879014 -38.418382)
+    writing force and moment files.
+
+Time = 100
+
+smoothSolver:  Solving for Ux, Initial residual = 0.0011945958, Final residual = 6.0880195e-05, No Iterations 4
+smoothSolver:  Solving for Uy, Initial residual = 0.0024537224, Final residual = 0.0001292754, No Iterations 4
+smoothSolver:  Solving for Uz, Initial residual = 0.0022079224, Final residual = 0.00011378454, No Iterations 4
+GAMG:  Solving for p, Initial residual = 0.014637358, Final residual = 0.00053003934, No Iterations 3
+time step continuity errors : sum local = 0.00045378102, global = -1.7930734e-06, cumulative = -0.00063378975
+smoothSolver:  Solving for omega, Initial residual = 1.7480303e-05, Final residual = 3.3381363e-07, No Iterations 4
+smoothSolver:  Solving for k, Initial residual = 0.001071679, Final residual = 2.1317521e-05, No Iterations 4
+ExecutionTime = 2910.53 s  ClockTime = 3008 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (1389.084 394.22532 -2241.2637)
+        Pressure : (1293.1155 387.52538 -2245.8879)
+        Viscous  : (95.968428 6.6999394 4.624177)
+    Sum of moments
+        Total    : (-992.9698 6098.6754 14.113062)
+        Pressure : (-992.27172 6057.8022 52.421727)
+        Viscous  : (-0.69807956 40.873275 -38.308665)
+    writing force and moment files.
+
+yPlus yPlus write:
+    writing field yPlus
+    patch ground y+ : min = 2.0815542, max = 3122.2321, average = 406.41409
+    patch wheels_front y+ : min = 6.381295, max = 3960.9088, average = 368.05556
+    patch wheels_rear y+ : min = 2.2282107, max = 4059.823, average = 196.22615
+    patch beamwing y+ : min = 0.041139461, max = 942.41244, average = 68.982941
+    patch body y+ : min = 0.024391528, max = 1598.3926, average = 94.978309
+    patch diffuser y+ : min = 4.2490353, max = 850.50672, average = 98.704844
+    patch floor y+ : min = 0.5856135, max = 1067.5016, average = 71.7881
+    patch frontwing y+ : min = 0.45110779, max = 909.0535, average = 76.339681
+    patch inlets y+ : min = 1.0643104, max = 432.42045, average = 40.333448
+    patch rearwing y+ : min = 0.010929736, max = 1469.301, average = 48.987404
+    patch sidepods y+ : min = 1.1757951, max = 1648.513, average = 88.439244
+    patch suspension y+ : min = 1.6403454, max = 1470.963, average = 196.4451
+wallShearStress wallShearStress write:
+    writing field wallShearStress
+    min/max(ground) = (-1.8016407 -7.6486422 -3.5502477), (12.381642 14.343364 1.3490831)
+    min/max(wheels_front) = (-34.346394 -12.77743 -21.13492), (10.990548 16.830147 10.475401)
+    min/max(wheels_rear) = (-28.948787 -15.364705 -14.635883), (9.6000521 15.91204 12.508098)
+    min/max(beamwing) = (-24.328871 -13.648176 -36.134747), (6.5666137 8.9188644 15.909262)
+    min/max(body) = (-42.630916 -11.091407 -14.679635), (12.525848 10.998532 11.979583)
+    min/max(diffuser) = (-22.874769 -11.845746 -7.9054172), (3.4453995 9.5217765 17.252915)
+    min/max(floor) = (-67.767952 -10.893219 -5.9940062), (4.0955639 7.3539104 21.49026)
+    min/max(frontwing) = (-33.805464 -13.589148 -16.839471), (3.7820114 17.362372 19.225375)
+    min/max(inlets) = (-8.8655531 -5.3185712 -2.8098125), (4.0335266 9.1408126 8.762534)
+    min/max(rearwing) = (-47.835811 -29.488578 -18.419713), (6.8694767 10.398425 20.012866)
+    min/max(sidepods) = (-30.389642 -10.272796 -8.3846841), (4.2710484 7.1671298 15.530263)
+    min/max(suspension) = (-38.622195 -10.525584 -11.213075), (8.8983674 9.1989674 42.102647)
+    functionObjects::vorticity vorticity writing field: vorticity
+    functionObjects::Q Q writing field: Q
+End
+
+Finalising parallel run
