@@ -78,7 +78,9 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   añadir otros (`nOuterIter`, `mergePatchFacesAngle`...). En la c13 del MP4/5 la adición de capas extruía al principio el
   73 % de las caras y acababa en el 62,6 %: lo que más capas quitaba era la no ortogonalidad > 65° (estricta las
   primeras 20 iteraciones; la malla final ya admite 75°) y la calidad de las tetraedrizaciones. Las c16/c17 prueban
-  esos ajustes en el MP4/5 (alerones con un 45-77 % de cobertura en los cuatro coches).
+  esos ajustes en el MP4/5. `"wall_layers_over"` cambia por caso valores de `geometry/wall_layers.json`: con la primera
+  capa a y⁺ 5, 10 capas y la última a 0,35 × la celda local, la pila mide 1–1,5 celdas (razón 1,49 en las celdas de 5,3 mm
+  de los alerones); la c18 prueba la última a 0,15 × la celda (razón 1,35, pila de 0,55–0,84 celdas).
 - **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.

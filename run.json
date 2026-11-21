@@ -1,9 +1,9 @@
 {
- "tag": "wing-layers-test-v1",
- "_doc": "Option B of the wing-layer plan, on the MP4/5 only (same mesh as the c13/p14: h0 0.34, 2 jobs like the c13). In the c13 the layer addition extruded 73 % of the faces at first and ended at 62.6 % (wings 61/77 %): most faces were lost to non-orthogonality > 65 (strict for the first 20 iterations although the final mesh accepts 75) and to tet quality. c16: featureAngle 180 (mergePatchFacesAngle kept at 130), maxThicknessToMedialRatio 1, minMedialAxisAngle 30, nSmoothThickness 2, relaxed quality (maxNonOrtho 75) from the first iteration. c17: the same plus nOuterIter 3 with nGrow -1 (layers added in 3 passes, OpenFOAM v2206+). The MFT03 run f03_p15 (run 44706113967) keeps going.",
+ "tag": "wing-layers-test-v2",
+ "_doc": "Wing-layer test on the MP4/5, third variant. c16 (featureAngle 180, medial ratio 1, relaxed quality from the start) kept the wing layer counts of the c13 (front 3.9 vs 4.1 of 10, rear 6.4 vs 6.5) and extruded fewer faces overall (43 % vs 63 %). The likely cause is the stack itself: with the first layer at y+ 5, 10 layers and the last one at 0.35 x the local cell, the stack is 1.0-1.5 cells thick (ratio 1.49 on the 5.3 mm wing cells), so the layer addition has to push the mesh back a whole cell and the non-orthogonal faces it leaves remove the layers. c18: the c13 controls with the last layer at 0.15 x the local cell (wall_layers_over final_rel_resolved): same y+ and 10 layers, ratio 1.35 on the wing cells (the ratio_resolved of wall_layers.json), stack 0.55-0.84 cells. Run 44858348495 (c16, c17) and the MFT03 run f03_p15 keep going.",
  "cases": [
   {
-   "name": "mp45_c16",
+   "name": "mp45_c18",
    "car": "mp45",
    "private": true,
    "U": 50.0,
@@ -18,40 +18,8 @@
    "dx_slices": 0.075,
    "stages": 2,
    "swap_gb": 16,
-   "layer_ctrl": {
-    "featureAngle": 180,
-    "mergePatchFacesAngle": 130,
-    "maxThicknessToMedialRatio": 1,
-    "minMedialAxisAngle": 30,
-    "nSmoothThickness": 2,
-    "nRelaxedIter": 0
-   }
-  },
-  {
-   "name": "mp45_c17",
-   "car": "mp45",
-   "private": true,
-   "U": 50.0,
-   "iters1": 100,
-   "simplec": true,
-   "h0": 0.34,
-   "iters": 3000,
-   "wall": "hybrid",
-   "post": "full",
-   "post2": true,
-   "slice_res": 0.007,
-   "dx_slices": 0.075,
-   "stages": 2,
-   "swap_gb": 16,
-   "layer_ctrl": {
-    "featureAngle": 180,
-    "mergePatchFacesAngle": 130,
-    "maxThicknessToMedialRatio": 1,
-    "minMedialAxisAngle": 30,
-    "nSmoothThickness": 2,
-    "nRelaxedIter": 0,
-    "nOuterIter": 3,
-    "nGrow": -1
+   "wall_layers_over": {
+    "final_rel_resolved": 0.15
    }
   }
  ]

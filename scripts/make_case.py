@@ -67,6 +67,7 @@ def wall_layers(c):
     Other walls: first cell centre at y+ ~ yplus_wf for the median friction velocity, n_wf layers (wall functions).
     Returns {part: (n, first, ratio, final_rel or None)}. See geometry/wall_layers.json."""
     spec = json.load(open(os.path.join(ROOT, "geometry", "wall_layers.json")))
+    spec.update(c.get("wall_layers_over", {}))     # per-case test values (e.g. final_rel_resolved)
     car = spec["cars"].get(c.get("car", ""), {"U_ref": 50.0, "resolved": [], "u": {}})
     nu = spec["nu"]
     scale = (c["U"] / car["U_ref"]) ** 0.9
