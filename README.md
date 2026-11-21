@@ -80,7 +80,12 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   primeras 20 iteraciones; la malla final ya admite 75°) y la calidad de las tetraedrizaciones. Las c16/c17 prueban
   esos ajustes en el MP4/5. `"wall_layers_over"` cambia por caso valores de `geometry/wall_layers.json`: con la primera
   capa a y⁺ 5, 10 capas y la última a 0,35 × la celda local, la pila mide 1–1,5 celdas (razón 1,49 en las celdas de 5,3 mm
-  de los alerones); la c18 prueba la última a 0,15 × la celda (razón 1,35, pila de 0,55–0,84 celdas).
+  de los alerones); la c18 prueba la última a 0,15 × la celda (razón 1,35, pila de 0,55–0,84 celdas) y no cambia nada
+  (delantero 3,95 de 10, trasero 6,46). Los cortes de malla muestran por qué: las capas están en el centro de cada
+  perfil y faltan en los bordes de ataque y de salida, donde un elemento de 15–20 mm de espesor tiene un radio menor
+  que la celda de 5,3 mm (en el MFT03, de perfil grueso, las capas rodean el borde de ataque). `"levels_over"` cambia
+  por caso los niveles de superficie (`{"frontwing": [6, 7]}`): con mínimo < máximo, `resolveFeatureAngle` lleva los
+  bordes de los elementos al nivel máximo; las c19/c20 lo prueban.
 - **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.

@@ -163,6 +163,12 @@ QUALITY_RELAXED = {"maxNonOrtho": 75}
 
 
 def snappy(c):
+    # per-case test values of the surface levels, e.g. {"frontwing": [6, 7]}: with min < max, resolveFeatureAngle
+    # refines the leading/trailing edges of thin elements to the max level (also used by the feature edges and by
+    # the cell size of wall_layers)
+    for p, lv in c.get("levels_over", {}).items():
+        if p in SURF_LEVELS:
+            SURF_LEVELS[p] = tuple(int(v) for v in lv)
     geo = "\n".join(f"    {p}.stl {{ type triSurfaceMesh; name {p}; }}" for p in ALL_PARTS)
     boxes = BOXES
     geo += "\n" + "\n".join(f"    {n} {{ type searchableBox; min ({a[0]} {a[1]} {a[2]}); max ({b[0]} {b[1]} {b[2]}); }}"

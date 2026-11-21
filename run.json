@@ -1,9 +1,9 @@
 {
- "tag": "wing-layers-test-v2",
- "_doc": "Wing-layer test on the MP4/5, third variant. c16 (featureAngle 180, medial ratio 1, relaxed quality from the start) kept the wing layer counts of the c13 (front 3.9 vs 4.1 of 10, rear 6.4 vs 6.5) and extruded fewer faces overall (43 % vs 63 %). The likely cause is the stack itself: with the first layer at y+ 5, 10 layers and the last one at 0.35 x the local cell, the stack is 1.0-1.5 cells thick (ratio 1.49 on the 5.3 mm wing cells), so the layer addition has to push the mesh back a whole cell and the non-orthogonal faces it leaves remove the layers. c18: the c13 controls with the last layer at 0.15 x the local cell (wall_layers_over final_rel_resolved): same y+ and 10 layers, ratio 1.35 on the wing cells (the ratio_resolved of wall_layers.json), stack 0.55-0.84 cells. Run 44858348495 (c16, c17) and the MFT03 run f03_p15 keep going.",
+ "tag": "wing-layers-test-v3",
+ "_doc": "Wing-layer test on the MP4/5, fourth variant. c18 (last layer at 0.15 x the cell, stack 0.55-0.84 cells) kept the c13 counts (front 3.95 vs 4.09 of 10, rear 6.46 vs 6.46), so the stack thickness is not the cause. The mesh cuts show the layers on the middle of each element and none on the leading and trailing edges: a 15-20 mm thick element has an edge radius below the 5.3 mm level-6 cell (the thick MFT03 main plane keeps its layers round the leading edge). c19: front wing at levels (6 7), so resolveFeatureAngle takes the edges to level 7 (2.7 mm); c20: the same on the rear wing too ((5 6) -> (6 7)). c13 layer controls, same y+ 5 / 10 layers. Runs 44858348495 (c16, c17) and 44871621690 (c18) keep going.",
  "cases": [
   {
-   "name": "mp45_c18",
+   "name": "mp45_c19",
    "car": "mp45",
    "private": true,
    "U": 50.0,
@@ -18,8 +18,38 @@
    "dx_slices": 0.075,
    "stages": 2,
    "swap_gb": 16,
-   "wall_layers_over": {
-    "final_rel_resolved": 0.15
+   "levels_over": {
+    "frontwing": [
+     6,
+     7
+    ]
+   }
+  },
+  {
+   "name": "mp45_c20",
+   "car": "mp45",
+   "private": true,
+   "U": 50.0,
+   "iters1": 100,
+   "simplec": true,
+   "h0": 0.34,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 2,
+   "swap_gb": 16,
+   "levels_over": {
+    "frontwing": [
+     6,
+     7
+    ],
+    "rearwing": [
+     6,
+     7
+    ]
    }
   }
  ]
