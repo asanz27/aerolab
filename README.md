@@ -73,6 +73,12 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   todo lo que no esté conectado con `locationInMesh` (`regionToCell`): en la MCL39 c10 se quitaron 539 celdas, alguna
   bolsa quedó aislada sin contorno de valor fijo y potentialFoam paró con una excepción de coma flotante (diagonal nula
   en el nivel más grueso de GAMG).
+- **Controles de la adición de capas** (`"layer_ctrl"`, `"quality_relaxed"`): los valores de `LAYER_CTRL` y
+  `QUALITY_RELAXED` en `make_case.py` son los de todas las corridas hasta la p15; un caso puede cambiar cualquiera o
+  añadir otros (`nOuterIter`, `mergePatchFacesAngle`...). En la c13 del MP4/5 la adición de capas extruía al principio el
+  73 % de las caras y acababa en el 62,6 %: lo que más capas quitaba era la no ortogonalidad > 65° (estricta las
+  primeras 20 iteraciones; la malla final ya admite 75°) y la calidad de las tetraedrizaciones. Las c16/c17 prueban
+  esos ajustes en el MP4/5 (alerones con un 45-77 % de cobertura en los cuatro coches).
 - **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.

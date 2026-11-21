@@ -1,23 +1,58 @@
 {
- "tag": "cad-skin-plug-prod-v1",
- "_doc": "MFT03 fine run on the hybrid walls (the plan's 'coarse check + fine results'): the c10 check at h0 0.30 had 5.6 M cells, an 11.9 GB peak and 26 s per iteration, so h0 0.25 (~8.5 M cells, like the MP4/5) fits; 4 chained jobs. The F1 production run p14 (run 44663709259) keeps going.",
+ "tag": "wing-layers-test-v1",
+ "_doc": "Option B of the wing-layer plan, on the MP4/5 only (same mesh as the c13/p14: h0 0.34, 2 jobs like the c13). In the c13 the layer addition extruded 73 % of the faces at first and ended at 62.6 % (wings 61/77 %): most faces were lost to non-orthogonality > 65 (strict for the first 20 iterations although the final mesh accepts 75) and to tet quality. c16: featureAngle 180 (mergePatchFacesAngle kept at 130), maxThicknessToMedialRatio 1, minMedialAxisAngle 30, nSmoothThickness 2, relaxed quality (maxNonOrtho 75) from the first iteration. c17: the same plus nOuterIter 3 with nGrow -1 (layers added in 3 passes, OpenFOAM v2206+). The MFT03 run f03_p15 (run 44706113967) keeps going.",
  "cases": [
   {
-   "name": "f03_p15",
-   "car": "mft03",
+   "name": "mp45_c16",
+   "car": "mp45",
    "private": true,
-   "U": 20.0,
+   "U": 50.0,
    "iters1": 100,
    "simplec": true,
-   "h0": 0.25,
+   "h0": 0.34,
    "iters": 3000,
    "wall": "hybrid",
    "post": "full",
    "post2": true,
-   "slice_res": 0.005,
-   "dx_slices": 0.05,
-   "stages": 4,
-   "swap_gb": 16
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 2,
+   "swap_gb": 16,
+   "layer_ctrl": {
+    "featureAngle": 180,
+    "mergePatchFacesAngle": 130,
+    "maxThicknessToMedialRatio": 1,
+    "minMedialAxisAngle": 30,
+    "nSmoothThickness": 2,
+    "nRelaxedIter": 0
+   }
+  },
+  {
+   "name": "mp45_c17",
+   "car": "mp45",
+   "private": true,
+   "U": 50.0,
+   "iters1": 100,
+   "simplec": true,
+   "h0": 0.34,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 2,
+   "swap_gb": 16,
+   "layer_ctrl": {
+    "featureAngle": 180,
+    "mergePatchFacesAngle": 130,
+    "maxThicknessToMedialRatio": 1,
+    "minMedialAxisAngle": 30,
+    "nSmoothThickness": 2,
+    "nRelaxedIter": 0,
+    "nOuterIter": 3,
+    "nGrow": -1
+   }
   }
  ]
 }

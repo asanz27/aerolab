@@ -155,6 +155,12 @@ mergePatchPairs ();
 """
 
 
+LAYER_CTRL = {"nGrow": 0, "featureAngle": 130, "slipFeatureAngle": 30, "nRelaxIter": 3, "nSmoothSurfaceNormals": 1,
+              "nSmoothNormals": 3, "nSmoothThickness": 10, "maxFaceThicknessRatio": 0.5, "maxThicknessToMedialRatio": 0.3,
+              "minMedialAxisAngle": 90, "nBufferCellsNoExtrude": 0, "nLayerIter": 50, "nRelaxedIter": 20}
+QUALITY_RELAXED = {"maxNonOrtho": 75}
+
+
 def snappy(c):
     geo = "\n".join(f"    {p}.stl {{ type triSurfaceMesh; name {p}; }}" for p in ALL_PARTS)
     boxes = BOXES
@@ -200,6 +206,12 @@ def snappy(c):
     expansionRatio 1.25;
     finalLayerThickness 0.45;
     minThickness 0.08;""")
+    # layer-addition controls: these defaults are the settings of every run up to p15; a case may override any of
+    # them (or add others, e.g. nOuterIter) with "layer_ctrl", and the relaxed mesh quality (used by the layer
+    # addition after nRelaxedIter iterations) with "quality_relaxed"
+    lc = dict(LAYER_CTRL, **c.get("layer_ctrl", {}))
+    lay_ctrl = "\n".join(f"    {k} {v};" for k, v in lc.items())
+    relaxed = "\n".join(f"        {k} {v};" for k, v in dict(QUALITY_RELAXED, **c.get("quality_relaxed", {})).items())
     return HDR.format(cls="dictionary", obj="snappyHexMeshDict") + f"""
 castellatedMesh true;
 snap            true;
@@ -253,19 +265,7 @@ addLayersControls
 {layers}
     }}
 {lay_glob}
-    nGrow 0;
-    featureAngle 130;
-    slipFeatureAngle 30;
-    nRelaxIter 3;
-    nSmoothSurfaceNormals 1;
-    nSmoothNormals 3;
-    nSmoothThickness 10;
-    maxFaceThicknessRatio 0.5;
-    maxThicknessToMedialRatio 0.3;
-    minMedialAxisAngle 90;
-    nBufferCellsNoExtrude 0;
-    nLayerIter 50;
-    nRelaxedIter 20;
+{lay_ctrl}
 }}
 
 meshQualityControls
@@ -286,7 +286,7 @@ meshQualityControls
     errorReduction 0.75;
     relaxed
     {{
-        maxNonOrtho 75;
+{relaxed}
     }}
 }}
 
