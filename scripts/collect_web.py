@@ -2,6 +2,9 @@
 
 Light-weight (git + JSON only), safe to run locally:
     python scripts/collect_web.py <web_data_dir> baseline=<case> [mesh=<case>:<label> ...] [map=<case>:<label> ...]
+                                  [wall=<case>:<label> ...]
+wall= rows (index.wall_study) are runs of the same car that differ only in the wing boundary-layer mesh (2026-11
+option A: the page shows the spread as the uncertainty from the wing layers); the baseline may be one of them.
 """
 from __future__ import annotations
 
@@ -72,6 +75,23 @@ def summary(meta):
                       if k in ("frontwing", "nosewing", "rearwing", "floor", "diffuser", "body")}}
 
 
+def wall_row(meta):
+    """summary + wing layer count and area share of each y+ class, for the boundary-layer sensitivity table"""
+    st = meta.get("surface", {}).get("stats", {})
+    lay = meta.get("mesh", {}).get("layers", {})
+    t = meta.get("forces", {}).get("total", {})
+    wings = {}
+    for w in ("frontwing", "rearwing"):
+        f = st.get(w, {}).get("yplus_frac") or {}
+        if not f:
+            continue
+        wings[w] = {"layers": lay.get(w, {}).get("layers"), "target": lay.get(w, {}).get("target"),
+                    "lt5": f.get("lt1", 0) + f.get("1_5", 0), "5_30": f.get("5_30", 0),
+                    "gt30": f.get("30_300", 0) + f.get("ge300", 0), "ClA": meta.get("forces", {}).get(w, {}).get("ClA")}
+    return {**summary(meta), "ClA_std": t.get("ClA_std"), "window": t.get("avg_window"),
+            "stages": meta.get("config", {}).get("stages"), "wings": wings}
+
+
 def main():
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
@@ -79,6 +99,7 @@ def main():
     base = args["baseline"]
     mesh = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("mesh=")]
     amap = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("map=")]
+    wall = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("wall=")]
     car = dict(a.split("=", 1) for a in sys.argv[2:] if a.startswith("car=")).get("car", "mft02")
     index = {"car": car, "baseline": base, "cases": [], "mesh_study": [], "aeromap": []}
     meta = fetch_case(base, os.path.join(out, base))
@@ -98,6 +119,10 @@ def main():
         v = m.get("config", {}).get("variant") or m.get("car", {}).get("variant") or {}
         index["aeromap"].append({"case": case, "label": label, "front_rh_mm": v.get("front_rh_mm", 0),
                                  "rear_rh_mm": v.get("rear_rh_mm", 0), **summary(m)})
+    for spec in wall:
+        case, label = spec.split(":", 1)
+        m = meta if case == base else remote_meta(case)
+        index.setdefault("wall_study", []).append({"case": case, "label": label, **wall_row(m)})
     json.dump(index, open(os.path.join(out, "index.json"), "w"), indent=1)
     total = sum(os.path.getsize(os.path.join(d, f)) for d, _, fs in os.walk(out) for f in fs)
     print(json.dumps(index, indent=1))

@@ -85,7 +85,12 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   perfil y faltan en los bordes de ataque y de salida, donde un elemento de 15–20 mm de espesor tiene un radio menor
   que la celda de 5,3 mm (en el MFT03, de perfil grueso, las capas rodean el borde de ataque). `"levels_over"` cambia
   por caso los niveles de superficie (`{"frontwing": [6, 7]}`): con mínimo < máximo, `resolveFeatureAngle` lleva los
-  bordes de los elementos al nivel máximo; las c19/c20 lo prueban.
+  bordes de los elementos al nivel máximo; las c19/c20 lo prueban: delantero 4,78 de 10 capas (c20 trasero 6,65), con
+  9,2–9,6 M celdas y casi 15 GB. Ninguna variante pasa del 50 % y ClA cae entre 1,45 y 1,59 (balance 31–36 %), lo mismo
+  que separa 2 de 4 trabajos en la misma malla (c13 1,495, p14 1,432). Decisión (2026-11-21, opción A): los F1 se quedan
+  con la p14 y la web lo explica. `collect_web.py ... wall=<caso>:<etiqueta>` guarda la serie en `index.wall_study`
+  (etiquetas `page`, `ref`, `thin`, `edge_fw`, `edge_both`); la página del MP4/5 la muestra en «Malla, y⁺ y
+  sensibilidad» y las otras F1 la cargan del MP4/5 como referencia.
 - **post2**: campos Vy/Vz, planos codificados en asinh (más resolución cerca del valor de referencia), planos Y cada 5 cm
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.
