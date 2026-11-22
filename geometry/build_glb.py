@@ -35,6 +35,14 @@ CARS = {
         # chimneys, diffuser and rear-wheel area, front-wheel area (front wing, rear wing and bargeboards are automatic)
         "detail_zones": [[[-0.20, 0.0, 0.0], [1.05, 0.70, 0.30]], [[1.30, 0.40, 0.40], [3.00, 0.80, 0.75]],
                          [[2.35, 0.15, 0.0], [3.35, 0.70, 0.50]], [[-0.25, 0.35, 0.10], [0.25, 0.65, 0.50]]],
+        # rebuilt wing elements (wing_rebuild.py section mode, --rebuild-wings): each element is two open skins in this
+        # model, followed through the cuts from a seed point (CFD axes, m). Bridge wing over the nose left as modelled.
+        "wing_rebuild": {"fw_main": {"role": "main", "seed": [-0.887, 0.15, 0.115], "y": [0.0, 0.60], "extend_to": 0.61},
+                         "fw_flap1": {"role": "flap", "after": "fw_main", "seed": [-0.680, 0.15, 0.160], "y": [0.0, 0.60], "extend_to": 0.61},
+                         "fw_flap2": {"role": "flap", "after": "fw_flap1", "seed": [-0.511, 0.15, 0.245], "y": [0.0, 0.575], "extend_to": 0.58},
+                         "rw_main": {"role": "main", "seed": [3.333, 0.25, 0.725], "y": [0.0, 0.50], "extend_to": 0.505},
+                         "rw_flap": {"role": "flap", "after": "rw_main", "seed": [3.486, 0.25, 0.829], "y": [0.0, 0.49], "extend_to": 0.50},
+                         "beam": {"role": "main", "seed": [3.469, 0.25, 0.417], "y": [0.055, 0.51], "extend_to": 0.515}},
         "source": {"title": "2008 Mclaren MP4/23", "author": "Dave Love SketchFab", "url": "https://skfb.ly/pKX8v",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
@@ -47,6 +55,19 @@ CARS = {
                          [[2.90, 0.03, 0.0], [3.75, 0.70, 0.50]], [[1.60, 0.45, 0.25], [2.00, 0.70, 0.50]]],
         # the front-wing slots of this model are only 4-5 mm: on the 1.25 mm grid they kept 1-3 mm
         "wing_h": {"fw": 0.0008},
+        # rebuilt wing elements (wing_rebuild.py section mode, --rebuild-wings): the front wing is one plane in the
+        # neutral centre (|y| < 0.25) and a stack of six elements outboard (main plane, second and third elements in one
+        # model piece; the fifth and sixth are one element inboard of y 0.33); the cascade winglets on the endplates and the small beam wing (4 cm chord) are left as modelled
+        "wing_rebuild": {"fw_centre": {"role": "main", "seed": [-0.888, 0.10, 0.085], "y": [0.0, 0.27], "extend_to": 0.27},
+                         "fw_e1": {"role": "main", "seed": [-0.964, 0.40, 0.073], "y": [0.25, 0.76]},
+                         "fw_e2": {"role": "flap", "after": "fw_e1", "seed": [-0.890, 0.40, 0.092], "y": [0.25, 0.76]},
+                         "fw_e3": {"role": "flap", "after": "fw_e2", "seed": [-0.823, 0.40, 0.116], "y": [0.25, 0.76]},
+                         "fw_e4": {"role": "flap", "after": "fw_e3", "seed": [-0.768, 0.40, 0.159], "y": [0.25, 0.76]},
+                         "fw_e56": {"role": "flap", "after": "fw_e4", "seed": [-0.751, 0.30, 0.186], "y": [0.25, 0.328]},
+                         "fw_e5": {"role": "flap", "after": "fw_e4", "seed": [-0.729, 0.40, 0.201], "y": [0.25, 0.76]},
+                         "fw_e6": {"role": "flap", "after": "fw_e5", "seed": [-0.699, 0.40, 0.239], "y": [0.25, 0.76]},
+                         "rw_main": {"role": "main", "seed": [3.558, 0.20, 0.865], "y": [0.0, 0.35], "extend_to": 0.355},
+                         "rw_flap": {"role": "flap", "after": "rw_main", "seed": [3.707, 0.20, 0.958], "y": [0.0, 0.35], "extend_to": 0.355}},
         "source": {"title": "2016 Redbull RB12", "author": "Dave Love SketchFab", "url": "https://sketchfab.com/3d-models/d9b5ce8c5d234deeb9cb57f5029dad57",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
@@ -56,12 +77,15 @@ CARS = {
         # detail zones (review): diffuser and rear-wheel area, front-wheel area, sidepod side
         "detail_zones": [[[1.95, 0.03, 0.0], [2.90, 0.65, 0.45]], [[-0.15, 0.40, 0.10], [0.30, 0.85, 0.50]],
                          [[1.60, 0.25, 0.30], [1.95, 0.55, 0.60]]],
-        # rebuilt wing elements (wing_rebuild.py, used with --rebuild-wings): each is its own piece in this model
-        "wing_rebuild": {"fw_main": {"role": "main", "box": [[-0.87, -0.72, 0.06], [-0.55, 0.72, 0.15]]},
-                         "fw_flap": {"role": "flap", "box": [[-0.60, -0.72, 0.13], [-0.44, 0.72, 0.22]]},
-                         "rw_main": {"role": "main", "box": [[2.90, -0.49, 0.78], [3.21, 0.49, 0.86]]},
-                         "rw_flap": {"role": "flap", "box": [[3.15, -0.49, 0.84], [3.35, 0.49, 0.95]]},
-                         "rw_lower": {"role": "main", "box": [[3.09, -0.49, 0.54], [3.34, 0.49, 0.64]]}},
+        # rebuilt wing elements (wing_rebuild.py section mode, --rebuild-wings). The first MP4/5 run with rebuilt wings
+        # (mp45_w1, commit 8f79fbf) used the box mode with fixed NACA 4 % / 6 % camber (main / flap); the section mode
+        # takes the model's own camber like the other cars (this model: front main -3.6 % = wrong side, front flap
+        # +2.8 %, rear elements +8 %)
+        "wing_rebuild": {"fw_main": {"role": "main", "seed": [-0.712, 0.30, 0.112], "y": [0.0, 0.69], "extend_to": 0.698},
+                         "fw_flap": {"role": "flap", "after": "fw_main", "seed": [-0.521, 0.30, 0.171], "y": [0.115, 0.69], "extend_to": 0.698},
+                         "rw_main": {"role": "main", "seed": [3.058, 0.20, 0.815], "y": [0.0, 0.47], "extend_to": 0.477},
+                         "rw_flap": {"role": "flap", "after": "rw_main", "seed": [3.255, 0.20, 0.884], "y": [0.0, 0.47], "extend_to": 0.477},
+                         "rw_lower": {"role": "main", "seed": [3.216, 0.20, 0.582], "y": [0.0, 0.47], "extend_to": 0.477}},
         "source": {"title": "McLaren MP4/5 || Formula 1", "author": "dark_igorek", "url": "https://sketchfab.com/3d-models/mclaren-mp45-formula-1-3059d4532ecd48ca8da41e1cac971f22",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
@@ -888,8 +912,15 @@ def split_parts(car, rebuild_wings=False):
         if not cfg.get("wing_rebuild"):
             raise SystemExit(f"{car}: no wing_rebuild elements defined")
         import wing_rebuild
-        parts, rep = wing_rebuild.rebuild(parts, cfg["wing_rebuild"], components, log=log)
-        WING_REBUILT.extend(rep)
+        spec = cfg["wing_rebuild"]
+        by_box = {k: v for k, v in spec.items() if "box" in v}       # one model piece per element (MP4/5)
+        by_sec = {k: v for k, v in spec.items() if "seed" in v}      # elements followed through the cuts
+        if by_sec:
+            parts, rep = wing_rebuild.rebuild_sections(parts, by_sec, components, log=log)
+            WING_REBUILT.extend(rep)
+        if by_box:
+            parts, rep = wing_rebuild.rebuild(parts, by_box, components, log=log)
+            WING_REBUILT.extend(rep)
         missing = set(cfg["wing_rebuild"]) - {r["element"] for r in rep}
         if missing:
             raise SystemExit(f"{car}: wing elements not found in the model: {sorted(missing)}")
