@@ -78,6 +78,7 @@ sec2d_one() {
     gmshToFoam mesh.msh > log.gmshToFoam 2>&1 || exit 4
     rm -f mesh.msh
     python3 "$PY" fixb "$S2/sections.json" "$id" "$v" "$C" > log.fixb 2>&1 || exit 5
+    cp system/fvSchemes.first system/fvSchemes
     checkMesh > log.checkMesh 2>&1
     if [ "$(jget sec2d_mesh_only false)" = "true" ]; then
       python3 "$PY" meshpic "$S2/sections.json" "$id" "$v" "$C" "$OUT/${id}__${v}__mesh.png" > log.meshpic 2>&1

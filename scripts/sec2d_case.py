@@ -41,11 +41,13 @@ VARIANTS = {
     "bl_d": {"mesh": "bl", "model": "kOmegaSST", "dinc": 0.0, "fans": False, "alg": 5},
 }
 MESH = {  # wall size, growth slope of the size with distance, far size, wake size
-    "bl": {"h": 4e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
+    "bl": {"h": 3e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
     "iso": {"h": 1e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
     "coarse": {"h": 5.3e-3, "slope": 0.25, "far": 0.25, "wake": 1.06e-2},
 }
-BL = {"first": 8e-6, "ratio": 1.2, "thick_max": 2.5e-3}
+# layer stack: 8 um first cell, x1.25, at most 0.6 mm - thinner than the 1 mm fillets the 2 mm gap closing leaves in
+# concave corners (a 2.5 mm stack failed there: gmsh "Edge not recovered" on 6 of 8 sections, run 45024...)
+BL = {"first": 8e-6, "ratio": 1.25, "thick_max": 6e-4, "simplify": 1.5e-4}
 
 HDR = """FoamFile
 {{
@@ -73,6 +75,9 @@ def rot(P, ang, pivot):
 def polys_of(sec, var):
     """Element outlines for this variant: incidence change dinc (deg, + = trailing edge up) about the leading point."""
     P = [np.asarray(p, float) for p in sec["polys_geo"]]
+    if VARIANTS[var]["mesh"] == "bl":           # no 0.1 mm raster staircase under the layers
+        from shapely.geometry import Polygon
+        P = [np.asarray(Polygon(p).simplify(BL["simplify"], preserve_topology=True).exterior.coords)[:-1] for p in P]
     d = VARIANTS[var]["dinc"]
     if d:
         piv = np.asarray(sec["pivot"], float)
@@ -130,7 +135,8 @@ def mesh(sec, var, case):
         el_pts.append(pts)
         fans += [pts[i] for i in sharp_convex(P)]
     surf = geo.addPlaneSurface(loops)
-    ext = geo.extrude([(2, surf)], 0, 0, DZ, numElements=[1], recombine=True)
+    own = VARIANTS[var]["mesh"] == "bl"         # layered meshes: 2D mesh extruded here (gmsh's extrusion of a layered
+    ext = None if own else geo.extrude([(2, surf)], 0, 0, DZ, numElements=[1], recombine=True)   # mesh lost its patches
     geo.synchronize()
 
     allw = [l for ls in el_lines for l in ls]
@@ -189,6 +195,18 @@ def mesh(sec, var, case):
         info.update({"bl_first": BL["first"], "bl_ratio": BL["ratio"], "bl_thick": thick,
                      "bl_layers": int(math.ceil(math.log(1 + thick * (BL["ratio"] - 1) / BL["first"]) / math.log(BL["ratio"])))})
 
+    if own:
+        try:
+            gmsh.model.mesh.generate(2)
+        except Exception as ex:
+            print("gmsh generate failed:", ex, flush=True)
+            raise
+        info.update(extrude_write(sec, polys, (x0, x1, y0, y1), os.path.join(case, "mesh.msh")))
+        info["elements"] = len(polys)
+        gmsh.finalize()
+        json.dump(info, open(os.path.join(case, "mesh_info.json"), "w"), indent=1)
+        print(json.dumps(info))
+        return
     # physical groups: lateral surfaces from their position (outer box sides, else the nearest element outline)
     top_s, vol = ext[0][1], ext[1][1]
     lat = [t for d, t in ext[2:] if d == 2]
@@ -232,6 +250,91 @@ def mesh(sec, var, case):
     gmsh.finalize()
     json.dump(info, open(os.path.join(case, "mesh_info.json"), "w"), indent=1)
     print(json.dumps(info))
+
+
+def extrude_write(sec, polys, box, path):
+    """2D gmsh mesh -> one-cell-thick msh 2.2 file for gmshToFoam: prisms/hexes, front/back faces, and the boundary
+    edges of the 2D mesh as lateral quads, named from their position (box sides, else the nearest element outline)."""
+    import gmsh
+    from shapely.geometry import Point, Polygon
+
+    x0, x1, y0, y1 = box
+    tags, coords, _ = gmsh.model.mesh.getNodes()
+    XY = coords.reshape(-1, 3)[:, :2]
+    pos = {int(t): i for i, t in enumerate(tags)}
+    cells = []
+    for et, _, en in zip(*gmsh.model.mesh.getElements(2)):
+        nn = {2: 3, 3: 4}.get(int(et))
+        if nn is None:
+            raise SystemExit(f"unexpected 2D element type {et}")
+        E = np.vectorize(pos.get)(en.reshape(-1, nn).astype(np.int64))
+        cells.append(E)
+    used = np.unique(np.concatenate([c.ravel() for c in cells]))
+    remap = -np.ones(len(XY), np.int64)
+    remap[used] = np.arange(len(used))
+    XY = XY[used]
+    cells = [remap[c] for c in cells]
+    N = len(XY)
+    oriented = []
+    for E in cells:                                 # counter-clockwise in x-y -> positive volume when extruded along +z
+        P = XY[E]
+        a = 0.5 * np.sum(P[:, :, 0] * np.roll(P[:, :, 1], -1, 1) - np.roll(P[:, :, 0], -1, 1) * P[:, :, 1], axis=1)
+        E = E.copy()
+        E[a < 0] = E[a < 0][:, ::-1]
+        oriented.append(E)
+    # boundary edges: used by one 2D element only
+    edges = np.vstack([np.stack([E, np.roll(E, -1, 1)], -1).reshape(-1, 2) for E in oriented])
+    key = np.sort(edges, 1)
+    _, inv, cnt = np.unique(key, axis=0, return_inverse=True, return_counts=True)
+    bnd = edges[cnt[inv.ravel()] == 1]
+    mid = 0.5 * (XY[bnd[:, 0]] + XY[bnd[:, 1]])
+    tol = 1e-7
+    shp = [Polygon(P) for P in polys]
+    names = ["front", "back", "inlet", "outlet", "top", "ground" if sec["ground"] else "farbottom"] + [f"e{i + 1}" for i in range(len(polys))] + ["fluid"]
+    pid = {n: i + 1 for i, n in enumerate(names)}
+    bname = []
+    for m in mid:
+        if abs(m[0] - x0) < tol:
+            bname.append("inlet")
+        elif abs(m[0] - x1) < tol:
+            bname.append("outlet")
+        elif abs(m[1] - y1) < tol:
+            bname.append("top")
+        elif abs(m[1] - y0) < tol:
+            bname.append(names[5])
+        else:
+            pm = Point(m)
+            bname.append(f"e{int(np.argmin([g.exterior.distance(pm) for g in shp])) + 1}")
+    lines = []
+    k = 0
+
+    def add(etype, phys, nodes):
+        nonlocal k
+        for row in nodes:
+            k += 1
+            lines.append(f"{k} {etype} 2 {phys} {phys} " + " ".join(str(int(v) + 1) for v in row))
+
+    for E in oriented:                              # front (z = 0) and back (z = DZ) faces
+        add(2 if E.shape[1] == 3 else 3, pid["front"], E)
+        add(2 if E.shape[1] == 3 else 3, pid["back"], E + N)
+    for (a, b), nm in zip(bnd, bname):
+        add(3, pid[nm], [[a, b, b + N, a + N]])
+    for E in oriented:
+        add(6 if E.shape[1] == 3 else 5, pid["fluid"], np.hstack([E, E + N]))
+    nl = chr(10)
+    with open(path, "w", newline=nl) as fh:
+        fh.write("$MeshFormat" + nl + "2.2 0 8" + nl + "$EndMeshFormat" + nl + "$PhysicalNames" + nl)
+        fh.write(f"{len(names)}" + nl)
+        for n in names:
+            fh.write(f"{3 if n == 'fluid' else 2} {pid[n]} \"{n}\"" + nl)
+        fh.write("$EndPhysicalNames" + nl + "$Nodes" + nl + f"{2 * N}" + nl)
+        Z = np.vstack([np.c_[XY, np.zeros(N)], np.c_[XY, np.full(N, DZ)]])
+        np.savetxt(fh, np.c_[np.arange(1, 2 * N + 1), Z], fmt=["%d", "%.9g", "%.9g", "%.9g"], newline=nl)
+        fh.write("$EndNodes" + nl + "$Elements" + nl + f"{len(lines)}" + nl)
+        fh.write(nl.join(lines) + nl + "$EndElements" + nl)
+    counts = {n: bname.count(n) for n in set(bname)}
+    return {"cells": int(sum(len(E) for E in oriented)), "quads2d": int(sum(len(E) for E in oriented if E.shape[1] == 4)),
+            "boundary_edges": counts}
 
 
 def fix_boundary(case, nel, ground):
