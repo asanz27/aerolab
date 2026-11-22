@@ -1,9 +1,9 @@
 {
- "tag": "sec2d-v1",
- "_doc": "2D wing-section test (option B of the wing-separation diagnosis, 2026-11-22): the 3D p14 runs show the MP4/23 rear wing stalled, the RB12 rear wing stalled inboard and its front-wing flaps separated, the MP4/5 front main plane separated inboard, the MCL39 attached. Each case builds the car (same geometry as p14), cuts two sections at the stations of the 3D wing-section lines (all wall surfaces, enclosed = solid, gaps < 2 mm closed as in the 3D mesh) and runs them in 2D (gmsh -> gmshToFoam -> simpleFoam, 50 m/s, moving ground under front wings): bl = y+ ~1 layers, iso = 0.1 mm triangles, iso_sa = Spalart-Allmaras, coarse = 5.3 mm like the 3D wing cells, iso_m5 = 5 deg less incidence. Geometry or mesh: if the fine sections stall too, it is the drawn geometry; if only coarse does, the mesh.",
+ "tag": "sec2d-bl-debug",
+ "_doc": "Mesh-only check of the boundary-layer variant of the 2D wing sections: in run 45020859381 (s2d_*) the bl mesh of mp423_FW_y20 failed in gmsh while the coarse one solved. bl as there, bl_nofan without fan points at sharp corners, bl_d the same with the Delaunay 2D algorithm; publishes the gmsh logs and mesh close-ups. Run 45020859381 keeps going.",
  "cases": [
   {
-   "name": "s2d_mp45",
+   "name": "s2dbg_mp45",
    "car": "mp45",
    "private": true,
    "U": 50.0,
@@ -11,10 +11,8 @@
    "stages": 1,
    "variants": [
     "bl",
-    "iso",
-    "iso_sa",
-    "coarse",
-    "iso_m5"
+    "bl_nofan",
+    "bl_d"
    ],
    "sec2d": [
     {
@@ -27,10 +25,11 @@
      "wing": "RW",
      "y": 0.2
     }
-   ]
+   ],
+   "sec2d_mesh_only": true
   },
   {
-   "name": "s2d_mp423",
+   "name": "s2dbg_mp423",
    "car": "mp423",
    "private": true,
    "U": 50.0,
@@ -38,10 +37,8 @@
    "stages": 1,
    "variants": [
     "bl",
-    "iso",
-    "iso_sa",
-    "coarse",
-    "iso_m5"
+    "bl_nofan",
+    "bl_d"
    ],
    "sec2d": [
     {
@@ -54,10 +51,11 @@
      "wing": "RW",
      "y": 0.2
     }
-   ]
+   ],
+   "sec2d_mesh_only": true
   },
   {
-   "name": "s2d_rb12",
+   "name": "s2dbg_rb12",
    "car": "rb12",
    "private": true,
    "U": 50.0,
@@ -65,10 +63,8 @@
    "stages": 1,
    "variants": [
     "bl",
-    "iso",
-    "iso_sa",
-    "coarse",
-    "iso_m5"
+    "bl_nofan",
+    "bl_d"
    ],
    "sec2d": [
     {
@@ -81,10 +77,11 @@
      "wing": "RW",
      "y": 0.2
     }
-   ]
+   ],
+   "sec2d_mesh_only": true
   },
   {
-   "name": "s2d_mcl39",
+   "name": "s2dbg_mcl39",
    "car": "mcl39",
    "private": true,
    "U": 50.0,
@@ -92,10 +89,8 @@
    "stages": 1,
    "variants": [
     "bl",
-    "iso",
-    "iso_sa",
-    "coarse",
-    "iso_m5"
+    "bl_nofan",
+    "bl_d"
    ],
    "sec2d": [
     {
@@ -108,7 +103,8 @@
      "wing": "RW",
      "y": 0.2
     }
-   ]
+   ],
+   "sec2d_mesh_only": true
   }
  ]
 }

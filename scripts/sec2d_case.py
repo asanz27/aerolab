@@ -37,6 +37,8 @@ VARIANTS = {
     "iso_sa": {"mesh": "iso", "model": "SpalartAllmaras", "dinc": 0.0},
     "coarse": {"mesh": "coarse", "model": "kOmegaSST", "dinc": 0.0},
     "iso_m5": {"mesh": "iso", "model": "kOmegaSST", "dinc": -5.0},
+    "bl_nofan": {"mesh": "bl", "model": "kOmegaSST", "dinc": 0.0, "fans": False},
+    "bl_d": {"mesh": "bl", "model": "kOmegaSST", "dinc": 0.0, "fans": False, "alg": 5},
 }
 MESH = {  # wall size, growth slope of the size with distance, far size, wake size
     "bl": {"h": 4e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
@@ -169,7 +171,7 @@ def mesh(sec, var, case):
     gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
     gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
     gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
-    gmsh.option.setNumber("Mesh.Algorithm", 6)
+    gmsh.option.setNumber("Mesh.Algorithm", VARIANTS[var].get("alg", 6))
     info = {"variant": var, "mesh": VARIANTS[var]["mesh"], "h_wall": mv["h"], "fans": len(fans)}
     if VARIANTS[var]["mesh"] == "bl":
         gaps = [g[2] for g in sec["gaps"]] + ([sec["zmin"]] if sec["ground"] else [])
@@ -181,7 +183,7 @@ def mesh(sec, var, case):
         fld.setNumber(fbl, "Thickness", thick)
         fld.setNumber(fbl, "SizeFar", mv["h"])
         fld.setNumber(fbl, "Quads", 1)
-        if fans:
+        if fans and VARIANTS[var].get("fans", True):
             fld.setNumbers(fbl, "FanPointsList", fans)
         fld.setAsBoundaryLayer(fbl)
         info.update({"bl_first": BL["first"], "bl_ratio": BL["ratio"], "bl_thick": thick,
@@ -216,7 +218,11 @@ def mesh(sec, var, case):
     for k, v in groups.items():
         if v:
             gmsh.model.addPhysicalGroup(2, v, name=names.get(k, k))
-    gmsh.model.mesh.generate(3)
+    try:
+        gmsh.model.mesh.generate(3)
+    except Exception as ex:
+        print("gmsh generate failed:", ex, flush=True)
+        raise
     gmsh.option.setNumber("Mesh.MshFileVersion", 2.2)
     gmsh.option.setNumber("Mesh.Binary", 0)
     gmsh.write(os.path.join(case, "mesh.msh"))
@@ -583,6 +589,11 @@ if __name__ == "__main__":
     sec = load(sections, sid)
     if cmd == "mesh":
         mesh(sec, var, case)
+    elif cmd == "meshpic":
+        import pyvista as pv
+        open(os.path.join(case, "case.foam"), "w").close()
+        rd = pv.OpenFOAMReader(os.path.join(case, "case.foam"))
+        meshpic(sec, var, rd.read(), sys.argv[6])
     elif cmd == "fixb":
         fix_boundary(case, len(sec["polys_geo"]), sec["ground"])
     elif cmd == "setup":

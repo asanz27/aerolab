@@ -79,6 +79,10 @@ sec2d_one() {
     rm -f mesh.msh
     python3 "$PY" fixb "$S2/sections.json" "$id" "$v" "$C" > log.fixb 2>&1 || exit 5
     checkMesh > log.checkMesh 2>&1
+    if [ "$(jget sec2d_mesh_only false)" = "true" ]; then
+      python3 "$PY" meshpic "$S2/sections.json" "$id" "$v" "$C" "$OUT/${id}__${v}__mesh.png" > log.meshpic 2>&1
+      exit 0
+    fi
     cp system/fvSchemes.first system/fvSchemes
     foamDictionary system/controlDict -entry endTime -set 300 > /dev/null
     foamDictionary system/controlDict -entry writeInterval -set 300 > /dev/null
@@ -99,6 +103,10 @@ sec2d_one() {
   local what="done"
   [ "$rc" -ne 0 ] && what="FAILED (step $rc: 2 setup 3 mesh 4 gmshToFoam 5 boundary 6 first solve 7 post)"
   echo "$id $v $what in $(( ($(date +%s) - t0) / 60 )) min" >> "$CASE/log.sec2d"
+  if [ "$rc" -ne 0 ]; then         # the failing step's log goes to the live status (st-<name>) too
+    local lg; lg=$(ls -t "$C"/log.* 2>/dev/null | head -1)
+    [ -n "$lg" ] && { echo "--- $(basename "$lg"):"; grep -iE "error|exception|fatal" "$lg" | head -5; tail -n 8 "$lg"; } >> "$CASE/log.sec2d"
+  fi
   # keep the disk small: drop the case once its results are out
   [ "$rc" -eq 0 ] && rm -rf "$C"/[0-9]* "$C"/constant/polyMesh
   return $rc
