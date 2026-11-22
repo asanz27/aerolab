@@ -11,7 +11,8 @@ The section (x, z of the car) is meshed in the x-y plane of a one-cell-thick sla
   slip far field 4 m below for rear wings; free stream 50 m/s along +x, as the 3D runs.
 Variants (same numerics as the 3D runs: k-omega SST, linearUpwind U, upwind turbulence, hybrid wall functions valid
 at any y+ - nutUSpalding + omega binomial blending):
-  bl      boundary-layer quads, first cell 8 um (y+ ~1), 0.4 mm along the wall
+  bl      thin boundary-layer stack (8 um first cell, ~7 layers, 0.15 mm) under 0.1 mm triangles
+  iso_rwl iso mesh with its wall cells split twice by refineWallLayer (y+ ~1)
   iso     triangles of 0.1 mm at the wall growing 8 % (y+ ~5-20), no layers
   iso_sa  as iso with Spalart-Allmaras
   coarse  5.3 mm at the wall (the level-6 cell of the 3D wings), no layers
@@ -39,15 +40,19 @@ VARIANTS = {
     "iso_m5": {"mesh": "iso", "model": "kOmegaSST", "dinc": -5.0},
     "bl_nofan": {"mesh": "bl", "model": "kOmegaSST", "dinc": 0.0, "fans": False},
     "bl_d": {"mesh": "bl", "model": "kOmegaSST", "dinc": 0.0, "fans": False, "alg": 5},
+    # iso mesh whose wall cells sec2d.sh splits twice with refineWallLayer (edge weight 0.25): y+ ~1 without gmsh layers
+    "iso_rwl": {"mesh": "iso", "model": "kOmegaSST", "dinc": 0.0},
 }
 MESH = {  # wall size, growth slope of the size with distance, far size, wake size
-    "bl": {"h": 3e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
+    "bl": {"h": 1e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
     "iso": {"h": 1e-4, "slope": 0.08, "far": 0.25, "wake": 3e-3},
     "coarse": {"h": 5.3e-3, "slope": 0.25, "far": 0.25, "wake": 1.06e-2},
 }
 # layer stack: 8 um first cell, x1.25, at most 0.6 mm - thinner than the 1 mm fillets the 2 mm gap closing leaves in
 # concave corners (a 2.5 mm stack failed there: gmsh "Edge not recovered" on 6 of 8 sections, run 45024...)
-BL = {"first": 8e-6, "ratio": 1.25, "thick_max": 6e-4, "simplify": 1.5e-4}
+# 0.6 mm still failed on both MCL39 sections (run s2dbl): now a thin stack (~7 layers, 0.15 mm) under the 0.1 mm
+# triangles of the iso mesh
+BL = {"first": 8e-6, "ratio": 1.3, "thick_max": 1.5e-4, "simplify": 1.5e-4}
 
 HDR = """FoamFile
 {{

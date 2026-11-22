@@ -1,16 +1,17 @@
 {
- "tag": "sec2d-bl",
- "_doc": "Boundary-layer variant of the 2D wing sections (y+ ~1), rerun after the s2dbg mesh check: gmsh's 2.5 mm layer stack failed ('Edge not recovered') in the 1 mm fillets of concave corners on 6 of 8 sections, and the 2 that meshed lost every patch in gmshToFoam (all faces in defaultFaces) after gmsh's own extrusion. Now 0.6 mm stack (8 um, x1.25), outlines simplified to 0.15 mm for this variant, 2D mesh extruded by sec2d_case.extrude_write. Run 45020859381 (other variants) keeps going.",
+ "tag": "sec2d-bl2",
+ "_doc": "y+ ~1 variants of the 2D wing sections, second try: the 0.6 mm gmsh layer stack still failed on both MCL39 sections ('Edge not recovered'). bl = thin stack (8 um, x1.3, 0.15 mm, ~7 layers) under the 0.1 mm triangles; iso_rwl = the iso mesh with its wall cells split twice by refineWallLayer (weight 0.25). Runs 45020859381 (s2d_*) and s2dbl_* keep going.",
  "cases": [
   {
-   "name": "s2dbl_mp45",
+   "name": "s2dbl2_mp45",
    "car": "mp45",
    "private": true,
    "U": 50.0,
    "iters": 5000,
    "stages": 1,
    "variants": [
-    "bl"
+    "bl",
+    "iso_rwl"
    ],
    "sec2d": [
     {
@@ -26,14 +27,15 @@
    ]
   },
   {
-   "name": "s2dbl_mp423",
+   "name": "s2dbl2_mp423",
    "car": "mp423",
    "private": true,
    "U": 50.0,
    "iters": 5000,
    "stages": 1,
    "variants": [
-    "bl"
+    "bl",
+    "iso_rwl"
    ],
    "sec2d": [
     {
@@ -49,14 +51,15 @@
    ]
   },
   {
-   "name": "s2dbl_rb12",
+   "name": "s2dbl2_rb12",
    "car": "rb12",
    "private": true,
    "U": 50.0,
    "iters": 5000,
    "stages": 1,
    "variants": [
-    "bl"
+    "bl",
+    "iso_rwl"
    ],
    "sec2d": [
     {
@@ -72,14 +75,15 @@
    ]
   },
   {
-   "name": "s2dbl_mcl39",
+   "name": "s2dbl2_mcl39",
    "car": "mcl39",
    "private": true,
    "U": 50.0,
    "iters": 5000,
    "stages": 1,
    "variants": [
-    "bl"
+    "bl",
+    "iso_rwl"
    ],
    "sec2d": [
     {

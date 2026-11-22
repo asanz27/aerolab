@@ -78,6 +78,11 @@ sec2d_one() {
     gmshToFoam mesh.msh > log.gmshToFoam 2>&1 || exit 4
     rm -f mesh.msh
     python3 "$PY" fixb "$S2/sections.json" "$id" "$v" "$C" > log.fixb 2>&1 || exit 5
+    if [ "$v" = "iso_rwl" ]; then          # wall cells split twice at 1/4 of their wall-normal edges
+      local wl; wl="($(python3 -c "import json,sys; s=[x for x in json.load(open(sys.argv[1])) if x['id']==sys.argv[2]][0]; print(' '.join(f'e{i+1}' for i in range(len(s['polys_geo']))))" "$S2/sections.json" "$id"))"
+      refineWallLayer -overwrite "$wl" 0.25 > log.refineWallLayer.1 2>&1 || exit 5
+      refineWallLayer -overwrite "$wl" 0.25 > log.refineWallLayer.2 2>&1 || exit 5
+    fi
     cp system/fvSchemes.first system/fvSchemes
     checkMesh > log.checkMesh 2>&1
     if [ "$(jget sec2d_mesh_only false)" = "true" ]; then
