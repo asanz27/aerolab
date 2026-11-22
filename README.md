@@ -95,6 +95,19 @@ trabajo siguiente, que continúa las iteraciones. Solo el último trabajo recons
   y Z cada 1-5 cm, volumen de velocidad de 2 cm para las líneas de corriente del navegador, cortes de malla por los
   alerones y distribución de y⁺ ponderada por área en cada pieza.
 
+## Secciones 2D de los alerones (`"sec2d"`, diagnóstico del desprendimiento)
+
+En la p14 el trasero del MP4/23 está en pérdida, el del RB12 en su mitad interior junto a los flaps de su delantero, y
+el plano principal delantero del MP4/5 desprende por dentro; el MCL39 va pegado aunque tiene la peor y⁺. Para separar
+geometría de malla, un caso con `"sec2d": [{"id", "wing": "FW"|"RW", "y"}]` construye el coche igual que la p14, corta
+las secciones (`scripts/sec2d_geom.py`: todas las superficies de pared, lo encerrado es sólido como en snappy, huecos
+< 2 mm cerrados como en la malla 3D) y las calcula en 2D (`scripts/sec2d.sh`, `sec2d_case.py`: gmsh → gmshToFoam →
+simpleFoam, 50 m/s, suelo móvil bajo los delanteros, mismos esquemas y pared híbrida que la 3D). Variantes: `bl` capas
+con y⁺ ≈ 1, `iso` triángulos de 0,1 mm, `iso_sa` Spalart-Allmaras, `coarse` 5,3 mm como las celdas 3D de los alerones,
+`iso_m5` con 5° menos de incidencia. Si las finas también entran en pérdida, es la geometría dibujada; si solo la
+`coarse`, la malla. Los contornos de las secciones (CAD privado) no salen del runner; se publican imágenes, fuerzas y
+líneas de Cp/Cf (`res-s2d_<coche>/sec2d`).
+
 ## Interior macizo y radiador de caudal fijo (modelos visuales)
 
 Los modelos visuales son solo una piel: el envolvente cierra los huecos pequeños, pero por las tomas grandes el

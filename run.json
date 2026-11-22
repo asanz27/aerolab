@@ -1,56 +1,114 @@
 {
- "tag": "wing-layers-test-v3",
- "_doc": "Wing-layer test on the MP4/5, fourth variant. c18 (last layer at 0.15 x the cell, stack 0.55-0.84 cells) kept the c13 counts (front 3.95 vs 4.09 of 10, rear 6.46 vs 6.46), so the stack thickness is not the cause. The mesh cuts show the layers on the middle of each element and none on the leading and trailing edges: a 15-20 mm thick element has an edge radius below the 5.3 mm level-6 cell (the thick MFT03 main plane keeps its layers round the leading edge). c19: front wing at levels (6 7), so resolveFeatureAngle takes the edges to level 7 (2.7 mm); c20: the same on the rear wing too ((5 6) -> (6 7)). c13 layer controls, same y+ 5 / 10 layers. Runs 44858348495 (c16, c17) and 44871621690 (c18) keep going.",
+ "tag": "sec2d-v1",
+ "_doc": "2D wing-section test (option B of the wing-separation diagnosis, 2026-11-22): the 3D p14 runs show the MP4/23 rear wing stalled, the RB12 rear wing stalled inboard and its front-wing flaps separated, the MP4/5 front main plane separated inboard, the MCL39 attached. Each case builds the car (same geometry as p14), cuts two sections at the stations of the 3D wing-section lines (all wall surfaces, enclosed = solid, gaps < 2 mm closed as in the 3D mesh) and runs them in 2D (gmsh -> gmshToFoam -> simpleFoam, 50 m/s, moving ground under front wings): bl = y+ ~1 layers, iso = 0.1 mm triangles, iso_sa = Spalart-Allmaras, coarse = 5.3 mm like the 3D wing cells, iso_m5 = 5 deg less incidence. Geometry or mesh: if the fine sections stall too, it is the drawn geometry; if only coarse does, the mesh.",
  "cases": [
   {
-   "name": "mp45_c19",
+   "name": "s2d_mp45",
    "car": "mp45",
    "private": true,
    "U": 50.0,
-   "iters1": 100,
-   "simplec": true,
-   "h0": 0.34,
-   "iters": 3000,
-   "wall": "hybrid",
-   "post": "full",
-   "post2": true,
-   "slice_res": 0.007,
-   "dx_slices": 0.075,
-   "stages": 2,
-   "swap_gb": 16,
-   "levels_over": {
-    "frontwing": [
-     6,
-     7
-    ]
-   }
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_sa",
+    "coarse",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "mp45_FW_y20",
+     "wing": "FW",
+     "y": 0.2
+    },
+    {
+     "id": "mp45_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
   },
   {
-   "name": "mp45_c20",
-   "car": "mp45",
+   "name": "s2d_mp423",
+   "car": "mp423",
    "private": true,
    "U": 50.0,
-   "iters1": 100,
-   "simplec": true,
-   "h0": 0.34,
-   "iters": 3000,
-   "wall": "hybrid",
-   "post": "full",
-   "post2": true,
-   "slice_res": 0.007,
-   "dx_slices": 0.075,
-   "stages": 2,
-   "swap_gb": 16,
-   "levels_over": {
-    "frontwing": [
-     6,
-     7
-    ],
-    "rearwing": [
-     6,
-     7
-    ]
-   }
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_sa",
+    "coarse",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "mp423_FW_y20",
+     "wing": "FW",
+     "y": 0.2
+    },
+    {
+     "id": "mp423_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
+  },
+  {
+   "name": "s2d_rb12",
+   "car": "rb12",
+   "private": true,
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_sa",
+    "coarse",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "rb12_FW_y35",
+     "wing": "FW",
+     "y": 0.35
+    },
+    {
+     "id": "rb12_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
+  },
+  {
+   "name": "s2d_mcl39",
+   "car": "mcl39",
+   "private": true,
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_sa",
+    "coarse",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "mcl39_FW_y35",
+     "wing": "FW",
+     "y": 0.35
+    },
+    {
+     "id": "mcl39_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
   }
  ]
 }

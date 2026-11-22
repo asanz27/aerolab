@@ -215,6 +215,14 @@ if [ "$STAGE" = "1" ]; then
     python3 "$ROOT/scripts/preview_geom.py" "$CASE/constant/triSurface" "$RES/preview.png" || true
     touch "$RES/.final"; kill $MEMPID 2>/dev/null; exit 0
   fi
+  if [ "$(jget sec2d false)" != "false" ]; then
+    # 2D wing-section test (option B of the wing-separation diagnosis): sections of the built wings, no 3D mesh
+    # shellcheck disable=SC1091
+    source "$ROOT/scripts/sec2d.sh"
+    status "sec2d: running"
+    if sec2d_main; then touch "$RES/.final"; status "sec2d: done"; else echo "sec2d failed"; status "sec2d: FAILED"; collect; fi
+    kill $MEMPID 2>/dev/null; exit 0
+  fi
   python3 "$ROOT/scripts/make_case.py" "$CASE" "$CFG" || { echo "make_case failed"; exit 1; }
   cd "$CASE"
   sed -i "s/numberOfSubdomains .*/numberOfSubdomains $NP;/" system/decomposeParDict
