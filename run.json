@@ -1,101 +1,37 @@
 {
- "tag": "sec2d-bl2",
- "_doc": "y+ ~1 variants of the 2D wing sections, second try: the 0.6 mm gmsh layer stack still failed on both MCL39 sections ('Edge not recovered'). bl = thin stack (8 um, x1.3, 0.15 mm, ~7 layers) under the 0.1 mm triangles; iso_rwl = the iso mesh with its wall cells split twice by refineWallLayer (weight 0.25). Runs 45020859381 (s2d_*) and s2dbl_* keep going.",
+ "tag": "wing-rebuild-mp45-v1",
+ "_doc": "MP4/5 with its wing elements rebuilt as clean aerofoils (geometry/wing_rebuild.py, \"wing_rebuild\": true): the model's front main plane is S-shaped (camber of the wrong sign over its front half) and the 2D sections of all four F1 showed the drawn geometry, not y+ or the mesh, as the cause of the separated wings (the MCL39 control stays attached at any y+). Each element keeps the model's leading and trailing edge per station (chord, incidence, span) and gets an inverted NACA 4-digit section (main planes 4 % camber, flaps 6 %, thickness = model median clamped to 9-15 %). mp45_w1 = the p14 settings; s2dw_mp45 = the 2D sections at the p14 stations on the rebuilt wings.",
  "cases": [
   {
-   "name": "s2dbl2_mp45",
+   "name": "mp45_w1",
    "car": "mp45",
    "private": true,
+   "wing_rebuild": true,
    "U": 50.0,
-   "iters": 5000,
-   "stages": 1,
-   "variants": [
-    "bl",
-    "iso_rwl"
-   ],
-   "sec2d": [
-    {
-     "id": "mp45_FW_y20",
-     "wing": "FW",
-     "y": 0.2
-    },
-    {
-     "id": "mp45_RW_y20",
-     "wing": "RW",
-     "y": 0.2
-    }
-   ]
+   "iters1": 100,
+   "simplec": true,
+   "h0": 0.34,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 4,
+   "swap_gb": 16
   },
   {
-   "name": "s2dbl2_mp423",
-   "car": "mp423",
+   "name": "s2dw_mp45",
+   "car": "mp45",
    "private": true,
+   "wing_rebuild": true,
    "U": 50.0,
    "iters": 5000,
    "stages": 1,
-   "variants": [
-    "bl",
-    "iso_rwl"
-   ],
+   "variants": ["bl", "iso"],
    "sec2d": [
-    {
-     "id": "mp423_FW_y20",
-     "wing": "FW",
-     "y": 0.2
-    },
-    {
-     "id": "mp423_RW_y20",
-     "wing": "RW",
-     "y": 0.2
-    }
-   ]
-  },
-  {
-   "name": "s2dbl2_rb12",
-   "car": "rb12",
-   "private": true,
-   "U": 50.0,
-   "iters": 5000,
-   "stages": 1,
-   "variants": [
-    "bl",
-    "iso_rwl"
-   ],
-   "sec2d": [
-    {
-     "id": "rb12_FW_y35",
-     "wing": "FW",
-     "y": 0.35
-    },
-    {
-     "id": "rb12_RW_y20",
-     "wing": "RW",
-     "y": 0.2
-    }
-   ]
-  },
-  {
-   "name": "s2dbl2_mcl39",
-   "car": "mcl39",
-   "private": true,
-   "U": 50.0,
-   "iters": 5000,
-   "stages": 1,
-   "variants": [
-    "bl",
-    "iso_rwl"
-   ],
-   "sec2d": [
-    {
-     "id": "mcl39_FW_y35",
-     "wing": "FW",
-     "y": 0.35
-    },
-    {
-     "id": "mcl39_RW_y20",
-     "wing": "RW",
-     "y": 0.2
-    }
+    {"id": "mp45_FW_y20", "wing": "FW", "y": 0.2},
+    {"id": "mp45_RW_y20", "wing": "RW", "y": 0.2}
    ]
   }
  ]

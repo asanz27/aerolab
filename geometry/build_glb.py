@@ -56,6 +56,12 @@ CARS = {
         # detail zones (review): diffuser and rear-wheel area, front-wheel area, sidepod side
         "detail_zones": [[[1.95, 0.03, 0.0], [2.90, 0.65, 0.45]], [[-0.15, 0.40, 0.10], [0.30, 0.85, 0.50]],
                          [[1.60, 0.25, 0.30], [1.95, 0.55, 0.60]]],
+        # rebuilt wing elements (wing_rebuild.py, used with --rebuild-wings): each is its own piece in this model
+        "wing_rebuild": {"fw_main": {"role": "main", "box": [[-0.87, -0.72, 0.06], [-0.55, 0.72, 0.15]]},
+                         "fw_flap": {"role": "flap", "box": [[-0.60, -0.72, 0.13], [-0.44, 0.72, 0.22]]},
+                         "rw_main": {"role": "main", "box": [[2.90, -0.49, 0.78], [3.21, 0.49, 0.86]]},
+                         "rw_flap": {"role": "flap", "box": [[3.15, -0.49, 0.84], [3.35, 0.49, 0.95]]},
+                         "rw_lower": {"role": "main", "box": [[3.09, -0.49, 0.54], [3.34, 0.49, 0.64]]}},
         "source": {"title": "McLaren MP4/5 || Formula 1", "author": "dark_igorek", "url": "https://sketchfab.com/3d-models/mclaren-mp45-formula-1-3059d4532ecd48ca8da41e1cac971f22",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },
@@ -869,10 +875,24 @@ def components(T):
     return [T[comp == c] for c in np.unique(comp)]
 
 
-def split_parts(car):
-    """Load the model and split it into wheel parts (per axle) and body parts."""
+WING_REBUILT = []   # report of the rebuilt wing elements of the current build (wing_rebuild.py)
+
+
+def split_parts(car, rebuild_wings=False):
+    """Load the model and split it into wheel parts (per axle) and body parts. With rebuild_wings, the car's
+    "wing_rebuild" elements are replaced by clean aerofoil lofts first (wing_rebuild.py)."""
     cfg = CARS[car]
     parts, s = load(car)
+    WING_REBUILT.clear()
+    if rebuild_wings:
+        if not cfg.get("wing_rebuild"):
+            raise SystemExit(f"{car}: no wing_rebuild elements defined")
+        import wing_rebuild
+        parts, rep = wing_rebuild.rebuild(parts, cfg["wing_rebuild"], components, log=log)
+        WING_REBUILT.extend(rep)
+        missing = set(cfg["wing_rebuild"]) - {r["element"] for r in rep}
+        if missing:
+            raise SystemExit(f"{car}: wing elements not found in the model: {sorted(missing)}")
     tread = np.concatenate([t.reshape(-1, 3) for n, t in parts if re.search(cfg["tread"], n)])
     if cfg.get("tyres_only"):                      # tyres only (see load)
         pcs = [c for n, t in parts if re.search(cfg["tread"], n) for c in components(t)]
@@ -1109,10 +1129,11 @@ def auto_zones(Tb, W, wing_h=None):
     return out
 
 
-def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True, fine_wings=False):
+def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True, fine_wings=False,
+         rebuild_wings=False):
     cfg = CARS[car]
     os.makedirs(outdir, exist_ok=True)
-    parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car)
+    parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car, rebuild_wings)
     regions = {}
     wing_tri, wing_pieces = {}, {}
     if fine_wings:
@@ -1287,6 +1308,8 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
                          **({"cooling": ["radiator_in", "radiator_out"]} if cooling else {})},
         "no_layers": [k for k in ("suspension", "radiator_in", "radiator_out") if k in names],
         "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm},
+        **({"wing_rebuild": [{k: r[k] for k in ("element", "role", "profile", "chord_m", "angle_deg", "span", "new_triangles")}
+                             for r in WING_REBUILT]} if WING_REBUILT else {}),
         "domain": [round(blo[0] - 7.5, 1), round(bhi[0] + 13.5, 1), 5.5, 5.5],
         "location_in_mesh": [round(bhi[0] + 3.1234, 4), 2.8765, 3.3456],
         "boxes": {
@@ -1320,5 +1343,6 @@ def cli(car):
     ap.add_argument("outdir", nargs="?", default="stl")
     ap.add_argument("--front-rh-mm", type=float, default=0.0)
     ap.add_argument("--rear-rh-mm", type=float, default=0.0)
+    ap.add_argument("--rebuild-wings", action="store_true", help="replace the wing elements by clean aerofoils (wing_rebuild.py)")
     a = ap.parse_args()
-    main(car, a.outdir, a.front_rh_mm, a.rear_rh_mm)
+    main(car, a.outdir, a.front_rh_mm, a.rear_rh_mm, rebuild_wings=a.rebuild_wings)

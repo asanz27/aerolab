@@ -203,7 +203,9 @@ if [ "$STAGE" = "1" ]; then
       | openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass env:CAD_KEY > "$CADDIR/${CAR}.npz" || { echo "CAD decryption failed"; exit 1; }
     export CAD_NPZ="$CADDIR/${CAR}.npz"
   fi
-  if ! python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" > "$CASE/log.geometry" 2>&1; then
+  GEOM_OPT=()
+  [ "$(jget wing_rebuild false)" = "true" ] && GEOM_OPT+=(--rebuild-wings)   # clean aerofoil wing elements (wing_rebuild.py)
+  if ! python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" "${GEOM_OPT[@]}" > "$CASE/log.geometry" 2>&1; then
     tail -30 "$CASE/log.geometry"; mkdir -p "$RES/logs"; cp "$CASE/log.geometry" "$CASE/mem.log" "$RES/logs/" 2>/dev/null
     echo "geometry failed"; exit 1
   fi
