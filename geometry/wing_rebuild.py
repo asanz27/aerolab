@@ -232,7 +232,8 @@ GROUP_TOL = 0.002        # m: cut segments with ends closer than this belong to 
 TRACK_DMAX = 0.025       # m: largest centroid move between two consecutive stations
 MISS_MAX = 0.03          # m: span without a clean station that stops the tracking
 CAPTURE = 0.0015         # m: margin of the chord-frame box around the model element
-GAP_MIN = 0.004          # m: smallest slot between two rebuilt elements (some model slots are closed: elements touching)
+GAP_MIN = 0.006          # m: smallest slot between two rebuilt elements (some model slots are closed: elements touching);
+                         # the detail-zone wrap (1.25 mm voxels, 1-voxel wall layer) reopens gaps wider than ~3 voxels
 CAMBER_RANGE = (0.02, 0.09)
 CAMBER_POS_RANGE = (0.30, 0.60)
 

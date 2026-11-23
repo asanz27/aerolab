@@ -1,18 +1,141 @@
 {
- "tag": "wing-rebuild-sections-v1",
- "_doc": "Rebuilt wing elements on the MP4/23, RB12 and MP4/5 (geometry/wing_rebuild.py section mode, \"wing_rebuild\": true): each element is followed through cuts y = const of the model from a seed point and replaced by an inverted NACA 4-digit loft on the model's leading and trailing edges, chord and incidence, with the model's camber (clipped 2-9 %) and thickness (9-15 %); a flap keeps at least the model's slot gap to the element ahead. MP4/23: front wing 3 elements, rear wing 2, beam wing. RB12: front-wing centre plane and the 6-element outboard stack, rear wing 2 (endplate cascades and the 4 cm beam wing left as modelled). MP4/5: same 5 elements as mp45_w1 (still running, box mode with fixed 4 % / 6 % camber), now with the model's camber: an A/B of the section shape. Bargeboards reviewed and left as modelled (thin smooth plates). 3D = p14 settings; 2D sections at the p14 stations, also with 5 deg less incidence (iso_m5) as a first look at the angle reduction.",
+ "tag": "wing-rebuild-sections-v2",
+ "_doc": "Relaunch of run 45083226299 (cancelled) with the slots between rebuilt elements kept open in the CFD surfaces: the detail-zone wrap left 2-6 mm of the 10-13 mm MP4/23 rear-wing slot (and parts of the front-wing slots) solid. Pockets next to rebuilt (closed) elements: the one-piece rule does not apply and the slot air already reopened counts as open air for up to 3 more ray passes; wing zones split along the span; smallest rebuilt slot 6 mm. Local check MP4/23: rear-wing slot 8-13 mm along the span, front-wing slots 5-15 mm. Rebuilt wing elements on the MP4/23, RB12 and MP4/5 (geometry/wing_rebuild.py section mode, \"wing_rebuild\": true): each element is followed through cuts y = const of the model from a seed point and replaced by an inverted NACA 4-digit loft on the model's leading and trailing edges, chord and incidence, with the model's camber (clipped 2-9 %) and thickness (9-15 %); a flap keeps at least the model's slot gap to the element ahead. MP4/23: front wing 3 elements, rear wing 2, beam wing. RB12: front-wing centre plane and the 6-element outboard stack, rear wing 2 (endplate cascades and the 4 cm beam wing left as modelled). MP4/5: same 5 elements as mp45_w1 (still running, box mode with fixed 4 % / 6 % camber), now with the model's camber: an A/B of the section shape. Bargeboards reviewed and left as modelled (thin smooth plates). 3D = p14 settings; 2D sections at the p14 stations, also with 5 deg less incidence (iso_m5) as a first look at the angle reduction.",
  "cases": [
-  {"name": "mp423_w1", "car": "mp423", "private": true, "wing_rebuild": true, "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.36,
-   "iters": 3000, "wall": "hybrid", "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 4, "swap_gb": 16},
-  {"name": "rb12_w1", "car": "rb12", "private": true, "wing_rebuild": true, "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.36,
-   "iters": 3000, "wall": "hybrid", "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 4, "swap_gb": 16},
-  {"name": "mp45_w2", "car": "mp45", "private": true, "wing_rebuild": true, "U": 50.0, "iters1": 100, "simplec": true, "h0": 0.34,
-   "iters": 3000, "wall": "hybrid", "post": "full", "post2": true, "slice_res": 0.007, "dx_slices": 0.075, "stages": 4, "swap_gb": 16},
-  {"name": "s2dw_mp423", "car": "mp423", "private": true, "wing_rebuild": true, "U": 50.0, "iters": 5000, "stages": 1,
-   "variants": ["bl", "iso", "iso_m5"], "sec2d": [{"id": "mp423_FW_y20", "wing": "FW", "y": 0.2}, {"id": "mp423_RW_y20", "wing": "RW", "y": 0.2}]},
-  {"name": "s2dw_rb12", "car": "rb12", "private": true, "wing_rebuild": true, "U": 50.0, "iters": 5000, "stages": 1,
-   "variants": ["bl", "iso", "iso_m5"], "sec2d": [{"id": "rb12_FW_y35", "wing": "FW", "y": 0.35}, {"id": "rb12_RW_y20", "wing": "RW", "y": 0.2}]},
-  {"name": "s2dw2_mp45", "car": "mp45", "private": true, "wing_rebuild": true, "U": 50.0, "iters": 5000, "stages": 1,
-   "variants": ["bl", "iso", "iso_m5"], "sec2d": [{"id": "mp45_FW_y20", "wing": "FW", "y": 0.2}, {"id": "mp45_RW_y20", "wing": "RW", "y": 0.2}]}
+  {
+   "name": "mp423_w2",
+   "car": "mp423",
+   "private": true,
+   "wing_rebuild": true,
+   "U": 50.0,
+   "iters1": 100,
+   "simplec": true,
+   "h0": 0.36,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 4,
+   "swap_gb": 16
+  },
+  {
+   "name": "rb12_w2",
+   "car": "rb12",
+   "private": true,
+   "wing_rebuild": true,
+   "U": 50.0,
+   "iters1": 100,
+   "simplec": true,
+   "h0": 0.36,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 4,
+   "swap_gb": 16
+  },
+  {
+   "name": "mp45_w3",
+   "car": "mp45",
+   "private": true,
+   "wing_rebuild": true,
+   "U": 50.0,
+   "iters1": 100,
+   "simplec": true,
+   "h0": 0.34,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 4,
+   "swap_gb": 16
+  },
+  {
+   "name": "s2dw2_mp423",
+   "car": "mp423",
+   "private": true,
+   "wing_rebuild": true,
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "mp423_FW_y20",
+     "wing": "FW",
+     "y": 0.2
+    },
+    {
+     "id": "mp423_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
+  },
+  {
+   "name": "s2dw2_rb12",
+   "car": "rb12",
+   "private": true,
+   "wing_rebuild": true,
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "rb12_FW_y35",
+     "wing": "FW",
+     "y": 0.35
+    },
+    {
+     "id": "rb12_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
+  },
+  {
+   "name": "s2dw3_mp45",
+   "car": "mp45",
+   "private": true,
+   "wing_rebuild": true,
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl",
+    "iso",
+    "iso_m5"
+   ],
+   "sec2d": [
+    {
+     "id": "mp45_FW_y20",
+     "wing": "FW",
+     "y": 0.2
+    },
+    {
+     "id": "mp45_RW_y20",
+     "wing": "RW",
+     "y": 0.2
+    }
+   ]
+  }
+ ],
+ "cancel_runs": [
+  45083226299
  ]
 }

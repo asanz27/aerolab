@@ -424,13 +424,15 @@ ZONE_THICK = 0.010                    # half-thickness above which a reopened po
 ZONE_MIN_CM3 = 2.0                    # smallest reopened gap kept
 ZONE_ONE_PIECE = 0.8                  # rays hitting one piece for more than this share: inside that piece
 ZONE_RAYS_SHEET = 9                   # ...unless this many rays see open air: the coarse wrap's offset along a surface
+ZONE_REPASS = 3                       # extra ray passes next to rebuilt (closed) wing elements, see carve_zone
 _DIRS = np.array([(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if (i, j, k) != (0, 0, 0)], float)
 _DIRS /= np.linalg.norm(_DIRS, axis=1)[:, None]
 
 
 def ray_escapes(smp, wall_id, outside, kmax):
     """For voxel samples, 26 straight rays: how many reach outside air before a wall voxel (leaving the grid counts as
-    blocked), the share of the wall hits that land on the most-hit piece of the model, and the number of hits."""
+    blocked), the share of the wall hits that land on the most-hit piece of the model, the number of hits and that
+    piece's id (-1 without hits)."""
     shape = np.array(wall_id.shape)
     n = len(smp)
     esc = np.zeros(n, int)
@@ -455,14 +457,16 @@ def ray_escapes(smp, wall_id, outside, kmax):
     # share of the most frequent piece among the hits (rows sorted; longest run of equal ids)
     hs = np.sort(hits, axis=1)
     nhit = (hs >= 0).sum(1)
-    best = np.zeros(n, int); run = np.ones(n, int)
+    best = (hs[:, 0] >= 0).astype(int); run = np.ones(n, int)
+    top = hs[:, 0].copy()
     for c in range(1, hs.shape[1]):
         same = (hs[:, c] == hs[:, c - 1]) & (hs[:, c] >= 0)
         run = np.where(same, run + 1, 1)
-        best = np.maximum(best, np.where(hs[:, c] >= 0, run, 0))
-    best = np.maximum(best, (hs[:, 0] >= 0).astype(int))
+        cur = np.where(hs[:, c] >= 0, run, 0)
+        top = np.where(cur > best, hs[:, c], top)
+        best = np.maximum(best, cur)
     share = best / np.maximum(nhit, 1)
-    return esc, share, nhit
+    return esc, share, nhit, top
 # CAD skin + inner plug (2026-11-18): the walls are the model's own triangles; the voxel solid (interior fill, cooling
 # duct, hollow insides of the parts) only becomes a plug kept away from them, so that the mesh cannot enter the car
 PLUG_MODE = True
@@ -477,13 +481,19 @@ ZONE_CUTS = []      # boxes removed from the coarse solid (their faces are inter
 ZONE_MAXVOX = 1.3e8
 
 
-def zone_chunks(zlo, zhi, hf):
-    """Split a detail-zone box along its longest side into chunks of at most ZONE_MAXVOX fine voxels (with margins).
-    Neighbouring chunks overlap by twice the margin; the coarse solid is removed over the whole box."""
+SPAN_CHUNKS = False  # wing zones split along the span (set for builds with rebuilt wing elements, see zone_chunks)
+
+
+def zone_chunks(zlo, zhi, hf, axis=None):
+    """Split a detail-zone box along its longest side (or `axis`) into chunks of at most ZONE_MAXVOX fine voxels (with
+    margins). Neighbouring chunks overlap by twice the margin; the coarse solid is removed over the whole box.
+    A wing zone split along x cuts its slots: in carve_zone a ray leaving the chunk counts as blocked, so a slot whose
+    mouth lies beyond the cut is not reopened (MP4/23 rebuilt rear wing: 12 mm slot left at 3-5 mm, chunks split at
+    x 3.42 under the flap nose). Along the span (y) every chunk holds the whole section of each slot."""
     n = int(np.ceil(np.prod((zhi - zlo + 2 * ZONE_M) / hf) / ZONE_MAXVOX))
     if n <= 1:
         return [(zlo, zhi)]
-    k = int(np.argmax(zhi - zlo))
+    k = int(np.argmax(zhi - zlo)) if axis is None else int(axis)
     edges = np.linspace(zlo[k], zhi[k], n + 1)
     out = []
     for a, b in zip(edges[:-1], edges[1:]):
@@ -493,13 +503,14 @@ def zone_chunks(zlo, zhi, hf):
     return out
 
 
-def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
+def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None, closed_ids=()):
     """Detail zone: inside the box (+ margin ZONE_M) the solid is rebuilt on a ZONE_H grid. Outside air reaches every
     gap wider than ~3 fine voxels: flood fill of the fine air from the coarse body's outside air, allowed only through
     fine air that is outside air or coarse solid within ZONE_BAND coarse voxels of the surface (gaps the coarse wrap
     closed, not the filled interior). The fine solid (= not outside air) is a closed surface overlapping the coarse body
     by 1.5 margins; the caller removes the zone interior from the coarse solid. Its triangles go to ZONE_TRIS and the
-    gaps found in it to the slot refinement regions."""
+    gaps found in it to the slot refinement regions. closed_ids: pieces that are closed solids (rebuilt wing elements,
+    wing_rebuild.py): air next to them is never the inside of a hollow part, so the one-piece rule does not apply."""
     from scipy import ndimage
     import pyvista as pv
     blo, bhi = zlo - ZONE_M, zhi + ZONE_M
@@ -544,15 +555,33 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
         smp = pts[np.all(pts % st == 0, axis=1)]
         if len(smp) < 50:
             smp = pts[:: max(1, len(pts) // 200)]
-        esc, share, nhit = ray_escapes(smp, wall_id, outside, int(round(ZONE_RAY_LEN / hf)))
+        esc, share, nhit, top = ray_escapes(smp, wall_id, outside, int(round(ZONE_RAY_LEN / hf)))
         # open to outside air through a few directions AND between different pieces of the model (a slot between two
         # elements); air whose walls all belong to one piece is the inside of that piece (hollow endplate, element),
-        # except the thin sheet the coarse wrap added along a surface, which sees open air in about half the directions
-        ok = ((esc >= ZONE_RAYS_OPEN) & (share <= ZONE_ONE_PIECE) & (nhit >= 4)) | (esc >= ZONE_RAYS_SHEET)
+        # except the thin sheet the coarse wrap added along a surface, which sees open air in about half the directions.
+        # A rebuilt element is a closed solid: air seen mostly on it is the slot under it (the one-piece rule left
+        # 3-6 mm of a 12 mm slot under the rebuilt MP4/23 rear flap solid)
+        closed = np.isin(top, np.array(sorted(closed_ids), np.int64)) if len(closed_ids) else np.zeros(len(smp), bool)
+        ok = ((esc >= ZONE_RAYS_OPEN) & ((share <= ZONE_ONE_PIECE) | closed) & (nhit >= 4)) | (esc >= ZONE_RAYS_SHEET)
         from scipy.spatial import cKDTree
         _, nn = cKDTree(smp).query(pts, k=1)
         good = ok[nn]
         reopen[tuple(pts[good].T)] = True
+        # next to rebuilt elements, the slot air already found open counts as open air for a second look: from under a
+        # flap nose few straight rays reach the coarse outside air through a narrow curved slot (MP4/23 rear wing: a
+        # 3-5 mm column under the flap nose stayed solid), but they reach the reopened part of the same slot. The
+        # inside of a closed element still sees its own walls in every direction and stays solid.
+        for _ in range(ZONE_REPASS if len(closed_ids) else 0):
+            pend = np.where(~ok & closed & (nhit >= 4))[0]
+            if not len(pend):
+                break
+            e2, _s2, _n2, _t2 = ray_escapes(smp[pend], wall_id, outside | reopen, int(round(ZONE_RAY_LEN / hf)))
+            new = e2 >= ZONE_RAYS_OPEN
+            if not new.any():
+                break
+            ok[pend[new]] = True
+            good = ok[nn]
+            reopen[tuple(pts[good].T)] = True
         # gaps are thin: whatever holds a ball of radius ZONE_THICK is the inside of a part with openings (a nose with
         # seams, an open-backed fairing) and stays solid (morphological opening of the reopened set)
         k = max(2, int(round(ZONE_THICK / hf)))
@@ -615,7 +644,7 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None):
         ZONE_TRIS.append(outward(tris_of(finish(surf, target))))
 
 
-def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_ids=None, plug=False):
+def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_ids=None, plug=False, closed_ids=()):
     """Watertight half-model (y >= y0) surface of triangle soup T on an h-voxel grid, closing radius r voxels.
     With W (wheel geometry dict) the hollow interior is filled and the cooling inlets kept as blind ducts
     (cavity.py). T_extra (the finely wrapped wings): obstacles for the outside-air flood fill and the interior fill,
@@ -737,9 +766,10 @@ def wrap(T, h, r, y0=0.0, W=None, T_extra=None, keep_solid=False, zones=(), T_id
         for z in zones:                    # every zone reads the untouched coarse solid
             zlo, zhi = np.array(z[0], float), np.array(z[1], float)
             hz = float(z[2]) if len(z) > 2 else ZONE_H
-            for clo, chi in zone_chunks(zlo, zhi, hz):
+            span = 1 if (SPAN_CHUNKS and hz <= WING_H + 1e-9) else None     # wing zones (see zone_chunks)
+            for clo, chi in zone_chunks(zlo, zhi, hz, axis=span):
                 carve_zone(T_all, clo, chi, solid, band, lo, h, hf=hz,
-                           ids=None if T_ids is None or T_extra is not None else T_ids)
+                           ids=None if T_ids is None or T_extra is not None else T_ids, closed_ids=closed_ids)
         del band
         for z in zones:
             zlo, zhi = np.array(z[0], float), np.array(z[1], float)
@@ -900,6 +930,7 @@ def components(T):
 
 
 WING_REBUILT = []   # report of the rebuilt wing elements of the current build (wing_rebuild.py)
+BODY_CLOSED = []    # per body piece of the last split_parts: True for a rebuilt wing element (a closed solid)
 
 
 def split_parts(car, rebuild_wings=False):
@@ -908,6 +939,7 @@ def split_parts(car, rebuild_wings=False):
     cfg = CARS[car]
     parts, s = load(car)
     WING_REBUILT.clear()
+    BODY_CLOSED.clear()
     if rebuild_wings:
         if not cfg.get("wing_rebuild"):
             raise SystemExit(f"{car}: no wing_rebuild elements defined")
@@ -954,6 +986,8 @@ def split_parts(car, rebuild_wings=False):
                     dest = k
                     break
             (wheels[dest] if dest else body).append(piece)
+            if not dest:
+                BODY_CLOSED.append(nme.startswith("rebuilt|"))
     return parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr)
 
 
@@ -1165,6 +1199,8 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
     cfg = CARS[car]
     os.makedirs(outdir, exist_ok=True)
     parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car, rebuild_wings)
+    global SPAN_CHUNKS
+    SPAN_CHUNKS = bool(rebuild_wings)
     regions = {}
     wing_tri, wing_pieces = {}, {}
     if fine_wings:
@@ -1185,7 +1221,11 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         log(f"detail zone {z[0]} - {z[1]} at {1000 * (z[2] if len(z) > 2 else ZONE_H):.2f} mm")
     Tb_ids = np.concatenate([np.full(len(p), i, np.int32) for i, p in enumerate(body)])   # connected piece of each triangle
     plug = PLUG_MODE and fill_interior and Tw is None
-    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None, T_extra=Tw, zones=zones, T_ids=Tb_ids, plug=plug)
+    closed_ids = [i for i, c in enumerate(BODY_CLOSED) if c] if len(BODY_CLOSED) == len(body) else []
+    if closed_ids:
+        log(f"rebuilt wing elements: {len(closed_ids)} closed body pieces (slots next to them always reopen)")
+    bsurf, cav = wrap(Tb, h_body, r_body, W=W if fill_interior else None, T_extra=Tw, zones=zones, T_ids=Tb_ids, plug=plug,
+                      closed_ids=closed_ids)
     bsurf = finish(bsurf, PLUG_TRIS_BODY if plug else 450000)
     btri = outward(tris_of(bsurf))
     # detail zones: their closed surfaces join the body surface; the faces of the body where the zones were cut out lie
