@@ -1,47 +1,151 @@
 {
- "tag": "wing-rebuild-mp423-bridge",
- "_doc": "MP4/23 with its bridge wing over the nose rebuilt too. In the 2D section s2dw2_mp423 (front wing y 0.20) the rebuilt main stack went from 82 % to 19 % reversed suction surface (Cl 1.8 -> 3.9, Cd 0.27 -> 0.14) and the stack itself is now attached (reversed area / profile area 0.02), but the bridge wing above it, left as modelled (a wedge with a knife trailing edge), separated along its whole lower surface in the upwash of the loaded stack (it was attached when the stack below was stalled). It is now an inverted NACA loft too: main plane in two pieces either side of the junction where its flap starts (y 0.30), flap outboard of y 0.31 with at least 6 mm of slot. Rear wing unchanged: in 2D it still separates (reversed area / profile area 0.5-1.1, the MCL39 control rear wing gives 1.0 in 2D and is attached in 3D), so it waits for the 3D mp423_w2 (run 45093828124) before any incidence change. 3D mp423_w3 = mp423_w2 settings; 2D sections of the front wing at y 0.20 (bridge main plane) and y 0.45 (bridge main plane + flap).",
+ "tag": "wing-rebuild-mp423-bridge-sweep",
+ "_doc": "MP4/23 bridge wing incidence sweep (2D). In s2dw3_mp423 the rebuilt bridge wing is attached at y 0.20 (reversed area / profile area 0.01, Cl 3.95, Cd 0.131) but at y 0.45 its outboard main plane stalls from the leading edge (87-99 % of its suction side reversed, bl and iso) at 4.5-7 deg geometric incidence, under the loaded main stack. Pre-approved remedy: less incidence. The whole outboard bridge (main plane + flap) is turned trailing edge down by 3, 6 and 9 deg about its leading edge (per-case wing_patch), the inboard piece blended from 0 at y 0.20 (attached as is) to the same value at the junction (y 0.29). 2D sections of the front wing at y 0.36, 0.45, 0.55 (bl mesh). The smallest change that keeps the bridge main plane attached goes to the next 3D run (with the rear-wing decision from the 3D mp423_w2).",
  "cases": [
   {
-   "name": "mp423_w3",
+   "name": "s2dw4_mp423_b3",
    "car": "mp423",
    "private": true,
    "wing_rebuild": true,
-   "U": 50.0,
-   "iters1": 100,
-   "simplec": true,
-   "h0": 0.36,
-   "iters": 3000,
-   "wall": "hybrid",
-   "post": "full",
-   "post2": true,
-   "slice_res": 0.007,
-   "dx_slices": 0.075,
-   "stages": 4,
-   "swap_gb": 16
-  },
-  {
-   "name": "s2dw3_mp423",
-   "car": "mp423",
-   "private": true,
-   "wing_rebuild": true,
+   "wing_patch": {
+    "fw_bridge": {
+     "d_alpha": [
+      [
+       0.2,
+       0
+      ],
+      [
+       0.29,
+       3
+      ]
+     ]
+    },
+    "fw_bridge_out": {
+     "d_alpha": 3
+    },
+    "fw_bridge_flap": {
+     "d_alpha": 3
+    }
+   },
    "U": 50.0,
    "iters": 5000,
    "stages": 1,
    "variants": [
-    "bl",
-    "iso"
+    "bl"
    ],
    "sec2d": [
     {
-     "id": "mp423_FW_y20",
+     "id": "mp423_FW_y36",
      "wing": "FW",
-     "y": 0.2
+     "y": 0.36
     },
     {
      "id": "mp423_FW_y45",
      "wing": "FW",
      "y": 0.45
+    },
+    {
+     "id": "mp423_FW_y55",
+     "wing": "FW",
+     "y": 0.55
+    }
+   ]
+  },
+  {
+   "name": "s2dw4_mp423_b6",
+   "car": "mp423",
+   "private": true,
+   "wing_rebuild": true,
+   "wing_patch": {
+    "fw_bridge": {
+     "d_alpha": [
+      [
+       0.2,
+       0
+      ],
+      [
+       0.29,
+       6
+      ]
+     ]
+    },
+    "fw_bridge_out": {
+     "d_alpha": 6
+    },
+    "fw_bridge_flap": {
+     "d_alpha": 6
+    }
+   },
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl"
+   ],
+   "sec2d": [
+    {
+     "id": "mp423_FW_y36",
+     "wing": "FW",
+     "y": 0.36
+    },
+    {
+     "id": "mp423_FW_y45",
+     "wing": "FW",
+     "y": 0.45
+    },
+    {
+     "id": "mp423_FW_y55",
+     "wing": "FW",
+     "y": 0.55
+    }
+   ]
+  },
+  {
+   "name": "s2dw4_mp423_b9",
+   "car": "mp423",
+   "private": true,
+   "wing_rebuild": true,
+   "wing_patch": {
+    "fw_bridge": {
+     "d_alpha": [
+      [
+       0.2,
+       0
+      ],
+      [
+       0.29,
+       9
+      ]
+     ]
+    },
+    "fw_bridge_out": {
+     "d_alpha": 9
+    },
+    "fw_bridge_flap": {
+     "d_alpha": 9
+    }
+   },
+   "U": 50.0,
+   "iters": 5000,
+   "stages": 1,
+   "variants": [
+    "bl"
+   ],
+   "sec2d": [
+    {
+     "id": "mp423_FW_y36",
+     "wing": "FW",
+     "y": 0.36
+    },
+    {
+     "id": "mp423_FW_y45",
+     "wing": "FW",
+     "y": 0.45
+    },
+    {
+     "id": "mp423_FW_y55",
+     "wing": "FW",
+     "y": 0.55
     }
    ]
   }

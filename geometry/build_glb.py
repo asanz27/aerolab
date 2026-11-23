@@ -954,7 +954,13 @@ def split_parts(car, rebuild_wings=False):
         if not cfg.get("wing_rebuild"):
             raise SystemExit(f"{car}: no wing_rebuild elements defined")
         import wing_rebuild
-        spec = cfg["wing_rebuild"]
+        spec = {k: dict(v) for k, v in cfg["wing_rebuild"].items()}
+        # per-case changes (run.json "wing_patch", passed by run_case.sh), e.g. an incidence sweep: {element: {key: value}}
+        for el, ch in json.loads(os.environ.get("WING_PATCH") or "{}").items():
+            if el not in spec:
+                raise SystemExit(f"{car}: wing_patch element {el} is not a wing_rebuild element")
+            spec[el].update(ch)
+            log(f"  wing patch {el}: {json.dumps(ch)}")
         by_box = {k: v for k, v in spec.items() if "box" in v}       # one model piece per element (MP4/5)
         by_sec = {k: v for k, v in spec.items() if "seed" in v}      # elements followed through the cuts
         if by_sec:

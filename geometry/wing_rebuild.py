@@ -372,6 +372,16 @@ def _med(a, w=5):
     return np.array([np.median(a[max(0, i - h):i + h + 1], axis=0) for i in range(len(a))])
 
 
+def _d_alpha(s, ys):
+    """Incidence taken off at each station (deg): "d_alpha" is a number, or a list of [|y|, deg] points interpolated
+    along the span (constant beyond the ends), e.g. to blend an element into a neighbour that keeps its incidence."""
+    da = s.get("d_alpha", 0.0)
+    if isinstance(da, (list, tuple)):
+        yy, aa = zip(*sorted(da))
+        return np.interp(np.abs(np.asarray(ys, float)), yy, aa)
+    return np.full(len(ys), float(da))
+
+
 def _rot(v, deg):
     """Rotate the 2D vectors v (n, 2; x-z) by deg (counter-clockwise, z up)."""
     r = math.radians(deg)
@@ -424,7 +434,8 @@ def rebuild_sections(parts, spec, components, log=print):
     Extra spec keys: "after": the element ahead of this one in the stack (slot: the rebuilt element is moved along its
     chord normal, away from the ground, until the smallest distance between the two rebuilt sections is at least the
     model's own between the two model sections, and at least GAP_MIN or the element's "gap_min", station by station); "d_alpha": degrees of incidence taken off (rotation about the element's leading edge; an
-    element "after" another first follows the displacement of that element's trailing edge)."""
+    element "after" another first follows the displacement of that element's trailing edge), a number or a list of
+    [|y|, deg] points along the span (see _d_alpha)."""
     from scipy.spatial import cKDTree
     Ts = [T for _, T in parts]
     offs = np.cumsum([0] + [len(T) for T in Ts])
@@ -513,9 +524,9 @@ def rebuild_sections(parts, spec, components, log=print):
             d = np.stack([np.interp(e["ys"], prev["ys"], prev["TE"][:, j] - prev["TE0"][:, j]) for j in range(2)], 1)
             e["LE"] += d
             e["TE"] += d
-        da = float(s.get("d_alpha", 0.0))
-        if da:
-            e["TE"] = e["LE"] + _rot(e["TE"] - e["LE"], -da)
+        da = _d_alpha(s, e["ys"])
+        for j in np.nonzero(da)[0]:
+            e["TE"][j] = e["LE"][j] + _rot((e["TE"][j] - e["LE"][j])[None], -da[j])[0]
         if prev is None:
             continue
         shifts, gaps = [], []
@@ -580,7 +591,7 @@ def rebuild_sections(parts, spec, components, log=print):
                "chord_m": [round(float(CH.min()), 4), round(float(CH.max()), 4)],
                "angle_deg": [round(float(ang.min()), 2), round(float(ang.max()), 2)],
                "model_angle_deg": [round(float(ang0.min()), 2), round(float(ang0.max()), 2)],
-               "d_alpha": float(s.get("d_alpha", 0.0)), "after": s.get("after"),
+               "d_alpha": s.get("d_alpha", 0.0), "after": s.get("after"),
                "slot_gap_model_mm": e["gap_mm"], "shift_mm": e["shift_mm"],
                "model_t_c": [round(float(TCs.min()), 3), round(TC, 3), round(float(TCs.max()), 3)], "model_camber": round(e["camber"], 3), "model_camber_pos": round(e["camber_pos"], 2),
                "role": s.get("role", "main"), "camber": round(prm["camber"], 3), "camber_pos": round(prm["camber_pos"], 2),
