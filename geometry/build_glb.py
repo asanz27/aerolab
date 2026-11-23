@@ -67,7 +67,10 @@ CARS = {
                          "fw_e5": {"role": "flap", "after": "fw_e4", "seed": [-0.729, 0.40, 0.201], "y": [0.25, 0.76]},
                          "fw_e6": {"role": "flap", "after": "fw_e5", "seed": [-0.699, 0.40, 0.239], "y": [0.25, 0.76]},
                          "rw_main": {"role": "main", "seed": [3.558, 0.20, 0.865], "y": [0.0, 0.35], "extend_to": 0.355},
-                         "rw_flap": {"role": "flap", "after": "rw_main", "seed": [3.707, 0.20, 0.958], "y": [0.0, 0.35], "extend_to": 0.355}},
+                         # rear slot: the model draws 5.7 mm; the regulations of the time ask 10-15 mm between the two
+                         # rear-wing sections at their closest (DRS closed); 12.5 mm here is ~10 mm after the voxel wrap
+                         "rw_flap": {"role": "flap", "after": "rw_main", "seed": [3.707, 0.20, 0.958], "y": [0.0, 0.35], "extend_to": 0.355,
+                                     "gap_min": 0.0125}},
         "source": {"title": "2016 Redbull RB12", "author": "Dave Love SketchFab", "url": "https://sketchfab.com/3d-models/d9b5ce8c5d234deeb9cb57f5029dad57",
                    "license": "CC BY 4.0", "license_url": "http://creativecommons.org/licenses/by/4.0/"},
     },

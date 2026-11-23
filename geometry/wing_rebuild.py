@@ -409,7 +409,7 @@ def rebuild_sections(parts, spec, components, log=print):
     """Section-mode rebuild (see above). parts: [(name, triangles)] in CFD axes. Returns (new parts, report).
     Extra spec keys: "after": the element ahead of this one in the stack (slot: the rebuilt element is moved along its
     chord normal, away from the ground, until the smallest distance between the two rebuilt sections is at least the
-    model's own between the two model sections, and at least GAP_MIN, station by station); "d_alpha": degrees of incidence taken off (rotation about the element's leading edge; an
+    model's own between the two model sections, and at least GAP_MIN or the element's "gap_min", station by station); "d_alpha": degrees of incidence taken off (rotation about the element's leading edge; an
     element "after" another first follows the displacement of that element's trailing edge)."""
     from scipy.spatial import cKDTree
     Ts = [T for _, T in parts]
@@ -514,7 +514,7 @@ def rebuild_sections(parts, spec, components, log=print):
                 g_model = 0.0
             else:
                 g_model = _outline_gap(prev["pts"][jp], e["pts"][j])
-            target = max(g_model, GAP_MIN)
+            target = max(g_model, float(s.get("gap_min", GAP_MIN)))
             ptc = float(np.clip(prev["TCs"][jp], prev["prm"]["t_min"], prev["prm"]["t_max"]))
             ple = np.array([np.interp(y, prev["ys"], prev["LE"][:, k]) for k in range(2)])
             pte = np.array([np.interp(y, prev["ys"], prev["TE"][:, k]) for k in range(2)])
