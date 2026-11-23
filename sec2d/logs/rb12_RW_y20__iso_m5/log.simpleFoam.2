@@ -1,0 +1,152 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2606                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _481094f-20260618 OPENFOAM=2606 version=2606
+Arch   : "LSB;label=32;scalar=64"
+Exec   : simpleFoam
+Date   : Nov 23 2026
+Time   : 07:11:27
+Host   : runnervmeozm8
+PID    : 14778
+I/O    : uncollated
+Case   : /home/runner/work/_temp/case_s2dw3_rb12/sec2d/rb12_RW_y20__iso_m5
+nProcs : 1
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+memory pool : not available
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+
+--> FOAM Warning : allowSystemOperations : Allowing user-supplied system call operations.
+                   This can be a security risk if running untrusted cases
+                   through e.g. 'coded' on-the-fly-compilation functionality.
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 6
+
+
+SIMPLE: no convergence criteria found. Calculations will run for 1e+15 steps.
+
+Reading field p
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Selecting incompressible transport model Newtonian
+Selecting turbulence model type RAS
+Selecting RAS turbulence model kOmegaSST
+Selecting patchDistMethod meshWave
+RAS
+{
+    RASModel        kOmegaSST;
+    turbulence      on;
+    printCoeffs     on;
+    alphaK1         0.85;
+    alphaK2         1;
+    alphaOmega1     0.5;
+    alphaOmega2     0.856;
+    gamma1          0.55555556;
+    gamma2          0.44;
+    beta1           0.075;
+    beta2           0.0828;
+    betaStar        0.09;
+    a1              0.31;
+    b1              1;
+    c1              10;
+    F3              false;
+    decayControl    false;
+    kInf            0;
+    omegaInf        0;
+}
+
+No MRF models present
+
+No finite volume options present
+
+Starting time loop
+
+forces forces_total:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1
+    Not including porosity effects
+
+forces forces_e1:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1
+    Not including porosity effects
+
+forces forces_e2:
+    rho: rhoInf
+    Freestream density (rhoInf) set to 1
+    Not including porosity effects
+
+wallShearStress wallShearStress:
+    processing (2) wall patches:
+        e1
+        e2
+
+fieldAverage fieldAverage:
+    Restarting averaging for fields:
+        U: starting averaging at time 6
+        p: starting averaging at time 6
+        wallShearStress: starting averaging at time 6
+
+Time = 7
+
+smoothSolver:  Solving for Ux, Initial residual = 0.043092045, Final residual = 0.00360658, No Iterations 2
+smoothSolver:  Solving for Uy, Initial residual = 0.035356386, Final residual = 0.0031199592, No Iterations 2
+GAMG:  Solving for p, Initial residual = 0.28803982, Final residual = 0.011999443, No Iterations 7
+GAMG:  Solving for p, Initial residual = 0.040044338, Final residual = 0.00085961985, No Iterations 2
+time step continuity errors : sum local = 0.013116964, global = -0.000245956, cumulative = -0.00044408833
+smoothSolver:  Solving for omega, Initial residual = 0.0010775952, Final residual = 2.1674942e-05, No Iterations 2
+smoothSolver:  Solving for k, Initial residual = 0.017183402, Final residual = 0.00048016333, No Iterations 2
+ExecutionTime = 6.86 s  ClockTime = 7 s
+
+forces forces_total write:
+    Sum of forces
+        Total    : (108.02688 -136.6361 -9.9258364e-19)
+        Pressure : (107.83879 -136.65611 -8.9375006e-19)
+        Viscous  : (0.18808933 0.020008501 -9.8833582e-20)
+    Sum of moments
+        Total    : (0.6831805 0.54013442 -599.57162)
+        Pressure : (0.68328054 0.53919397 -599.48024)
+        Viscous  : (-0.00010004251 0.00094044664 -0.091378829)
+    writing force and moment files.
+
+forces forces_e1 write:
+    Sum of forces
+        Total    : (31.66497 -73.086416 -7.2213399e-19)
+        Pressure : (31.532026 -73.098154 -7.262598e-19)
+        Viscous  : (0.13294322 0.011738512 4.125814e-21)
+    Sum of moments
+        Total    : (0.36543208 0.15832485 -291.1991)
+        Pressure : (0.36549077 0.15766013 -291.1285)
+        Viscous  : (-5.8692558e-05 0.00066471612 -0.070598625)
+    writing force and moment files.
+
+forces forces_e2 write:
+    Sum of forces
+        Total    : (76.361914 -63.549685 -2.7044965e-19)
+        Pressure : (76.306768 -63.557955 -1.6749026e-19)
+        Viscous  : (0.055146105 0.0082699897 -1.029594e-19)
+    Sum of moments
+        Total    : (0.31774842 0.38180957 -308.37252)
+        Pressure : (0.31778977 0.38153384 -308.35174)
+        Viscous  : (-4.1349948e-05 0.00027573052 -0.020780203)
+    writing force and moment files.
+
+wallShearStress wallShearStress write:
+    writing field wallShearStress
+    min/max(e1) = (-786.60258 -272.25867 -4.1482223e-16), (29.790546 184.5863 3.0181124e-16)
+    min/max(e2) = (-2407.304 -736.32283 -4.6056321e-15), (368.28497 451.7313 3.2568171e-14)
+yPlus yPlus write:
+    writing field yPlus
+    patch e1 y+ : min = 2.3605065, max = 69.906388, average = 12.757686
+    patch e2 y+ : min = 2.815639, max = 92.162004, average = 11.799194
+End
+
