@@ -220,7 +220,9 @@ def rebuild(parts, spec, components, log=print):
 # starting from a seed point (x, y, z) given per element. A station whose group jumps in chord (merged with a neighbour,
 # a pylon or an endplate) is skipped; after MISS_MAX without a clean station the tracking stops. Spec keys:
 #   "seed": [x, y, z] on the element (y > 0), "y": [y_min, y_max] tracking limits (y_min <= 0: full-span element, one
-#   loft from -y to +y through the centre), "extend_to": optional |y| the loft is carried to (endplate), "role", "profile".
+#   loft from -y to +y through the centre), "extend_to": optional |y| the loft is carried to (endplate), "extend_from": optional inboard |y| the loft of a
+#   per-side element starts at (to close a junction left as modelled between two tracked pieces), "merge_skins": the
+#   element's two skins do not meet in the cuts (see track), "role", "profile".
 # Section shape: NACA 4-digit with the model's own camber and its position (spanwise medians, clipped to CAMBER_RANGE
 # and CAMBER_POS_RANGE: the render models draw main planes and flaps with 3-13 % camber, an S-shaped section gets the
 # minimum), thickness as in the box mode; "profile" in the spec overrides.
@@ -321,8 +323,10 @@ def chord_box(P, le, te):
     return s.min(), s.max(), h.min(), h.max()
 
 
-def track(T, seed, ylo, yhi):
-    """Stations of one element on the y > 0 side of the triangles T: {y: (group, le, te, chord, t/c, chord box)}."""
+def track(T, seed, ylo, yhi, skins=False):
+    """Stations of one element on the y > 0 side of the triangles T: {y: (group, le, te, chord, t/c, chord box)}.
+    skins: also take the other cut groups lying within the chord of the nearest one (an element drawn as two skins
+    that do not meet at the leading and trailing edges, which would otherwise keep one skin as modelled)."""
     out = {}
     for direction in (1, -1):
         prev = np.array([seed[0], seed[2]], float)
@@ -336,6 +340,16 @@ def track(T, seed, ylo, yhi):
                 j = int(np.argmin(dist))
                 if dist[j] <= TRACK_DMAX and len(G[j]["pts"]) >= 6:
                     g = G[j]
+                    if skins:
+                        le0, te0, c0, _ = fit_station(g["pts"])
+                        u = (te0 - le0) / c0
+                        nrm = np.array([-u[1], u[0]])
+                        for i, h in enumerate(G):
+                            q = h["pts"] - le0
+                            sh, hn = q @ u / c0, q @ nrm / c0
+                            if i != j and sh.min() > -0.05 and sh.max() < 1.05 and np.abs(hn).max() < 0.25:
+                                g = {"segs": np.concatenate([g["segs"], h["segs"]]), "tri": np.concatenate([g["tri"], h["tri"]]),
+                                     "c": g["c"], "pts": np.concatenate([g["pts"], h["pts"]])}
                     le, te, c, t = fit_station(g["pts"])
                     ref = np.median(chords[-5:]) if chords else c
                     ok = 0.75 < c / ref < 1.33
@@ -441,7 +455,7 @@ def rebuild_sections(parts, spec, components, log=print):
                 _, ii = tree.query(comp.mean(1))
                 piece[k[ii]] = npc
                 npc += 1
-        sides = {sg: track(Tc * np.array([1, sg, 1]), seed, max(ylo, 0.0), yhi) for sg in (1, -1)}
+        sides = {sg: track(Tc * np.array([1, sg, 1]), seed, max(ylo, 0.0), yhi, bool(s.get("merge_skins"))) for sg in (1, -1)}
         st = sides[1]
         if len(st) < 3:
             log(f"  wing rebuild {el}: only {len(st)} clean stations - left as modelled")
@@ -453,7 +467,7 @@ def rebuild_sections(parts, spec, components, log=print):
         TC = float(np.median(TCs))
         BOX = np.array([v[5] for v in st.values()])
         y_end = max(float(ys[-1]) + EXTEND, float(s.get("extend_to", 0.0)))
-        y_beg = -y_end if full else float(ys[0]) - EXTEND
+        y_beg = -y_end if full else min(float(ys[0]) - EXTEND, float(s.get("extend_from", 9.0)))
         members = set()
         for sg in (1, -1):
             for v in sides[sg].values():

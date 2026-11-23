@@ -36,8 +36,15 @@ CARS = {
         "detail_zones": [[[-0.20, 0.0, 0.0], [1.05, 0.70, 0.30]], [[1.30, 0.40, 0.40], [3.00, 0.80, 0.75]],
                          [[2.35, 0.15, 0.0], [3.35, 0.70, 0.50]], [[-0.25, 0.35, 0.10], [0.25, 0.65, 0.50]]],
         # rebuilt wing elements (wing_rebuild.py section mode, --rebuild-wings): each element is two open skins in this
-        # model, followed through the cuts from a seed point (CFD axes, m). Bridge wing over the nose left as modelled.
+        # model, followed through the cuts from a seed point (CFD axes, m). The bridge wing over the nose (a wedge with a
+        # knife trailing edge) separated in 2D once the main stack below was attached; outboard of y 0.31 it has a flap
+        # whose inboard end joins the main plane near y 0.30, so the main plane is tracked as two pieces whose lofts
+        # overlap across the junction.
         "wing_rebuild": {"fw_main": {"role": "main", "seed": [-0.887, 0.15, 0.115], "y": [0.0, 0.60], "extend_to": 0.61},
+                         "fw_bridge": {"role": "main", "seed": [-0.877, 0.20, 0.389], "y": [0.0, 0.29], "extend_to": 0.309},
+                         "fw_bridge_out": {"role": "main", "seed": [-0.875, 0.45, 0.330], "y": [0.31, 0.60], "extend_from": 0.307, "extend_to": 0.605},
+                         "fw_bridge_flap": {"role": "flap", "after": "fw_bridge_out", "seed": [-0.765, 0.45, 0.364], "y": [0.31, 0.60], "extend_to": 0.605,
+                                            "merge_skins": True},
                          "fw_flap1": {"role": "flap", "after": "fw_main", "seed": [-0.680, 0.15, 0.160], "y": [0.0, 0.60], "extend_to": 0.61},
                          "fw_flap2": {"role": "flap", "after": "fw_flap1", "seed": [-0.511, 0.15, 0.245], "y": [0.0, 0.575], "extend_to": 0.58},
                          "rw_main": {"role": "main", "seed": [3.333, 0.25, 0.725], "y": [0.0, 0.50], "extend_to": 0.505},
