@@ -435,6 +435,7 @@ ZONE_MIN_CM3 = 2.0                    # smallest reopened gap kept
 ZONE_ONE_PIECE = 0.8                  # rays hitting one piece for more than this share: inside that piece
 ZONE_RAYS_SHEET = 9                   # ...unless this many rays see open air: the coarse wrap's offset along a surface
 ZONE_REPASS = 3                       # extra ray passes next to rebuilt (closed) wing elements, see carve_zone
+ZONE_CRUST_AIR = 0.35                 # share of open air around a small solid pocket piece above which it is reopened
 _DIRS = np.array([(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1) if (i, j, k) != (0, 0, 0)], float)
 _DIRS /= np.linalg.norm(_DIRS, axis=1)[:, None]
 
@@ -606,6 +607,27 @@ def carve_zone(T, zlo, zhi, solid, band, lo, h, hf=None, target=None, ids=None, 
             small = np.where(cnt * hf ** 3 < ZONE_MIN_CM3 * 1e-6)[0]
             reopen[np.isin(lab, small[small > 0])] = False
         del lab
+        # next to rebuilt elements, small pieces of the pocket left solid that face open air over a good part of their
+        # boundary are crusts of the coarse wrap on an element, not the inside of a part (whose boundary is its walls):
+        # every voxel takes the verdict of the nearest ray sample (every 3rd voxel), and a 1-3 voxel crust on the nose of
+        # the MP4/5 front flap, turned by d_alpha, stayed solid and became a loose piece of plug 1.5 mm off the nose
+        if len(closed_ids):
+            rest = L & ~reopen
+            lab, n = ndimage.label(rest, np.ones((3, 3, 3)))
+            if n:
+                ring = ndimage.grey_dilation(lab, footprint=ball)
+                ring[rest] = 0
+                tot = np.bincount(ring.ravel(), minlength=n + 1)
+                ring[~(outside | reopen)] = 0
+                frac = np.bincount(ring.ravel(), minlength=n + 1) / np.maximum(tot, 1)
+                del ring
+                vol = np.bincount(lab.ravel(), minlength=n + 1) * hf ** 3
+                crust = np.where((frac >= ZONE_CRUST_AIR) & (vol < ZONE_MIN_CM3 * 1e-6))[0]
+                crust = crust[crust > 0]
+                if len(crust):
+                    reopen |= np.isin(lab, crust)
+                    log(f"    {len(crust)} crusts on rebuilt elements reopened: {vol[crust].sum() * 1e6:.1f} cm3")
+            del lab, rest
         vreal = reopen.sum() * hf ** 3
         vfake = len(pts) * hf ** 3 - vreal
     del L, pts
@@ -1210,8 +1232,47 @@ def auto_zones(Tb, W, wing_h=None):
     return out
 
 
+CORNER_BLEND = 0.10     # m: lateral band inboard of the tyre's inner face where a held corner blends into the chassis
+
+
+def ride_height_variant(regions, slots, xf, xr, Rf, Rr, front_mm, rear_mm, hold_corners=False):
+    """Ride-height variant (in place): every non-wheel part turns about the front axle at ground level and rises by
+    front_mm, so that the chassis moves by front_mm at the front axle and rear_mm at the rear axle; the wheels stay.
+    hold_corners: the wheel corners stay with the wheels, as on the real car, where the chassis moves on its springs -
+    the body and suspension pieces inside the wheels' side outline and outboard of the tyres' inner faces (uprights,
+    brake drums and ducts, classed as body), blended over CORNER_BLEND inboard (the wishbones bend). Without it the
+    corners move with the chassis: a 50 mm drop sank the MCL39 brake drums and ducts 50 mm into the tyres."""
+    dF, dR = front_mm / 1000.0, rear_mm / 1000.0
+    th = np.arctan2(dR - dF, xr - xf)
+    cth, sth = np.cos(th), np.sin(th)
+    corners = []
+    if hold_corners:
+        for k, xa, R in (("wheels_front", xf, Rf), ("wheels_rear", xr, Rr)):
+            Vw = regions[k].reshape(-1, 3)
+            tread = np.hypot(Vw[:, 0] - xa, Vw[:, 2] - (R - SINK)) > 0.9 * R
+            corners.append((xa, R - SINK, R, float(np.abs(Vw[tread, 1]).min())))
+            log(f"ride height: {k} corner held outboard of |y| {corners[-1][3]:.3f} (blend {CORNER_BLEND} m)")
+    for k, tri in list(regions.items()) + list(slots.items()):
+        if k.startswith("wheels"):
+            continue
+        xx, zz = tri[..., 0] - xf, tri[..., 2].copy()
+        nx = xf + xx * cth - zz * sth
+        nz = xx * sth + zz * cth + dF
+        if corners and k in ("body", "suspension"):
+            w = np.ones(tri.shape[:-1])
+            for xa, za, R, yin in corners:
+                wy = np.clip((yin - np.abs(tri[..., 1])) / CORNER_BLEND, 0.0, 1.0)
+                wr = np.clip((np.hypot(tri[..., 0] - xa, tri[..., 2] - za) - R - 0.02) / 0.05, 0.0, 1.0)
+                w = np.minimum(w, 1.0 - (1.0 - wy) * (1.0 - wr))
+            log(f"ride height: {k}: {int((w < 0.999).sum())} vertices held or blended")
+            nx = tri[..., 0] + w * (nx - tri[..., 0])
+            nz = tri[..., 2] + w * (nz - tri[..., 2])
+        tri[..., 0] = nx
+        tri[..., 2] = nz
+
+
 def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_interior=True, fine_wings=False,
-         rebuild_wings=False):
+         rebuild_wings=False, hold_corners=False):
     cfg = CARS[car]
     os.makedirs(outdir, exist_ok=True)
     parts, s, W, wheels, body, (Rf, Rr, xf, xr, yf, yr) = split_parts(car, rebuild_wings)
@@ -1340,15 +1401,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         regions[k] = np.concatenate([regions[k], tri]) if k in regions else tri
     slots = {k: np.concatenate(v) for k, v in SLOTS.items() if v}
     if abs(front_mm) > 1e-9 or abs(rear_mm) > 1e-9:
-        dF, dR = front_mm / 1000.0, rear_mm / 1000.0
-        th = np.arctan2(dR - dF, xr - xf)
-        cth, sth = np.cos(th), np.sin(th)
-        for k, tri in list(regions.items()) + list(slots.items()):
-            if k.startswith("wheels"):
-                continue
-            xx, zz = tri[..., 0] - xf, tri[..., 2].copy()
-            tri[..., 0] = xf + xx * cth - zz * sth
-            tri[..., 2] = xx * sth + zz * cth + dF
+        ride_height_variant(regions, slots, xf, xr, Rf, Rr, front_mm, rear_mm, hold_corners)
     info = {}
     for k, tri in regions.items():
         if len(tri) < 20:
@@ -1394,7 +1447,7 @@ def main(car, outdir, front_mm=0.0, rear_mm=0.0, h_body=0.0035, r_body=2, fill_i
         "force_groups": {**{k: [k] for k in names if not k.startswith("radiator_")},
                          **({"cooling": ["radiator_in", "radiator_out"]} if cooling else {})},
         "no_layers": [k for k in ("suspension", "radiator_in", "radiator_out") if k in names],
-        "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm},
+        "variant": {"front_rh_mm": front_mm, "rear_rh_mm": rear_mm, **({"hold_corners": True} if hold_corners else {})},
         **({"wing_rebuild": [{k: r[k] for k in ("element", "role", "profile", "chord_m", "angle_deg", "span", "new_triangles")}
                              for r in WING_REBUILT]} if WING_REBUILT else {}),
         "domain": [round(blo[0] - 7.5, 1), round(bhi[0] + 13.5, 1), 5.5, 5.5],
@@ -1431,5 +1484,6 @@ def cli(car):
     ap.add_argument("--front-rh-mm", type=float, default=0.0)
     ap.add_argument("--rear-rh-mm", type=float, default=0.0)
     ap.add_argument("--rebuild-wings", action="store_true", help="replace the wing elements by clean aerofoils (wing_rebuild.py)")
+    ap.add_argument("--hold-corners", action="store_true", help="ride-height variant: wheel corners stay with the wheels")
     a = ap.parse_args()
-    main(car, a.outdir, a.front_rh_mm, a.rear_rh_mm, rebuild_wings=a.rebuild_wings)
+    main(car, a.outdir, a.front_rh_mm, a.rear_rh_mm, rebuild_wings=a.rebuild_wings, hold_corners=a.hold_corners)

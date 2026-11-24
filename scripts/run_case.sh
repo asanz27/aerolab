@@ -207,6 +207,8 @@ if [ "$STAGE" = "1" ]; then
   [ "$(jget wing_rebuild false)" = "true" ] && GEOM_OPT+=(--rebuild-wings)   # clean aerofoil wing elements (wing_rebuild.py)
   WP=$(jget wing_patch "")
   [ -n "$WP" ] && export WING_PATCH="$WP"   # per-case changes to the car's wing_rebuild elements (build_glb.split_parts)
+  HC=$(python3 -c "import json,sys; print(str(json.loads(sys.argv[1]).get('variant',{}).get('hold_corners',False)).lower())" "$CFG")
+  [ "$HC" = "true" ] && GEOM_OPT+=(--hold-corners)   # ride-height variant: wheel corners stay with the wheels
   if ! python3 "$GEOM" "$CASE/constant/triSurface" --front-rh-mm "$FRH" --rear-rh-mm "$RRH" "${GEOM_OPT[@]}" > "$CASE/log.geometry" 2>&1; then
     tail -30 "$CASE/log.geometry"; mkdir -p "$RES/logs"; cp "$CASE/log.geometry" "$CASE/mem.log" "$RES/logs/" 2>/dev/null
     echo "geometry failed"; exit 1
