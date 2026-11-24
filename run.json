@@ -1,10 +1,10 @@
 {
- "tag": "mcl39-ride-height rerun",
- "_doc": "MCL39 ride-height sensitivity, flat -25 mm case again: mcl39_rh25 (run 45303302268) diverged in the first-order start (from iteration ~18 a growing pressure oscillation on the rear wing, NaN by 100) while the -50 mm and rake meshes of the same geometry run normally and the mesh quality figures are the same as theirs. The geometry is only translated by the variant, so the bad cell comes from how snappyHexMesh cut this offset: same settings, offset -26 mm instead of -25 mm, which gives a different mesh of the same car.",
+ "tag": "wing-rebuild round 3: mp45_w5, mp423_w6",
+ "_doc": "Round 3 of the rebuilt-wing angles (criteria: main planes and middle elements attached; last element up to about half separated, not from its leading edge, slot alive). MP4/5 mp45_w4: front main + flap -5 deg at y 0.32-0.43 attached there, but the separation moved inboard to y 0.19-0.28 (suction side 69 % reversed at 0.22-0.25) -> mp45_w5: the same -5 deg from y 0.20 (ramp from 0 at 0.16) to 0.43, 0 at 0.50. Its rear-wing centre (|y| < 0.08) stays separated with -4 deg as with 0: it is the junction of the central pylon with the main plane's suction side, not incidence (and more rotation leaves the pylon top sticking out of the main) -> rear wing back to the model angles. MP4/23 mp423_w5 (rear 10/16 deg, beam outboard 6 deg) passes (rear-wing suction reversed 60 -> 7 %, beam 7 %), but every run with the rebuilt bridge wing (w3-w5) has ~0.2 m2 less ClA from the rear floor and diffuser than w2 (bridge as modelled, attached in 3D) -> mp423_w6 = w5 with the bridge left as modelled (wing_patch skip), to settle the bridge.",
  "cases": [
   {
-   "name": "mcl39_rh26",
-   "car": "mcl39",
+   "name": "mp45_w5",
+   "car": "mp45",
    "private": true,
    "U": 50.0,
    "iters1": 100,
@@ -17,11 +17,96 @@
    "dx_slices": 0.075,
    "stages": 4,
    "swap_gb": 16,
+   "wing_rebuild": true,
+   "h0": 0.34,
+   "wing_patch": {
+    "fw_main": {
+     "d_alpha": [
+      [
+       0.16,
+       0
+      ],
+      [
+       0.2,
+       5
+      ],
+      [
+       0.43,
+       5
+      ],
+      [
+       0.5,
+       0
+      ]
+     ]
+    },
+    "fw_flap": {
+     "d_alpha": [
+      [
+       0.16,
+       0
+      ],
+      [
+       0.2,
+       5
+      ],
+      [
+       0.43,
+       5
+      ],
+      [
+       0.5,
+       0
+      ]
+     ]
+    }
+   }
+  },
+  {
+   "name": "mp423_w6",
+   "car": "mp423",
+   "private": true,
+   "U": 50.0,
+   "iters1": 100,
+   "simplec": true,
+   "iters": 3000,
+   "wall": "hybrid",
+   "post": "full",
+   "post2": true,
+   "slice_res": 0.007,
+   "dx_slices": 0.075,
+   "stages": 4,
+   "swap_gb": 16,
+   "wing_rebuild": true,
    "h0": 0.36,
-   "variant": {
-    "front_rh_mm": -26,
-    "rear_rh_mm": -26,
-    "hold_corners": true
+   "wing_patch": {
+    "rw_main": {
+     "d_alpha": 10
+    },
+    "rw_flap": {
+     "d_alpha": 16
+    },
+    "beam": {
+     "d_alpha": [
+      [
+       0.32,
+       0
+      ],
+      [
+       0.4,
+       6
+      ]
+     ]
+    },
+    "fw_bridge": {
+     "skip": true
+    },
+    "fw_bridge_out": {
+     "skip": true
+    },
+    "fw_bridge_flap": {
+     "skip": true
+    }
    }
   }
  ]

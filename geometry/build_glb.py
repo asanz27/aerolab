@@ -983,6 +983,14 @@ def split_parts(car, rebuild_wings=False):
                 raise SystemExit(f"{car}: wing_patch element {el} is not a wing_rebuild element")
             spec[el].update(ch)
             log(f"  wing patch {el}: {json.dumps(ch)}")
+        # {"skip": true}: that element stays as modelled (e.g. the MP4/23 bridge wing, attached in 3D as modelled)
+        skipped = {el for el, v in spec.items() if v.get("skip")}
+        for el in sorted(skipped):
+            del spec[el]
+            log(f"  wing element {el} left as modelled")
+        orphans = [el for el, v in spec.items() if v.get("after") in skipped]
+        if orphans:
+            raise SystemExit(f"{car}: {orphans} follow a skipped element: skip them too")
         by_box = {k: v for k, v in spec.items() if "box" in v}       # one model piece per element (MP4/5)
         by_sec = {k: v for k, v in spec.items() if "seed" in v}      # elements followed through the cuts
         if by_sec:
@@ -991,7 +999,7 @@ def split_parts(car, rebuild_wings=False):
         if by_box:
             parts, rep = wing_rebuild.rebuild(parts, by_box, components, log=log)
             WING_REBUILT.extend(rep)
-        missing = set(cfg["wing_rebuild"]) - {r["element"] for r in rep}
+        missing = set(cfg["wing_rebuild"]) - skipped - {r["element"] for r in WING_REBUILT}
         if missing:
             raise SystemExit(f"{car}: wing elements not found in the model: {sorted(missing)}")
     tread = np.concatenate([t.reshape(-1, 3) for n, t in parts if re.search(cfg["tread"], n)])
