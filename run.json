@@ -1,9 +1,9 @@
 {
- "tag": "wing-rebuild round 3: mp45_w5, mp423_w6",
- "_doc": "Round 3 of the rebuilt-wing angles (criteria: main planes and middle elements attached; last element up to about half separated, not from its leading edge, slot alive). MP4/5 mp45_w4: front main + flap -5 deg at y 0.32-0.43 attached there, but the separation moved inboard to y 0.19-0.28 (suction side 69 % reversed at 0.22-0.25) -> mp45_w5: the same -5 deg from y 0.20 (ramp from 0 at 0.16) to 0.43, 0 at 0.50. Its rear-wing centre (|y| < 0.08) stays separated with -4 deg as with 0: it is the junction of the central pylon with the main plane's suction side, not incidence (and more rotation leaves the pylon top sticking out of the main) -> rear wing back to the model angles. MP4/23 mp423_w5 (rear 10/16 deg, beam outboard 6 deg) passes (rear-wing suction reversed 60 -> 7 %, beam 7 %), but every run with the rebuilt bridge wing (w3-w5) has ~0.2 m2 less ClA from the rear floor and diffuser than w2 (bridge as modelled, attached in 3D) -> mp423_w6 = w5 with the bridge left as modelled (wing_patch skip), to settle the bridge.",
+ "tag": "wing-rebuild round 4: mp45_w6",
+ "_doc": "Round 4 of the rebuilt-wing angles (same criteria). mp45_w5 (front main + flap -5 deg from y 0.20 to 0.43, 0 at 0.50) attached the front wing at y 0.20-0.40, but its main plane separated outboard where the cut ends: suction side 44-62 % reversed at y 0.45-0.55 and 36-50 % at 0.55-0.65 (w4: 8-26 %, w1: 6-16 %), from mid-chord at y 0.50. -> mp45_w6: the same -5 deg from y 0.20 to the tip (0.69), ramp from 0 at 0.16. Rear wing at the model angles (w5: 2.7 % suction reversed). The front-wing load oscillates +-12 % around its mean (ClA 0.77-0.95 over the last 600 iterations), so single-snapshot separation maps move from run to run; the mean front-wing ClA is 0.86-0.89 in w1, w4 and w5.",
  "cases": [
   {
-   "name": "mp45_w5",
+   "name": "mp45_w6",
    "car": "mp45",
    "private": true,
    "U": 50.0,
@@ -29,14 +29,6 @@
       [
        0.2,
        5
-      ],
-      [
-       0.43,
-       5
-      ],
-      [
-       0.5,
-       0
       ]
      ]
     },
@@ -49,63 +41,8 @@
       [
        0.2,
        5
-      ],
-      [
-       0.43,
-       5
-      ],
-      [
-       0.5,
-       0
       ]
      ]
-    }
-   }
-  },
-  {
-   "name": "mp423_w6",
-   "car": "mp423",
-   "private": true,
-   "U": 50.0,
-   "iters1": 100,
-   "simplec": true,
-   "iters": 3000,
-   "wall": "hybrid",
-   "post": "full",
-   "post2": true,
-   "slice_res": 0.007,
-   "dx_slices": 0.075,
-   "stages": 4,
-   "swap_gb": 16,
-   "wing_rebuild": true,
-   "h0": 0.36,
-   "wing_patch": {
-    "rw_main": {
-     "d_alpha": 10
-    },
-    "rw_flap": {
-     "d_alpha": 16
-    },
-    "beam": {
-     "d_alpha": [
-      [
-       0.32,
-       0
-      ],
-      [
-       0.4,
-       6
-      ]
-     ]
-    },
-    "fw_bridge": {
-     "skip": true
-    },
-    "fw_bridge_out": {
-     "skip": true
-    },
-    "fw_bridge_flap": {
-     "skip": true
     }
    }
   }
