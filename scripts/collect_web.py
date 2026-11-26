@@ -2,9 +2,11 @@
 
 Light-weight (git + JSON only), safe to run locally:
     python scripts/collect_web.py <web_data_dir> baseline=<case> [mesh=<case>:<label> ...] [map=<case>:<label> ...]
-                                  [wall=<case>:<label> ...]
+                                  [wall=<case>:<label> ...] [wr=<case>:<label> ...]
 wall= rows (index.wall_study) are runs of the same car that differ only in the wing boundary-layer mesh (2026-11
 option A: the page shows the spread as the uncertainty from the wing layers); the baseline may be one of them.
+wr= rows (index.wing_rebuild) compare the model's own wing sections with the rebuilt ones (2026-11-22..26): label
+"orig" = model sections, "page" = the rebuilt case shown on the page.
 """
 from __future__ import annotations
 
@@ -92,6 +94,16 @@ def wall_row(meta):
             "stages": meta.get("config", {}).get("stages"), "wings": wings}
 
 
+def rebuild_row(meta):
+    """summary + wing-part ClA/CdA and the angle changes, for the wing-rebuild comparison (index.wing_rebuild)"""
+    F = meta.get("forces", {})
+    c = meta.get("config", {})
+    return {**summary(meta), "ClA_std": F.get("total", {}).get("ClA_std"),
+            "wing_parts": {k: {"ClA": F[k].get("ClA"), "CdA": F[k].get("CdA")}
+                           for k in ("frontwing", "rearwing", "beamwing") if k in F},
+            "rebuilt": bool(c.get("wing_rebuild")), "wing_patch": c.get("wing_patch") or {}}
+
+
 def main():
     out = sys.argv[1]
     os.makedirs(out, exist_ok=True)
@@ -100,6 +112,7 @@ def main():
     mesh = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("mesh=")]
     amap = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("map=")]
     wall = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("wall=")]
+    wrb = [a.split("=", 1)[1] for a in sys.argv[2:] if a.startswith("wr=")]
     car = dict(a.split("=", 1) for a in sys.argv[2:] if a.startswith("car=")).get("car", "mft02")
     index = {"car": car, "baseline": base, "cases": [], "mesh_study": [], "aeromap": []}
     meta = fetch_case(base, os.path.join(out, base))
@@ -123,6 +136,10 @@ def main():
         case, label = spec.split(":", 1)
         m = meta if case == base else remote_meta(case)
         index.setdefault("wall_study", []).append({"case": case, "label": label, **wall_row(m)})
+    for spec in wrb:
+        case, label = spec.split(":", 1)
+        m = meta if case == base else remote_meta(case)
+        index.setdefault("wing_rebuild", []).append({"case": case, "label": label, **rebuild_row(m)})
     json.dump(index, open(os.path.join(out, "index.json"), "w"), indent=1)
     total = sum(os.path.getsize(os.path.join(d, f)) for d, _, fs in os.walk(out) for f in fs)
     print(json.dumps(index, indent=1))
