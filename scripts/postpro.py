@@ -317,6 +317,41 @@ def _disable_all(r):
                 pass
 
 
+# time averages written by fieldAverage (make_case.py, avg_iters): used instead of the last-iteration
+# fields wherever they exist, so the surface maps, slices and lines do not depend on where an unsteady
+# wake or a partly stalled wing element happened to be at the last iteration
+MEAN_OF = {"p": "pMean", "U": "UMean", "wallShearStress": "wallShearStressMean"}
+MEANS_USED = set()
+
+
+def use_means(m):
+    cd = m.cell_data
+    for f, mf in MEAN_OF.items():
+        if mf in cd.keys():
+            cd[f] = np.asarray(cd[mf])
+            cd.remove(mf)
+            MEANS_USED.add(f)
+    return m
+
+
+def averaging_info(case, r):
+    """Averaging window of the fieldAverage means in the last time directory (None without means)."""
+    if not MEANS_USED:
+        return None
+    t = r.time_values[-1]
+    info = {"fields": sorted(MEANS_USED), "to": float(t)}
+    try:
+        tn = "%g" % t
+        fp = os.path.join(case, tn, "uniform", "functionObjects", "functionObjectProperties")
+        n = [int(x) for x in re.findall(r"totalIter\s+(\d+)\s*;", open(fp, errors="ignore").read())]
+        if n:
+            info["iters"] = max(n)
+            info["from"] = float(t) - max(n) + 1
+    except Exception as e:
+        log("averaging properties not read:", e)
+    return info
+
+
 def read_boundary(r, names):
     import pyvista as pv
     _disable_all(r)
@@ -334,15 +369,30 @@ def read_boundary(r, names):
         except Exception:
             blk = None
         if blk is not None and blk.n_cells > 0:
-            out[n] = blk
+            out[n] = use_means(blk)
     return out
 
 
 def read_internal(r):
     _disable_all(r)
     r.enable_patch_array("internalMesh")
-    mb = r.read()
-    return mb["internalMesh"]
+    # with the means present, skip the last-iteration copies and the (internally zero) wall shear
+    # stress: about 0.6 GB less on an 8 M cell mesh
+    skip = []
+    try:
+        names = set(r.cell_array_names)
+        if {"UMean", "pMean"} <= names:
+            skip = [n for n in ("U", "p", "wallShearStress", "wallShearStressMean") if n in names]
+            for n in skip:
+                r.disable_cell_array(n)
+    except Exception as e:
+        log("cell array selection failed:", e)
+    try:
+        mb = r.read()
+    finally:
+        for n in skip:
+            r.enable_cell_array(n)
+    return use_means(mb["internalMesh"])
 
 
 # ---------------------------------------------------------------------------------------------
@@ -903,6 +953,8 @@ def main(case, out, cfg):
     try:
         meta["surface"] = surface_export(case, r, cfg, webdir, parts)
         patches = read_boundary(r, parts)
+        meta["averaging"] = averaging_info(case, r)
+        log("averaging", meta["averaging"])
     except Exception:
         meta["errors"].append(traceback.format_exc())
         log(meta["errors"][-1])

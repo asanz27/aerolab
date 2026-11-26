@@ -2,7 +2,9 @@
 
 usage: python make_case.py <case_dir> '<json config>'
 config keys: name, h0 (base cell m), U (m/s), iters, iters1 (first-order iterations), layers,
-             variant {front_rh_mm, rear_rh_mm}, nprocs, mesh_only
+             variant {front_rh_mm, rear_rh_mm}, nprocs, mesh_only,
+             avg_iters (time-average p, U and the wall shear stress over the last N iterations; default
+             500, 0 = last-iteration fields only)
 """
 from __future__ import annotations
 
@@ -359,21 +361,28 @@ def control(c):
         {extra}
         fields          ({fl});
     }}""")
-    fo.append("""    yPlus
-    {
+    # time average over the last avg_iters iterations (fieldAverage -> pMean, UMean, wallShearStressMean):
+    # unsteady wakes and partly stalled wing elements make the last-iteration surface fields jump from
+    # one run to the next; the averaging needs the wall shear stress every iteration inside the window
+    n_avg = min(int(c.get("avg_iters", 500)), max(0, (int(c["iters"]) - int(c.get("iters1", 0))) // 2))
+    t_avg = int(c["iters"]) - n_avg
+    wss_exec = (f"executeControl  timeStep;\n        timeStart       {t_avg};" if n_avg > 0
+                else "executeControl  writeTime;")
+    fo.append(f"""    yPlus
+    {{
         type            yPlus;
         libs            (fieldFunctionObjects);
         executeControl  writeTime;
         writeControl    writeTime;
-    }
+    }}
     wallShearStress
-    {
+    {{
         type            wallShearStress;
         libs            (fieldFunctionObjects);
-        executeControl  writeTime;
+        {wss_exec}
         writeControl    writeTime;
-    }
-    vorticity
+    }}""")
+    fo.append("""    vorticity
     {
         type            vorticity;
         libs            (fieldFunctionObjects);
@@ -387,6 +396,20 @@ def control(c):
         executeControl  writeTime;
         writeControl    writeTime;
     }""")
+    if n_avg > 0:   # after wallShearStress: function objects run in this order every iteration
+        fo.append(f"""    fieldAverage
+    {{
+        type            fieldAverage;
+        libs            (fieldFunctionObjects);
+        timeStart       {t_avg};
+        writeControl    writeTime;
+        fields
+        (
+            U               {{ mean on; prime2Mean off; base time; }}
+            p               {{ mean on; prime2Mean off; base time; }}
+            wallShearStress {{ mean on; prime2Mean off; base time; }}
+        );
+    }}""")
     return HDR.format(cls="dictionary", obj="controlDict") + f"""
 application     simpleFoam;
 startFrom       latestTime;
